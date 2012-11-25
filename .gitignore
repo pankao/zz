@@ -1,0 +1,7 @@
+bin/*
+build/*
+deploy/*
+obj/*
+tmp/*
+sandbox/*
+*.hxproj
