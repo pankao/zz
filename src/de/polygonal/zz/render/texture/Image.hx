@@ -63,7 +63,7 @@ class Image extends HashableItem
 		return new Image(data.clone(), w, h);
 		#end
 		
-		return throw 'unsupported operation'
+		return throw 'unsupported operation';
 	}
 	
 	public function free():Void

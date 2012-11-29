@@ -53,10 +53,10 @@ class SpriteSheetEffect extends TextureEffect
 	
 	var _frame:Int = 0;
 	
-	public function new(tex:Tex, sheet:SpriteSheet)
+	public function new(sheet:SpriteSheet)
 	{
 		this.sheet = sheet;
-		super(tex);
+		super(sheet.tex);
 		__spriteSheetEffect = this;
 		frame = 0;
 	}

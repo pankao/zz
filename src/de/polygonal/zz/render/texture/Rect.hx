@@ -48,6 +48,11 @@ class Rect
 		this.b = y + h;
 	}
 	
+	public function clone():Rect
+	{
+		return new Rect(x, y, w, h);
+	}
+	
 	public function toString():String
 	{
 		var format = "{x %-+8.3f y %-+8.3f w %-+8.3f h %-+.3f}";

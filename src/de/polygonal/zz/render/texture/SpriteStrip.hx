@@ -34,16 +34,16 @@ import de.polygonal.zz.render.texture.SpriteSheet;
 
 class SpriteStrip extends SpriteSheet
 {
-	//public var frameW(default, null):Int;
-	//public var frameH(default, null):Int;
+	public var frameW:Int;
+	public var frameH:Int;
 	
 	public function new(tex:Tex, rows:Int, cols:Int)
 	{
 		super(tex, rows * cols);
-		//__spriteStrip = this;
+		__spriteStrip = this;
 		
-		var w = tex.image.w;
-		var h = tex.image.h;
+		var w = _sheetW = tex.image.w;
+		var h = _sheetH = tex.image.h;
 		
 		#if debug
 		D.assert(w % cols == 0, 'w % cols == 0');
@@ -53,11 +53,17 @@ class SpriteStrip extends SpriteSheet
 		frameW = Std.int(w / cols);
 		frameH = Std.int(h / rows);
 		
-		_sheetW = w;
-		_sheetH = h;
-		
 		for (y in 0...rows)
 			for (x in 0...cols)
-				addCropRectAt(y * cols + x, new Rect(x * frameW, y * frameH, frameW, frameH), tex.isNormalize, tex.isPack);
+				addCropRectAt(y * cols + x,
+					new Rect(x * frameW, y * frameH, frameW, frameH),
+					tex.isNormalize, tex.isPack);
+	}
+	
+	override public function free():Void 
+	{
+		super.free();
+		frameW = -1;
+		frameH = -1;
 	}
 }

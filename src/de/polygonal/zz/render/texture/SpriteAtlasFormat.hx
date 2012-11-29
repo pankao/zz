@@ -29,12 +29,18 @@
  */
 package de.polygonal.zz.render.texture;
 
-class SpriteSheetFormat
+class SpriteAtlasFormat
 {
-	public var data(default, null):SpriteSheetData;
+	public var sheetW:Int = 0;
+	public var sheetH:Int = 0;
 	
-	function new()
+	public var frames:Array<Rect>;
+	
+	public var names:Array<String>;
+	
+	public function new()
 	{
-		data = new SpriteSheetData();
+		frames = [];
+		names = [];
 	}
 }
