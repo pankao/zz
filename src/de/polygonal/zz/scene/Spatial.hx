@@ -50,7 +50,8 @@ using de.polygonal.ds.BitFlags;
 	BIT_FORCE_CULL,
 	BIT_IS_CAMERA,
 	BIT_USE_2D_XFORM,
-	BIT_MODEL_CHANGED //used in Geometry
+	BIT_MODEL_CHANGED,		//used in Geometry
+	BIT_WORLD_BOUND_CURRENT //used in Node
 ], true))
 class Spatial implements Visitable
 {

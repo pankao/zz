@@ -31,7 +31,6 @@ package de.polygonal.zz.scene;
 
 import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Vec3;
-import de.polygonal.ds.Bits;
 import de.polygonal.motor.geom.primitive.Sphere2;
 import de.polygonal.core.util.Assert;
 
@@ -44,8 +43,6 @@ using de.polygonal.ds.BitFlags;
  */
 class Node extends Spatial
 {
-	inline public static var BIT_WORLD_BOUND_CURRENT = Bits.next(Spatial);
-	
 	public function new(id:String = null)
 	{
 		super(id);
@@ -141,7 +138,7 @@ class Node extends Spatial
 	
 	public function enableUpdateBV(value:Bool):Void
 	{
-		setfif(BIT_WORLD_BOUND_CURRENT, !value);
+		setfif(Spatial.BIT_WORLD_BOUND_CURRENT, !value);
 	}
 	
 	/**
@@ -204,7 +201,7 @@ class Node extends Spatial
 	
 	override function _updateWorldBound():Void
 	{
-		if (hasf(BIT_WORLD_BOUND_CURRENT)) return;
+		if (hasf(Spatial.BIT_WORLD_BOUND_CURRENT)) return;
 		
 		//compute world bounding volume containing world bounding volume of all its children
 		//set to first non-null child
