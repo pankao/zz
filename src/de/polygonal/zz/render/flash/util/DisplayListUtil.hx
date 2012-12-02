@@ -30,7 +30,7 @@
 package de.polygonal.zz.render.flash.util;
 
 import de.polygonal.core.fmt.Sprintf;
-import de.polygonal.core.fmt.StringUtil;
+import de.polygonal.core.util.ClassUtil;
 import de.polygonal.ds.ArrayedStack;
 import de.polygonal.core.util.Assert;
 
@@ -76,7 +76,7 @@ class DisplayListUtil
 					t += "|   ";
 			}
 			
-			s += Sprintf.format("%s%02d %s [%s]\n", [t, o.parent != null ? o.parent.getChildIndex(o) : 0, Std.is(o, Stage) ? "stage" : o.name, StringUtil.getUnqualifiedClassName(o)]);
+			s += Sprintf.format("%s%02d %s [%s]\n", [t, o.parent != null ? o.parent.getChildIndex(o) : 0, Std.is(o, Stage) ? "stage" : o.name, ClassUtil.getUnqualifiedClassName(o)]);
 			if (Std.is(o, DisplayObjectContainer))
 			{
 				var c:DisplayObjectContainer = untyped o;
