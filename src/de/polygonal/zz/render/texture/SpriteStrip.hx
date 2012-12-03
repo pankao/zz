@@ -39,7 +39,7 @@ class SpriteStrip extends SpriteSheet
 	
 	public function new(tex:Tex, rows:Int, cols:Int)
 	{
-		super(tex, rows * cols);
+		super(tex);
 		__spriteStrip = this;
 		
 		var w = _sheetW = tex.image.w;
@@ -55,7 +55,7 @@ class SpriteStrip extends SpriteSheet
 		
 		for (y in 0...rows)
 			for (x in 0...cols)
-				addCropRectAt(y * cols + x,
+				addCropRectAt(y * cols + x, x + '' + y,
 					new Rect(x * frameW, y * frameH, frameW, frameH),
 					tex.isNormalize, tex.isPack);
 	}

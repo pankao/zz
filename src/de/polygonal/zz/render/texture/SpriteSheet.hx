@@ -35,10 +35,8 @@ class SpriteSheet
 {
 	public var tex(default, null):Tex;
 	
-	public var frameCount(default, null):Int;
-	
-	var _cropList:DA<Rect>;
-	var _sizeList:DA<Size>;
+	var _cropMap:Hash<Rect>;
+	var _sizeMap:Hash<Size>;
 	
 	var _sheetW:Int;
 	var _sheetH:Int;
@@ -46,51 +44,53 @@ class SpriteSheet
 	public var __spriteStrip:SpriteStrip;
 	public var __spriteAtlas:SpriteAtlas;
 	
-	function new(tex:Tex, frameCount:Int)
+	function new(tex:Tex)
 	{
 		this.tex = tex;
-		this.frameCount = frameCount;
+		
+		_cropMap = new Hash();
+		_sizeMap = new Hash();
 		
 		_sheetW = tex.image.w;
 		_sheetH = tex.image.h;
 		
 		__spriteStrip = null;
 		__spriteAtlas = null;
-		
-		_cropList = new DA(frameCount, frameCount);
-		_cropList.fill(null, frameCount);
-		_sizeList = new DA(frameCount, frameCount);
-		_sizeList.fill(null, frameCount);
 	}
 	
 	public function free():Void
 	{
 		tex = null;
 		
+		_cropMap = null;
+		_sizeMap = null;
+		
 		__spriteStrip = null;
 		__spriteAtlas = null;
-		_cropList.free();
-		_cropList = null;
-		_sizeList.free();
-		_sizeList = null;
 	}
 	
-	inline public function getSize(index:Int):Size
+	inline public function getSize(id:String):Size
 	{
-		return _sizeList.get(index);
+		return _sizeMap.get(id);
 	}
 	
-	inline public function getCropRect(index:Int):Rect
+	inline public function getCropRect(id:String):Rect
 	{
-		return _cropList.get(index);
+		if (!_cropMap.exists(id)) throw 1;
+		
+		return _cropMap.get(id);
 	}
 	
-	function addCropRectAt(index:Int, crop:Rect, normalize:Bool, pack:Bool)
+	function addCropRectAt(index:Int, id:String, crop:Rect, normalize:Bool, pack:Bool)
 	{
 		crop = crop.clone();
 		
-		_cropList.set(index, crop);
-		_sizeList.set(index, new Size(Std.int(crop.w), Std.int(crop.h)));
+		var size = new Size(Std.int(crop.w), Std.int(crop.h));
+		
+		_cropMap.set(id, crop);
+		_cropMap.set(Std.string(index), crop);
+		_sizeMap.set(id, size);
+		_sizeMap.set(Std.string(index), size);
 		
 		if (pack)
 		{

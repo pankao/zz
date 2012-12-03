@@ -31,45 +31,18 @@ package de.polygonal.zz.render.texture;
 
 class SpriteAtlas extends SpriteSheet
 {
-	var _indexMap:Hash<Int>;
-	
 	public function new(tex:Tex, format:SpriteAtlasFormat)
 	{
-		super(tex, format.frames.length);
+		super(tex);
 		__spriteAtlas = this;
-		
-		_indexMap = new Hash();
 		
 		for (i in 0...format.frames.length)
 		{
 			var frame = format.frames[i];
-			if (frame == null)
-				_cropList.set(i, null);
-			else
-				addCropRectAt(i, frame, tex.isNormalize, tex.isPack);
-			
-			_indexMap.set(format.names[i], i);
+			if (frame != null)
+			{
+				addCropRectAt(i, format.names[i], frame, tex.isNormalize, tex.isPack);
+			}
 		}
-	}
-	
-	inline public function getIndex(name:String):Int
-	{
-		return _indexMap.get(name);
-	}
-	
-	inline public function getSizeByName(name:String):Size
-	{
-		return _sizeList.get(getIndex(name));
-	}
-	
-	inline public function getCropRectByName(name:String):Rect
-	{
-		return _cropList.get(getIndex(name));
-	}
-	
-	override public function free():Void
-	{
-		super.free();
-		_indexMap = null;
 	}
 }

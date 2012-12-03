@@ -39,26 +39,26 @@ class SpriteSheetEffect extends TextureEffect
 {
 	public var sheet:SpriteSheet;
 	
-	public var frame(get_frame, set_frame):Int;
-	inline function get_frame():Int
+	public var frame(get_frame, set_frame):String;
+	inline function get_frame():String
 	{
 		return _frame;
 	}
-	inline function set_frame(value:Int):Int
+	inline function set_frame(value:String):String
 	{
 		_frame = value;
 		setCrop();
 		return value;
 	}
 	
-	var _frame:Int = 0;
+	var _frame:String;
 	
 	public function new(sheet:SpriteSheet)
 	{
+		_frame = '0';
 		this.sheet = sheet;
 		super(sheet.tex);
 		__spriteSheetEffect = this;
-		frame = 0;
 	}
 	
 	override public function draw(renderer:Renderer):Void
@@ -68,6 +68,8 @@ class SpriteSheetEffect extends TextureEffect
 	
 	override function setCrop():Void
 	{
+		if (_frame == null) throw 1;
+		
 		setf(Effect.UV_CHANGED);
 		crop = sheet.getCropRect(_frame);
 	}
