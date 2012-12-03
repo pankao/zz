@@ -152,6 +152,23 @@ class Spatial implements Visitable
 	 */
 	public var anchorY:Float;
 	
+	/**
+	 * Uniform scale.
+	 */
+	public var scale(get_scale, set_scale):Float;
+	inline function get_scale():Float
+	{
+		#if debug
+		D.assert(scaleX == scaleY, 'non-uniform scale');
+		#end
+		return scaleX;
+	}
+	inline function set_scale(value:Float):Float
+	{
+		scaleX = scaleY = value;
+		return value;
+	}
+	
 	var _bits:Int;
 	var _globalStates:GlobalState;
 	
