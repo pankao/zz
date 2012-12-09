@@ -29,7 +29,7 @@
  */
 package de.polygonal.zz.render.texture;
 
-#if nme
+#if (flash || nme)
 typedef ImageData = flash.display.BitmapData;
 #elseif js
 typedef ImageData = js.w3c.html5.Core.HTMLImageElement;

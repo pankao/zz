@@ -31,8 +31,8 @@ package de.polygonal.zz.render.texture;
 
 class SpriteAtlasFormat
 {
-	public var sheetW:Int = 0;
-	public var sheetH:Int = 0;
+	public var sheetW = 0;
+	public var sheetH = 0;
 	
 	public var frames:Array<Rect>;
 	

@@ -235,6 +235,15 @@ class FlashStage3DRenderer extends Renderer
 		}
 	}
 	
+	override public function drawEffect(effect:Effect)
+	{
+		var brush = getBrush(effect.flags, 0, false);
+		brush.bindVertexBuffer();
+		brush.add(currGeometry);
+		brush.draw(this);
+		brush.unbindVertexBuffer();
+	}
+	
 	override public function drawTextureEffect(effect:TextureEffect)
 	{
 		super.drawTextureEffect(effect);

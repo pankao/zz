@@ -126,7 +126,7 @@ class Effect
 		return _tex = value;
 	}
 	
-	#if nme
+	#if (flash || nme)
 	public var smooth:Bool = true;
 	#end
 	

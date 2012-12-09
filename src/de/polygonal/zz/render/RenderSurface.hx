@@ -80,7 +80,7 @@ class RenderSurface
 	public static var mouse(get_mouse, never):Vec2;
 	static function get_mouse():Vec2
 	{
-		#if nme
+		#if (flash || nme)
 		_mouse.x = stage.mouseX;
 		_mouse.y = stage.mouseY;
 		#elseif js
@@ -100,7 +100,7 @@ class RenderSurface
 	static var _flags:Int = 0;
 	static var _onCreate:Void->Void = null;
 	
-	#if nme
+	#if (flash || nme)
 	public static var stage(default, null):flash.display.Stage = null;
 	public static var root(default, null):flash.display.Sprite = null;
 	#if flash11
@@ -257,7 +257,7 @@ class RenderSurface
 		_flags &= ~READY;
 	}
 	
-	#if nme
+	#if (flash || nme)
 	static function initDisplayList()
 	{
 		stage = flash.Lib.current.stage;
