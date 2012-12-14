@@ -29,6 +29,7 @@
  */
 package de.polygonal.zz.render.effect;
 
+import de.polygonal.core.math.Vec2;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.texture.Rect;
 import de.polygonal.zz.render.texture.Tex;
@@ -39,12 +40,17 @@ using de.polygonal.ds.BitFlags;
 class TextureEffect extends Effect
 {
 	public var crop:Rect;
+	public var uvOffset:Vec2;
+	public var uvScale:Vec2;
 	
 	public function new(tex:Tex)
 	{
 		super();
 		__textureEffect = this;
 		this.tex = tex;
+		
+		uvOffset = new Vec2();
+		uvScale = new Vec2();
 		
 		setCrop();
 		setf(Effect.UV_CHANGED);
