@@ -27,9 +27,9 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.flash.stage3d;
+package de.polygonal.zz.render.module.swf.stage3d;
 
-import de.polygonal.zz.render.module.FlashStage3DRenderer;
+import de.polygonal.zz.render.module.swf.Stage3DRenderer;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.core.math.Mathematics;
@@ -58,7 +58,7 @@ class Stage3DTexture
 	{
 		sourceTexture = tex;
 		
-		if (flags == 0) flags = FlashStage3DRenderer.DEFAULT_TEXTURE_FLAGS;
+		if (flags == 0) flags = Stage3DRenderer.DEFAULT_TEXTURE_FLAGS;
 		this.flags = flags;
 		
 		handle = null;

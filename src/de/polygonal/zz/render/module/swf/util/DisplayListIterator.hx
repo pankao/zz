@@ -1,4 +1,4 @@
-/*
+﻿/*
  *                            _/                                                    _/
  *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
  *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
@@ -27,72 +27,59 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.flash.stage3d;
+package de.polygonal.zz.render.module.swf.util
 
-import de.polygonal.core.fmt.Sprintf;
-import flash.display3D.Context3D;
-import flash.display3D.IndexBuffer3D;
-import flash.Vector;
+import de.polygonal.ds.Itr;
+import flash.display.DisplayObject;
+import flash.display.DisplayObjectContainer;
 
-class Stage3DIndexBuffer
+/**
+ * An iterator for traversing the display list.<br/>
+ * see <a href="http://lab.polygonal.de/2010/02/02/traversing-the-display-listtraversing-the-display-list/" target="_blank">http://lab.polygonal.de/2010/02/02/traversing-the-display-listtraversing-the-display-list/</a>
+ */
+class DisplayListIterator implements de.polygonal.ds.Itr<DisplayObject>
 {
-	public var numIndices(default, null):Int;
-	
-	public var numTriangles(get_numTriangles, never):Int;
-	function get_numTriangles():Int
+	inline public static function iterator(root:DisplayObjectContainer):DisplayListIterator
 	{
-		return Std.int(numIndices / 3);
+		return new DisplayListIterator(root);
 	}
 	
-	public var handle:IndexBuffer3D;
+	var _root:DisplayObjectContainer;
+	var _stack:Array<DisplayObject>;
+	var _stackSize:Int;
 	
-	var _context:Context3D;
-	var _buffer:Vector<UInt>;
-	
-	public function new(context:Context3D)
+	public function new(root:DisplayObjectContainer) 
 	{
-		_buffer = new Vector();
-		numIndices = 0;
-		
-		_context = context;
+		_stack = new Array<DisplayObject>();
+		_root = root;
+		reset();
 	}
 	
-	public function free():Void
+	public function hasNext():Bool
 	{
-		handle.dispose();
-		handle = null;
-		
-		_buffer = null;
-		_context = null;
+		return _stackSize > 0;
 	}
 	
-	inline public function clear():Void
+	public function reset():Itr<DisplayObject>
 	{
-		numIndices = 0;
+		_stack[0] = _root;
+		_stackSize = 1;
+		return this;
 	}
 	
-	inline public function add(i:Int):Void
+	public function next():DisplayObject
 	{
-		_buffer[numIndices++] = i;
-	}
-	
-	public function upload(?count = -1):Void
-	{
-		if (count == -1) count = numIndices;
-		
-		if (handle == null)
-			handle = _context.createIndexBuffer(count);
-		else
+		var o = _stack[--_stackSize];
+		if (Std.is(o, DisplayObjectContainer))
 		{
-			handle.dispose();
-			handle = _context.createIndexBuffer(count);
+			var c:DisplayObjectContainer = untyped o;
+			for (i in 0...c.numChildren) _stack[_stackSize++] = c.getChildAt(i);
 		}
-		
-		handle.uploadFromVector(_buffer, 0, count);
+		return o;
 	}
 	
-	public function toString():String
+	public function remove():Void
 	{
-		return Sprintf.format("{IndexBuffer: #indices=%d, #triangles=%d}", [numIndices, numTriangles]);
+		throw 'unsupported operation';
 	}
 }

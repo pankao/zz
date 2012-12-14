@@ -27,42 +27,72 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.flash.stage3d.paintbox;
+package de.polygonal.zz.render.module.swf.stage3d;
 
-import de.polygonal.zz.render.flash.stage3d.shader.AGALNullShader;
-import de.polygonal.zz.render.module.FlashStage3DRenderer;
+import de.polygonal.core.fmt.Sprintf;
 import flash.display3D.Context3D;
+import flash.display3D.IndexBuffer3D;
+import flash.Vector;
 
-class Stage3DBrushRectNull extends Stage3DBrushRect
+class Stage3DIndexBuffer
 {
-	public function new(context:Context3D, effectMask:Int)
+	public var numIndices(default, null):Int;
+	
+	public var numTriangles(get_numTriangles, never):Int;
+	function get_numTriangles():Int
 	{
-		super(context, effectMask, -1);
-		
-		initVertexBuffer([2]);
-		initIndexBuffer(1);
-		
-		_shader = new AGALNullShader(_context, effectMask);
+		return Std.int(numIndices / 3);
 	}
 	
-	override public function draw(renderer:FlashStage3DRenderer):Void
+	public var handle:IndexBuffer3D;
+	
+	var _context:Context3D;
+	var _buffer:Vector<UInt>;
+	
+	public function new(context:Context3D)
 	{
-		_shader.bindProgram();
+		_buffer = new Vector();
+		numIndices = 0;
 		
-		var constantRegisters = _scratchVector;
-		var indexBuffer = _ib.handle;
+		_context = context;
+	}
+	
+	public function free():Void
+	{
+		handle.dispose();
+		handle = null;
 		
-		for (i in 0..._batch.size())
+		_buffer = null;
+		_context = null;
+	}
+	
+	inline public function clear():Void
+	{
+		numIndices = 0;
+	}
+	
+	inline public function add(i:Int):Void
+	{
+		_buffer[numIndices++] = i;
+	}
+	
+	public function upload(?count = -1):Void
+	{
+		if (count == -1) count = numIndices;
+		
+		if (handle == null)
+			handle = _context.createIndexBuffer(count);
+		else
 		{
-			var mvp = renderer.setModelViewProjMatrix(_batch.get(i));
-			mvp.m13 = 1; //op.zw
-			mvp.toVector(constantRegisters);
-			
-			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 2);
-			_context.drawTriangles(indexBuffer, 0, 2);
-			renderer.numCallsToDrawTriangle++;
+			handle.dispose();
+			handle = _context.createIndexBuffer(count);
 		}
 		
-		super.draw(renderer);
+		handle.uploadFromVector(_buffer, 0, count);
+	}
+	
+	public function toString():String
+	{
+		return Sprintf.format("{IndexBuffer: #indices=%d, #triangles=%d}", [numIndices, numTriangles]);
 	}
 }

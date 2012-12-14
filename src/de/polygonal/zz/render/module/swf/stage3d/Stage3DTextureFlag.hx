@@ -1,4 +1,4 @@
-﻿/*
+/*
  *                            _/                                                    _/
  *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
  *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
@@ -27,59 +27,50 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.flash.util;
+package de.polygonal.zz.render.module.swf.stage3d;
 
-import de.polygonal.ds.Itr;
-import flash.display.DisplayObject;
-import flash.display.DisplayObjectContainer;
+import de.polygonal.ds.Bits;
 
-/**
- * An iterator for traversing the display list.<br/>
- * see <a href="http://lab.polygonal.de/2010/02/02/traversing-the-display-listtraversing-the-display-list/" target="_blank">http://lab.polygonal.de/2010/02/02/traversing-the-display-listtraversing-the-display-list/</a>
- */
-class DisplayListIterator implements de.polygonal.ds.Itr<DisplayObject>
+class Stage3DTextureFlag
 {
-	inline public static function iterator(root:DisplayObjectContainer):DisplayListIterator
-	{
-		return new DisplayListIterator(root);
-	}
+	inline public static var MM_NONE       = Bits.BIT_10;
+	inline public static var MM_NEAREST    = Bits.BIT_11;
+	inline public static var MM_LINEAR     = Bits.BIT_12;
+	inline public static var FM_NEAREST    = Bits.BIT_13;
+	inline public static var FM_LINEAR     = Bits.BIT_14;
+	inline public static var REPEAT_NORMAL = Bits.BIT_15;
+	inline public static var REPEAT_CLAMP  = Bits.BIT_16;
 	
-	var _root:DisplayObjectContainer;
-	var _stack:Array<DisplayObject>;
-	var _stackSize:Int;
+	inline public static var PRESET_QUALITY_LOW    = MM_NONE    | FM_NEAREST | REPEAT_NORMAL;
+	inline public static var PRESET_QUALITY_MEDIUM = MM_NONE    | FM_LINEAR  | REPEAT_NORMAL;
+	inline public static var PRESET_QUALITY_HIGH   = MM_NEAREST | FM_LINEAR  | REPEAT_NORMAL;
+	inline public static var PRESET_QUALITY_ULTRA  = MM_LINEAR  | FM_LINEAR  | REPEAT_NORMAL;
 	
-	public function new(root:DisplayObjectContainer) 
-	{
-		_stack = new Array<DisplayObject>();
-		_root = root;
-		reset();
-	}
+	inline public static var SHIFT = 9;
 	
-	public function hasNext():Bool
+	public static function print(flags:Int):String
 	{
-		return _stackSize > 0;
-	}
-	
-	public function reset():Itr<DisplayObject>
-	{
-		_stack[0] = _root;
-		_stackSize = 1;
-		return this;
-	}
-	
-	public function next():DisplayObject
-	{
-		var o = _stack[--_stackSize];
-		if (Std.is(o, DisplayObjectContainer))
+		if (flags <= 0) return '-';
+		
+		var a = [];
+		for (i in 0...7)
 		{
-			var c:DisplayObjectContainer = untyped o;
-			for (i in 0...c.numChildren) _stack[_stackSize++] = c.getChildAt(i);
+			if ((flags >> 9) & (1 << i) > 0)
+			{
+				a.push(
+				switch (i) 
+				{
+					case 0: 'mipnone';
+					case 1: 'mipnearest';
+					case 2: 'miplinear';
+					case 3: 'nearest';
+					case 4: 'linear';
+					case 5: 'repeat';
+					case 6: 'clamp';
+					default: 'unknown';
+				});
+			}
 		}
-		return o;
-	}
-	
-	public function remove():Void
-	{
-		throw 'unsupported operation';
+		return a.join(',');
 	}
 }

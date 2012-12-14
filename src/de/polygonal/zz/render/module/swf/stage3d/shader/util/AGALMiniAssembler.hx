@@ -37,7 +37,7 @@
 //	in accordance with the terms of the license agreement accompanying it.
 //
 // ================================================================================
-package de.polygonal.zz.render.flash.stage3d.shader.util;
+package de.polygonal.zz.render.module.swf.stage3d.shader.util;
 
 class AGALMiniAssembler
 {

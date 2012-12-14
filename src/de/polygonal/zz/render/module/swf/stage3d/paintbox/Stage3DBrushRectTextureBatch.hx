@@ -27,13 +27,13 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.flash.stage3d.paintbox;
+package de.polygonal.zz.render.module.swf.stage3d.paintbox;
 
 import de.polygonal.core.math.Vec3;
 import de.polygonal.ds.DA;
-import de.polygonal.zz.render.flash.stage3d.shader.AGALTextureBatchConstantShader;
-import de.polygonal.zz.render.flash.stage3d.shader.AGALTextureBatchVertexShader;
-import de.polygonal.zz.render.module.FlashStage3DRenderer;
+import de.polygonal.zz.render.module.swf.stage3d.shader.AGALTextureBatchConstantShader;
+import de.polygonal.zz.render.module.swf.stage3d.shader.AGALTextureBatchVertexShader;
+import de.polygonal.zz.render.module.swf.Stage3DRenderer;
 import de.polygonal.zz.scene.Geometry;
 import de.polygonal.zz.scene.Spatial;
 import flash.display3D.Context3D;
@@ -65,7 +65,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 	{
 		super(context, effectMask, textureFlags);
 		
-		_strategy = FlashStage3DRenderer.BATCH_STRATEGY;
+		_strategy = Stage3DRenderer.BATCH_STRATEGY;
 		
 		_batchCapacity = MAX_BATCH_SIZE_QUADS;
 		
@@ -163,7 +163,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		_bindVertexBuffer = true;
 	}
 	
-	override public function draw(renderer:FlashStage3DRenderer):Void
+	override public function draw(renderer:Stage3DRenderer):Void
 	{
 		var constantRegisters = _scratchVector;
 		

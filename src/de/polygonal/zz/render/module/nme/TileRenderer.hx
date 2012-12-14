@@ -27,7 +27,7 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module;
+package de.polygonal.zz.render.module.nme;
 
 import de.polygonal.core.math.Vec3;
 import de.polygonal.ds.IntHashTable;
@@ -50,7 +50,7 @@ import nme.display.Tilesheet;
 import nme.geom.Rectangle;
 import de.polygonal.core.util.Assert;
 
-class NMETileRenderer extends Renderer
+class TileRenderer extends Renderer
 {
 	//TODO flush if buffer is full
 	inline static var MAX_BUFFER_SIZE = 4096;

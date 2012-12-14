@@ -27,57 +27,42 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.flash.stage3d.shader;
+package de.polygonal.zz.render.module.swf.stage3d.paintbox;
 
+import de.polygonal.zz.render.module.swf.stage3d.shader.AGALNullShader;
+import de.polygonal.zz.render.module.swf.Stage3DRenderer;
 import flash.display3D.Context3D;
 
-class AGALTextureShader extends AGALShader
+class Stage3DBrushRectNull extends Stage3DBrushRect
 {
-	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
+	public function new(context:Context3D, effectMask:Int)
 	{
-		super(context, effectMask, textureFlags);
+		super(context, effectMask, -1);
+		
+		initVertexBuffer([2]);
+		initIndexBuffer(1);
+		
+		_shader = new AGALNullShader(_context, effectMask);
 	}
 	
-	override function getVertexShader():String
+	override public function draw(renderer:Stage3DRenderer):Void
 	{
-		//|r11 r12  a   tx| vc0
-		//|r21 r22  1   ty| vc1
-		//|uvw uvh uvx uvy| vc2
-		//| -   -   -   - |
+		_shader.bindProgram();
 		
-		var s = '';
+		var constantRegisters = _scratchVector;
+		var indexBuffer = _ib.handle;
 		
-		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clip space row1
-		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clip space row2
-		s += 'mov op.zw, vc1.z \n';				//z = 1, w = 1
-		
-		s += 'mul vt0, va0, vc2.xy \n';			//scale uv
-		s += 'add vt0.xy, vt0.xy, vc2.zw \n';	//offset uv
-		s += 'mov v0, vt0 \n';	 				//copy uv
-		
-		if (supportsAlpha())
-			s += 'mov v1, vc0.z \n';			//copy alpha
-		
-		return s;
-	}
-	
-	override function getFragmentShader():String
-	{
-		var s = '';
-		
-		s += 'tex ft0, v0, fs0 <TEX_FLAGS> \n';	//sample texture from uv
-		
-		if (supportsAlpha())
-			s += 'mul ft0.w, v1, ft0 \n';		//* alpha
-		
-		if (supportsColorXForm())
+		for (i in 0..._batch.size())
 		{
-			s += 'mul ft0, ft0, fc0 \n';		//* color multiplier
-			s += 'add ft0, fc1, ft0 \n';		//+ color offset
+			var mvp = renderer.setModelViewProjMatrix(_batch.get(i));
+			mvp.m13 = 1; //op.zw
+			mvp.toVector(constantRegisters);
+			
+			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 2);
+			_context.drawTriangles(indexBuffer, 0, 2);
+			renderer.numCallsToDrawTriangle++;
 		}
 		
-		s += 'mov oc, ft0 \n';
-		
-		return s;
+		super.draw(renderer);
 	}
 }

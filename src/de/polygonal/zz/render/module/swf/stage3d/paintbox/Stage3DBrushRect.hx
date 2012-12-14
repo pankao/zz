@@ -27,34 +27,45 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.flash.stage3d.shader;
+package de.polygonal.zz.render.module.swf.stage3d.paintbox;
 
+import de.polygonal.core.math.Vec3;
+import de.polygonal.zz.render.module.swf.stage3d.Stage3DIndexBuffer;
+import de.polygonal.zz.render.module.swf.stage3d.Stage3DVertexBuffer;
 import flash.display3D.Context3D;
 
-class AGALNullShader extends AGALShader
+class Stage3DBrushRect extends Stage3DBrush
 {
-	public function new(context:Context3D, effectMask:Int)
+	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
 	{
-		super(context, effectMask, 0);
+		super(context, effectMask, textureFlags);
 	}
 	
-	override function getVertexShader():String
+	function initVertexBuffer(numFloatsPerAttribute:Array<Int>)
 	{
-		//|r11 r12 1 tx| vc0
-		//|r21 r22 - ty| vc1
-		//| -   -  - - | vc2
-		//| -   -  - - |
-		
-		var s = '';
-		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clip space row1
-		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clip space row2
-		s += 'mov op.zw, vc0.z \n';				//z = 1, w = 1
-		s += 'mov v0 va0 \n';					//copy vertex
-		return s;
+		_vb = new Stage3DVertexBuffer(_context);
+		_vb.allocate(numFloatsPerAttribute, 4);
+		_vb.addFloat2(new Vec3(0, 0));
+		_vb.addFloat2(new Vec3(1, 0));
+		_vb.addFloat2(new Vec3(1, 1));
+		_vb.addFloat2(new Vec3(0, 1));
+		_vb.upload();
 	}
 	
-	override function getFragmentShader():String
+	function initIndexBuffer(numQuads:Int)
 	{
-		return 'mov oc, v0 \n';
+		_ib = new Stage3DIndexBuffer(_context);
+		for (i in 0...numQuads)
+		{
+			var offset = i << 2;
+			_ib.add(offset + 0);
+			_ib.add(offset + 1);
+			_ib.add(offset + 2);
+			
+			_ib.add(offset + 0);
+			_ib.add(offset + 2);
+			_ib.add(offset + 3);
+		}
+		_ib.upload();
 	}
 }

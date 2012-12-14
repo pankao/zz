@@ -242,7 +242,7 @@ class RenderSurface
 	public static function destroy():Void
 	{
 		#if flash11
-		de.polygonal.zz.render.flash.util.DisplayListUtil.removeChildren(stage);
+		de.polygonal.zz.render.module.swf.util.DisplayListUtil.removeChildren(stage);
 		if (isHardware())
 		{
 			try 
