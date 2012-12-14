@@ -112,7 +112,7 @@ class Stage3DBrush
 	}
 	
 	//TODO add UVs and indices
-	function _fillBuffer(geometry:Geometry):Void
+	function fillBuffer(geometry:Geometry)
 	{
 		_vb = new Stage3DVertexBuffer(_context);
 		

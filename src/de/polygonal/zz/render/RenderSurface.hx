@@ -207,7 +207,6 @@ class RenderSurface
 				context = _canvas.getContext('2d');
 				if (isResizable())
 				{
-					trace('resizable!');
 					_jq.resize(function(e:js.JQuery.JqEvent)
 						{
 							var w = js.Lib.window.innerWidth;
@@ -318,7 +317,7 @@ class RenderSurface
 		bound.maxY = height = stage.stageHeight;
 		#end
 		
-		trace('surface resized to %03dx%03d', width, height);
+		trace(Sprintf.format('surface resized (%03dx%03dpx)', [width, height]));
 		if (onResize != null) onResize(width, height);
 	}
 }

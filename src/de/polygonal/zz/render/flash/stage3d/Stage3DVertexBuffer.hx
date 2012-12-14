@@ -76,28 +76,28 @@ class Stage3DVertexBuffer
 	
 	inline public function addFloat1(data:Vec3):Void
 	{
-		_push(data.x);
+		push(data.x);
 	}
 	
 	inline public function addFloat2(data:Vec3):Void
 	{
-		_push(data.x);
-		_push(data.y);
+		push(data.x);
+		push(data.y);
 	}
 	
 	inline public function addFloat3(data:Vec3):Void
 	{
-		_push(data.x);
-		_push(data.y);
-		_push(data.z);
+		push(data.x);
+		push(data.y);
+		push(data.z);
 	}
 	
 	inline public function addFloat4(data:Vec3):Void
 	{
-		_push(data.x);
-		_push(data.y);
-		_push(data.z);
-		_push(data.w);
+		push(data.x);
+		push(data.y);
+		push(data.z);
+		push(data.w);
 	}
 	
 	inline public function setFloat1(offset:Int, data:Vec3):Void
@@ -126,7 +126,7 @@ class Stage3DVertexBuffer
 		buffer[offset + 3] = data.w;
 	}
 	
-	inline function _push(x:Float):Void
+	inline function push(x:Float)
 	{
 		buffer[_size++] = x;
 	}

@@ -40,7 +40,7 @@ class AGALTextureBatchVertexShader extends AGALTextureShader
 		super(context, vertexAttributes, textureFlags);
 	}
 	
-	override function _getVertexShader():String
+	override function getVertexShader():String
 	{
 		//|r11 r12  1   tx| vc0
 		//|r21 r22  -   ty| vc1
@@ -65,7 +65,7 @@ class AGALTextureBatchVertexShader extends AGALTextureShader
 		return s;
 	}
 	
-	override function _getFragmentShader():String
+	override function getFragmentShader():String
 	{
 		var s = '';
 		s += 'tex ft0, v0, fs0 <TEX_FLAGS> \n';	//sample texture from uv

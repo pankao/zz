@@ -134,8 +134,6 @@ class Camera extends Spatial
 		_renderer = null;
 	}
 	
-	
-	
 	public function setEye(location:Vec3)
 	{
 		local.setTranslate(location.x, location.y, location.z);
@@ -230,12 +228,7 @@ class Camera extends Spatial
 	 */
 	override public function draw(renderer:Renderer, noCull:Bool) {}
 	
-	override private function _updateWorldData():Void
-	{
-		super._updateWorldData();
-	}
-	
-	override function _updateWorldBound()
+	override function updateWorldBound()
 	{
 		//the camera has an implicit model bound whose center is the camera's position and whose radius is zero.
 		worldBound.setCenter(world.applyForward(local.getTranslate(), new Vec3()));

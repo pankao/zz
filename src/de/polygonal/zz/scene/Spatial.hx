@@ -322,6 +322,11 @@ class Spatial implements Visitable
 		return 0;
 	}
 	
+	inline public function hasWorldChanged():Bool
+	{
+		return hasf(BIT_WORLD_CHANGED);
+	}
+	
 	/**
 	 * Recomputes world transformations and world bounding volumes.
 	 * @param intiator if true, the change in world bounding volume occuring at
@@ -330,12 +335,12 @@ class Spatial implements Visitable
 	public function updateGeometricState(initiator = true):Void
 	{
 		//propagate transformations: parent => children
-		_updateWorldData();
+		updateWorldData();
 		
 		//propagate world bounding volumes children => parents
-		_updateWorldBound(); //implement in subclass
+		updateWorldBound(); //implement in subclass
 		
-		if (initiator) _propagateBoundToRoot();
+		if (initiator) propagateBoundToRoot();
 	}
 	
 	/**
@@ -344,8 +349,8 @@ class Spatial implements Visitable
 	 */
 	public function updateBoundState():Void
 	{
-		_updateWorldBound();
-		_propagateBoundToRoot();
+		updateWorldBound();
+		propagateBoundToRoot();
 	}
 	
 	/**
@@ -360,15 +365,15 @@ class Spatial implements Visitable
 			stacks = GlobalState.getStacks();
 			
 			//traverse to root and push states from root to this node
-			_propageStateFromRoot(stacks);
+			propageStateFromRoot(stacks);
 		}
 		else
-			_pushState(stacks);
+			pushState(stacks);
 		
 		//propagate new state to the subtree rooted here
-		_propagateRenderStateUpdate(stacks);
+		propagateRenderStateUpdate(stacks);
 		
-		initiator ? GlobalState.getStacks() : _popState(stacks);
+		initiator ? GlobalState.getStacks() : popState(stacks);
 	}
 	
 	/**
@@ -461,14 +466,14 @@ class Spatial implements Visitable
 		return Sprintf.format("? id=%s userData=%s", [id, userData]);
 	}
 	
-	function _updateWorldData():Void
+	function updateWorldData()
 	{
 		if (hasf(BIT_WORLD_CURRENT)) return;
 		
 		var sync = !hasf(BIT_IS_CAMERA);
 		if (sync)
 		{
-			hasf(Spatial.BIT_USE_2D_XFORM) ? _syncLocalXForm2() : _syncLocalXForm();
+			hasf(Spatial.BIT_USE_2D_XFORM) ? syncLocalXForm2() : syncLocalXForm();
 			clrf(BIT_LOCAL_CHANGED);
 			setf(BIT_WORLD_CHANGED);
 		}
@@ -488,30 +493,30 @@ class Spatial implements Visitable
 			world.set(local); //root node
 	}
 	
-	function _updateWorldBound():Void {}
+	function updateWorldBound() {}
 	
-	function _propagateBoundToRoot():Void
+	function propagateBoundToRoot()
 	{
 		var parent = treeNode.parent;
 		if (parent != null)
 		{
 			var o = parent.val;
-			o._updateWorldBound();
-			o._propagateBoundToRoot();
+			o.updateWorldBound();
+			o.propagateBoundToRoot();
 		}
 	}
 	
-	function _propageStateFromRoot(stacks:GlobalStateStacks):Void
+	function propageStateFromRoot(stacks:GlobalStateStacks)
 	{
 		//traverse to root to allow downward state propagation
 		var parent = treeNode.parent;
-		if (parent != null) parent.val._propageStateFromRoot(stacks);
-		_pushState(stacks);
+		if (parent != null) parent.val.propageStateFromRoot(stacks);
+		pushState(stacks);
 	}
 	
-	function _propagateRenderStateUpdate(stacks:GlobalStateStacks):Void {}
+	function propagateRenderStateUpdate(stacks:GlobalStateStacks) {}
 	
-	inline function _syncLocalXForm():Void
+	inline function syncLocalXForm()
 	{
 		#if debug
 		D.assert(!hasf(BIT_IS_CAMERA), '!hasf(BIT_IS_CAMERA)');
@@ -545,7 +550,7 @@ class Spatial implements Visitable
 		(scaleX == scaleY) ? local.setUniformScale(scaleX) : local.setScale(scaleX, scaleY, 1);
 	}
 	
-	inline public function _syncLocalXForm2():Void
+	inline public function syncLocalXForm2()
 	{
 		#if debug
 		D.assert(!hasf(BIT_IS_CAMERA), '!hasf(BIT_IS_CAMERA)');
@@ -571,7 +576,7 @@ class Spatial implements Visitable
 		(scaleX == scaleY) ? local.setUniformScale2(scaleX) : local.setScale2(scaleX, scaleY);
 	}
 	
-	inline function _pushState(stacks:GlobalStateStacks):Void
+	inline function pushState(stacks:GlobalStateStacks)
 	{
 		var node = _globalStates;
 		while (node != null)
@@ -581,7 +586,7 @@ class Spatial implements Visitable
 		}
 	}
 	
-	inline function _popState(stacks:GlobalStateStacks):Void
+	inline function popState(stacks:GlobalStateStacks)
 	{
 		var node = _globalStates;
 		while (node != null)

@@ -105,18 +105,18 @@ class Geometry extends Spatial
 	
 	public function updateModelState():Void
 	{
-		hasf(Spatial.BIT_USE_2D_XFORM) ? _syncLocalXForm2() : _syncLocalXForm();
-		_updateModelBound();
+		hasf(Spatial.BIT_USE_2D_XFORM) ? syncLocalXForm2() : syncLocalXForm();
+		updateModelBound();
 		setf(Spatial.BIT_MODEL_CHANGED);
 	}
 	
-	override function _updateWorldBound():Void
+	override function updateWorldBound()
 	{
 		//apply current world transformation to compute world bounding volume from model bounding volume
 		modelBound.transformBy(world, worldBound);
 	}
 	
-	override function _propagateRenderStateUpdate(stacks:GlobalStateStacks):Void
+	override function propagateRenderStateUpdate(stacks:GlobalStateStacks)
 	{
 		//render state at leaf node represents all global states from root to leaf
 		//make local copy of the stack contents
@@ -134,7 +134,7 @@ class Geometry extends Spatial
 		}
 	}
 	
-	function _updateModelBound():Void
+	function updateModelBound()
 	{
 		//compute model bounding volume from vertices
 		modelBound.computeFromData(vertices);

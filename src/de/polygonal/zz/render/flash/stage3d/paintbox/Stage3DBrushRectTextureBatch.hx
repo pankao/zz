@@ -31,16 +31,12 @@ package de.polygonal.zz.render.flash.stage3d.paintbox;
 
 import de.polygonal.core.math.Vec3;
 import de.polygonal.ds.DA;
-import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.flash.stage3d.shader.AGALTextureBatchConstantShader;
 import de.polygonal.zz.render.flash.stage3d.shader.AGALTextureBatchVertexShader;
 import de.polygonal.zz.render.module.FlashStage3DRenderer;
-import de.polygonal.zz.render.flash.stage3d.Stage3DTextureFlag;
-import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.zz.scene.Geometry;
 import de.polygonal.zz.scene.Spatial;
 import flash.display3D.Context3D;
-import flash.display3D.Context3DBlendFactor;
 import flash.display3D.Context3DProgramType;
 
 using de.polygonal.ds.BitFlags;
@@ -57,8 +53,6 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 	var _numRegistersPerQuad:Int;
 	var _strategy:Int;
 	
-	var _prevBatch:DA<Geometry>;
-	
 	var _uv0:Vec3;
 	var _uv1:Vec3;
 	var _uv2:Vec3;
@@ -74,8 +68,6 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		_strategy = FlashStage3DRenderer.BATCH_STRATEGY;
 		
 		_batchCapacity = MAX_BATCH_SIZE_QUADS;
-		
-		_prevBatch = new DA(_batchCapacity, _batchCapacity);
 		
 		_uv0 = new Vec3();
 		_uv1 = new Vec3();
@@ -159,8 +151,6 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 	{
 		super.free();
 		
-		_prevBatch.free();
-		_prevBatch = null;
 		_uv0 = null;
 		_uv1 = null;
 		_uv2 = null;
@@ -168,7 +158,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		_uvs = null;
 	}
 	
-	override public function bindVertexBuffer():Void 
+	override public function bindVertexBuffer():Void
 	{
 		_bindVertexBuffer = true;
 	}
@@ -177,9 +167,9 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 	{
 		var constantRegisters = _scratchVector;
 		
-		if (_strategy == 0) //vertex batching
+		if (_strategy == 0) //"vertex batching"
 		{
-			_updateVertexBuffer();
+			updateVertexBuffer();
 			
 			var vp = renderer.currViewProjMatrix;
 			vp.m13 = 1; //op.zw
@@ -188,17 +178,18 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 2);
 			
 			_shader.bindProgram();
+			
 			_shader.bindTexture(0, renderer.currStage3DTexture.handle);
 			
 			if (_bindVertexBuffer) _vb.bind();
 			
-			_context.drawTriangles(_ib.handle, 0, _batch.size() * 2);
+			_context.drawTriangles(_ib.handle, 0, _batch.size() << 1);
 			renderer.numCallsToDrawTriangle++;
 			
 			_batch.clear();
 		}
 		else
-		if (_strategy == 1) //constant batching
+		if (_strategy == 1) //"constant batching"
 		{
 			var changed = false;
 			var stride = _vb.numFloatsPerVertex;
@@ -337,10 +328,9 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		super.draw(renderer);
 	}
 	
-	function _updateVertexBuffer():Void
+	function updateVertexBuffer()
 	{
 		var stride = _vb.numFloatsPerVertex;
-		var changed = false;
 		
 		var uv0 = _uv0;
 		var uv1 = _uv1;
@@ -351,124 +341,100 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		var vb = _vb;
 		var batch = _batch;
 		
-		var offset, address;
+		var offset, address, i, size;
 		var geometry, effect, vertices, world, crop, x, y, w, h;
-		var shiftPos;
 		
 		var supportsAlpha = _shader.supportsAlpha();
 		var supportColorXForm = _shader.supportsColorXForm();
 		
-		var i = 0;
-		var size = batch.size();
+		size = batch.size();
+		
+		i = 0;
+		size = batch.size();
 		while (i < size)
 		{
 			offset = (i << 2) * stride;
 			
 			geometry = batch.get(i);
 			effect = geometry.effect.__textureEffect;
-			shiftPos = _prevBatch.inRange(i) && geometry != _prevBatch.get(i);
 			
-			//update xform?
-			if (shiftPos || geometry.hasf(Spatial.BIT_WORLD_CHANGED))
-			{
-				changed = true;
-				vertices = geometry.vertices;
-				world = geometry.world;
-				address = offset;
-				vb.setFloat2(address, world.applyForward2(vertices[0], t)); address += stride;
-				vb.setFloat2(address, world.applyForward2(vertices[1], t)); address += stride;
-				vb.setFloat2(address, world.applyForward2(vertices[2], t)); address += stride;
-				vb.setFloat2(address, world.applyForward2(vertices[3], t));
-				
-				offset += 2;
-			}
+			//update vertices
+			vertices = geometry.vertices;
+			world = geometry.world;
+			address = offset;
+			vb.setFloat2(address, world.applyForward2(vertices[0], t)); address += stride;
+			vb.setFloat2(address, world.applyForward2(vertices[1], t)); address += stride;
+			vb.setFloat2(address, world.applyForward2(vertices[2], t)); address += stride;
+			vb.setFloat2(address, world.applyForward2(vertices[3], t));
 			
-			//update uv?
-			if (shiftPos || effect.hasUVChanged())
-			{
-				changed = true;
-				
-				crop = effect.crop;
-				x = crop.x;
-				y = crop.y;
-				w = crop.w;
-				h = crop.h;
-				
-				uv0.x = x;		//0 * w + x
-				uv0.y = y;		//0 * h + y
-				uv1.x = w + x;	//1 * w + x
-				uv1.y = y;		//0 * h + y
-				uv2.x = w + x;	//1 * w + x
-				uv2.y = h + y;	//1 * h + y
-				uv3.x = x;		//0 * w + x
-				uv3.y = h + y;	//1 * h + y
-				
-				address = offset;
-				vb.setFloat2(address, uv0); address += stride;
-				vb.setFloat2(address, uv1); address += stride;
-				vb.setFloat2(address, uv2); address += stride;
-				vb.setFloat2(address, uv3);
-				
-				offset += 2;
-			}
+			offset += 2;
 			
-			//update alpha?
+			//update uv
+			crop = effect.crop;
+			x = crop.x;
+			y = crop.y;
+			w = crop.w;
+			h = crop.h;
+			
+			uv0.x = x;		//0 * w + x
+			uv0.y = y;		//0 * h + y
+			uv1.x = w + x;	//1 * w + x
+			uv1.y = y;		//0 * h + y
+			uv2.x = w + x;	//1 * w + x
+			uv2.y = h + y;	//1 * h + y
+			uv3.x = x;		//0 * w + x
+			uv3.y = h + y;	//1 * h + y
+			
+			address = offset;
+			vb.setFloat2(address, uv0); address += stride;
+			vb.setFloat2(address, uv1); address += stride;
+			vb.setFloat2(address, uv2); address += stride;
+			vb.setFloat2(address, uv3);
+			
+			offset += 2;
+			
 			if (supportsAlpha)
 			{
-				if (shiftPos || effect.hasAlphaChanged())
-				{
-					changed = true;
-					
-					t.x = effect.alpha;
-					address = offset;
-					vb.setFloat1(address, t); address += stride;
-					vb.setFloat1(address, t); address += stride;
-					vb.setFloat1(address, t); address += stride;
-					vb.setFloat1(address, t);
-					
-					offset += 1;
-				}
+				//update alpha
+				t.x = effect.alpha;
+				address = offset;
+				vb.setFloat1(address, t); address += stride;
+				vb.setFloat1(address, t); address += stride;
+				vb.setFloat1(address, t); address += stride;
+				vb.setFloat1(address, t);
+				
+				offset += 1;
 			}
 			
-			//update color xform?
 			if (supportColorXForm)
 			{
-				if (shiftPos || effect.hasColorXFormChanged())
-				{
-					changed = true;
-					
-					t = effect.colorXForm.multiplier;
-					var address = offset;
-					vb.setFloat4(address, t); address += stride;
-					vb.setFloat4(address, t); address += stride;
-					vb.setFloat4(address, t); address += stride;
-					vb.setFloat4(address, t);
-					
-					offset += 4;
-					
-					t.set(effect.colorXForm.offset);
-					t.x /= 255;
-					t.y /= 255;
-					t.z /= 255;
-					t.w /= 255;
-					address = offset;
-					vb.setFloat4(address, t); address += stride;
-					vb.setFloat4(address, t); address += stride;
-					vb.setFloat4(address, t); address += stride;
-					vb.setFloat4(address, t);
-					
-					offset += 4;
-				}
+				//update color transformation
+				t = effect.colorXForm.multiplier;
+				var address = offset;
+				vb.setFloat4(address, t); address += stride;
+				vb.setFloat4(address, t); address += stride;
+				vb.setFloat4(address, t); address += stride;
+				vb.setFloat4(address, t);
+				
+				offset += 4;
+				
+				t.set(effect.colorXForm.offset);
+				t.x *= INV_FF;
+				t.y *= INV_FF;
+				t.z *= INV_FF;
+				t.w *= INV_FF;
+				address = offset;
+				vb.setFloat4(address, t); address += stride;
+				vb.setFloat4(address, t); address += stride;
+				vb.setFloat4(address, t); address += stride;
+				vb.setFloat4(address, t);
+				
+				offset += 4;
 			}
 			
 			i++;
 		}
 		
-		if (changed)
-		{
-			vb.upload(size * 4);
-			if (size < _prevBatch.size()) _prevBatch.trim(size);
-			for (i in 0...size) _prevBatch.set(i, batch.get(i));
-		}
+		vb.upload(size << 2);
 	}
 }

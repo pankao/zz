@@ -38,7 +38,7 @@ class AGALNullShader extends AGALShader
 		super(context, effectMask, 0);
 	}
 	
-	override function _getVertexShader():String
+	override function getVertexShader():String
 	{
 		//|r11 r12 1 tx| vc0
 		//|r21 r22 - ty| vc1
@@ -53,7 +53,7 @@ class AGALNullShader extends AGALShader
 		return s;
 	}
 	
-	override function _getFragmentShader():String
+	override function getFragmentShader():String
 	{
 		return 'mov oc, v0 \n';
 	}

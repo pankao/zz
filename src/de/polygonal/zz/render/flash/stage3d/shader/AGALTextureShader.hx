@@ -38,7 +38,7 @@ class AGALTextureShader extends AGALShader
 		super(context, effectMask, textureFlags);
 	}
 	
-	override function _getVertexShader():String
+	override function getVertexShader():String
 	{
 		//|r11 r12  a   tx| vc0
 		//|r21 r22  1   ty| vc1
@@ -61,7 +61,7 @@ class AGALTextureShader extends AGALShader
 		return s;
 	}
 	
-	override function _getFragmentShader():String
+	override function getFragmentShader():String
 	{
 		var s = '';
 		

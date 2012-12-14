@@ -54,9 +54,9 @@ class Stage3DTexture
 	
 	public var flags:Int;
 	
-	public function new(texture:Tex, flags = 0)
+	public function new(tex:Tex, flags = 0)
 	{
-		sourceTexture = texture;
+		sourceTexture = tex;
 		
 		if (flags == 0) flags = FlashStage3DRenderer.DEFAULT_TEXTURE_FLAGS;
 		this.flags = flags;

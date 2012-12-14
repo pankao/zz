@@ -41,7 +41,7 @@ class Stage3DBrushRect extends Stage3DBrush
 		super(context, effectMask, textureFlags);
 	}
 	
-	function initVertexBuffer(numFloatsPerAttribute:Array<Int>):Void
+	function initVertexBuffer(numFloatsPerAttribute:Array<Int>)
 	{
 		_vb = new Stage3DVertexBuffer(_context);
 		_vb.allocate(numFloatsPerAttribute, 4);
@@ -52,7 +52,7 @@ class Stage3DBrushRect extends Stage3DBrush
 		_vb.upload();
 	}
 	
-	function initIndexBuffer(numQuads:Int):Void
+	function initIndexBuffer(numQuads:Int)
 	{
 		_ib = new Stage3DIndexBuffer(_context);
 		for (i in 0...numQuads)

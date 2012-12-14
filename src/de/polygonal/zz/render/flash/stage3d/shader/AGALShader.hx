@@ -56,7 +56,7 @@ class AGALShader
 		
 		if (textureFlags == 0)
 		{
-			_initShaders(null);
+			initShaders(null);
 			return;
 		}
 		
@@ -70,7 +70,7 @@ class AGALShader
 		D.assert(textureFlags & (Stage3DTextureFlag.REPEAT_NORMAL | Stage3DTextureFlag.REPEAT_CLAMP) > 0, 'repeat flag missing');
 		#end
 		
-		_initShaders('2d,' + Stage3DTextureFlag.print(textureFlags));
+		initShaders('2d,' + Stage3DTextureFlag.print(textureFlags));
 	}
 	
 	public function free()
@@ -100,14 +100,14 @@ class AGALShader
 		return _effectMask & EFF_COLOR_XFORM > 0;
 	}
 	
-	function _initShaders(texFlags:String)
+	function initShaders(texFlags:String)
 	{
 		var vertexShaderAssembler = new AGALMiniAssembler();
-		vertexShaderAssembler.assemble(Context3DProgramType.VERTEX, _getVertexShader());
+		vertexShaderAssembler.assemble(Context3DProgramType.VERTEX, getVertexShader());
 		
 		var fragmentShaderAssembler:AGALMiniAssembler = new AGALMiniAssembler();
 		
-		var fragmentSource = _getFragmentShader();
+		var fragmentSource = getFragmentShader();
 		if (texFlags != null)
 			fragmentSource = StringTools.replace(fragmentSource, 'TEX_FLAGS', texFlags);
 		fragmentShaderAssembler.assemble(Context3DProgramType.FRAGMENT, fragmentSource);
@@ -116,12 +116,12 @@ class AGALShader
 		_shaderProgram.upload(vertexShaderAssembler.agalcode, fragmentShaderAssembler.agalcode);
 	}
 	
-	function _getVertexShader():String
+	function getVertexShader():String
 	{
 		return throw 'override for implementation';
 	}
 	
-	function _getFragmentShader():String
+	function getFragmentShader():String
 	{
 		return throw 'override for implementation';
 	}

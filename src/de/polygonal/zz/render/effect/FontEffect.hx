@@ -50,11 +50,10 @@ class FontEffect extends SpriteSheetEffect
 		
 		tmp = new Quad();
 		
-		var data = new BMFontFormat(bitmapFont.characterSet).data;
+		var format = new BMFontFormat(bitmapFont.characterSet);
+		var atlas = new SpriteAtlas(tex, format);
 		
-		var atlas = new SpriteAtlas(tex, data);
-		
-		super(tex, atlas);
+		super(atlas);
 	}
 	
 	public function setText(x:String, bound:AABB2 = null, align:Align = null, size:Float = -1)
@@ -65,7 +64,7 @@ class FontEffect extends SpriteSheetEffect
 			return;
 		}
 		
-		bitmapFont.addString(x, bound, align, size, 0xff0000, true); 
+		bitmapFont.addString(x, bound, align, size, 0xff0000, true);
 	}
 	
 	override public function draw(renderer:Renderer):Void

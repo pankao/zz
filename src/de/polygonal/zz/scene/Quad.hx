@@ -76,7 +76,7 @@ class Quad extends TriMesh
 		
 		_scratchVec3 = new Vec3();
 		
-		_updateModelBound();
+		updateModelBound();
 	}
 	
 	override public function pick(origin:Vec3, results:Array<Dynamic>):Int

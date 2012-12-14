@@ -60,7 +60,7 @@ class SpriteStrip extends SpriteSheet
 					tex.isNormalize, tex.isPack);
 	}
 	
-	override public function free():Void 
+	override public function free():Void
 	{
 		super.free();
 		frameW = -1;

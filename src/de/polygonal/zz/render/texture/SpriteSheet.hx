@@ -30,6 +30,7 @@
 package de.polygonal.zz.render.texture;
 
 import de.polygonal.ds.DA;
+import de.polygonal.core.util.Assert;
 
 class SpriteSheet
 {
@@ -38,8 +39,14 @@ class SpriteSheet
 	var _cropMap:Hash<Rect>;
 	var _sizeMap:Hash<Size>;
 	
+	var _cropList:DA<Rect>;
+	var _sizeList:DA<Size>;
+	
 	var _sheetW:Int;
 	var _sheetH:Int;
+	
+	var _indexMap:Hash<Int>;
+	var _nameMap:IntHash<String>;
 	
 	public var __spriteStrip:SpriteStrip;
 	public var __spriteAtlas:SpriteAtlas;
@@ -50,6 +57,12 @@ class SpriteSheet
 		
 		_cropMap = new Hash();
 		_sizeMap = new Hash();
+		
+		_cropList = new DA();
+		_sizeList = new DA();
+		
+		_indexMap = new Hash();
+		_nameMap = new IntHash();
 		
 		_sheetW = tex.image.w;
 		_sheetH = tex.image.h;
@@ -65,6 +78,11 @@ class SpriteSheet
 		_cropMap = null;
 		_sizeMap = null;
 		
+		_cropList = null;
+		_sizeList = null;
+		
+		_indexMap = null;
+		
 		__spriteStrip = null;
 		__spriteAtlas = null;
 	}
@@ -74,23 +92,59 @@ class SpriteSheet
 		return _sizeMap.get(id);
 	}
 	
+	inline public function getSizeAt(index:Int):Size
+	{
+		return _sizeList.get(index);
+	}
+	
 	inline public function getCropRect(id:String):Rect
 	{
-		if (!_cropMap.exists(id)) throw 1;
+		#if debug
+		D.assert(_cropMap.exists(id), '_cropMap.exists(id)');
+		#end
 		
 		return _cropMap.get(id);
 	}
 	
+	inline public function getCropRectAt(index:Int):Rect
+	{
+		return _cropList.get(index);
+	}
+	
+	inline public function getFrameIndex(id:String):Int
+	{
+		#if debug
+		D.assert(_indexMap.exists(id), '_indexMap.exists(id)');
+		#end
+		
+		return _indexMap.get(id);
+	}
+	
+	inline public function getFrameName(index:Int):String
+	{
+		#if debug
+		D.assert(_nameMap.exists(index), '_nameMap.exists(index)');
+		#end
+		
+		return _nameMap.get(index);
+	}
+	
 	function addCropRectAt(index:Int, id:String, crop:Rect, normalize:Bool, pack:Bool)
 	{
+		_indexMap.set(id, index);
+		_nameMap.set(index, id);
+		
 		crop = crop.clone();
 		
 		var size = new Size(Std.int(crop.w), Std.int(crop.h));
 		
 		_cropMap.set(id, crop);
-		_cropMap.set(Std.string(index), crop);
+		_cropMap.set(cast index, crop);
 		_sizeMap.set(id, size);
-		_sizeMap.set(Std.string(index), size);
+		_sizeMap.set(cast index, size);
+		
+		_cropList.set(index, crop);
+		_sizeList.set(index, size);
 		
 		if (pack)
 		{
