@@ -27,13 +27,13 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.swf.stage3d.shader;
+package de.polygonal.zz.render.module.flash.stage3d.shader;
 
 import de.polygonal.ds.Bits;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.effect.Effect.*;
-import de.polygonal.zz.render.module.swf.stage3d.shader.util.AGALMiniAssembler;
-import de.polygonal.zz.render.module.swf.stage3d.Stage3DTextureFlag;
+import de.polygonal.zz.render.module.flash.stage3d.shader.util.AGALMiniAssembler;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3DTextureFlag;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DProgramType;
 import flash.display3D.Program3D;

@@ -1,4 +1,4 @@
-/*
+﻿/*
  *                            _/                                                    _/
  *       _/_/_/      _/_/    _/  _/    _/    _/_/_/    _/_/    _/_/_/      _/_/_/  _/
  *      _/    _/  _/    _/  _/  _/    _/  _/    _/  _/    _/  _/    _/  _/    _/  _/
@@ -27,60 +27,59 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.swf.stage3d.shader;
+package de.polygonal.zz.render.module.flash.util;
 
-import flash.display3D.Context3D;
+import de.polygonal.ds.Itr;
+import flash.display.DisplayObject;
+import flash.display.DisplayObjectContainer;
 
-using de.polygonal.ds.Bits;
-
-class AGALTextureBatchVertexShader extends AGALTextureShader
+/**
+ * An iterator for traversing the display list.<br/>
+ * see <a href="http://lab.polygonal.de/2010/02/02/traversing-the-display-listtraversing-the-display-list/" target="_blank">http://lab.polygonal.de/2010/02/02/traversing-the-display-listtraversing-the-display-list/</a>
+ */
+class DisplayListIterator implements de.polygonal.ds.Itr<DisplayObject>
 {
-	public function new(context:Context3D, vertexAttributes:Int, textureFlags:Int)
+	inline public static function iterator(root:DisplayObjectContainer):DisplayListIterator
 	{
-		super(context, vertexAttributes, textureFlags);
+		return new DisplayListIterator(root);
 	}
 	
-	override function getVertexShader():String
+	var _root:DisplayObjectContainer;
+	var _stack:Array<DisplayObject>;
+	var _stackSize:Int;
+	
+	public function new(root:DisplayObjectContainer) 
 	{
-		//|r11 r12  1   tx| vc0
-		//|r21 r22  -   ty| vc1
-		//| -   -   -   - |
-		//| -   -   -   - |
-		
-		var s = '';
-		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clipspace row1
-		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clipspace row2
-		s += 'mov op.zw, vc0.z \n';				//z = 1, w = 1
-		s += 'mov v0, va1 \n';					//copy uv
-		
-		if (supportsAlpha())
-			s += 'mov v1, va2 \n';				//copy alpha
-		
-		if (supportsColorXForm())
-		{
-			s += 'mov v1, va2 \n';				//copy color multiplier
-			s += 'mov v2, va3 \n';				//copy color offset
-		}
-		
-		return s;
+		_stack = new Array<DisplayObject>();
+		_root = root;
+		reset();
 	}
 	
-	override function getFragmentShader():String
+	public function hasNext():Bool
 	{
-		var s = '';
-		s += 'tex ft0, v0, fs0 <TEX_FLAGS> \n';	//sample texture from uv
-		
-		if (supportsAlpha())
-			s += 'mul ft0.w, v1.x, ft0 \n';		//* alpha
-		
-		if (supportsColorXForm())
+		return _stackSize > 0;
+	}
+	
+	public function reset():Itr<DisplayObject>
+	{
+		_stack[0] = _root;
+		_stackSize = 1;
+		return this;
+	}
+	
+	public function next():DisplayObject
+	{
+		var o = _stack[--_stackSize];
+		if (Std.is(o, DisplayObjectContainer))
 		{
-			s += 'mul ft0, ft0, v1 \n';			//* color multiplier
-			s += 'add ft0, ft0, v2 \n';			//+ color offset
+			var c:DisplayObjectContainer = untyped o;
+			for (i in 0...c.numChildren) _stack[_stackSize++] = c.getChildAt(i);
 		}
-		
-		s += 'mov oc, ft0 \n';
-		
-		return s;
+		return o;
+	}
+	
+	public function remove():Void
+	{
+		throw 'unsupported operation';
 	}
 }

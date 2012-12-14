@@ -27,50 +27,33 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.swf.stage3d;
+package de.polygonal.zz.render.module.flash.stage3d.shader;
 
-import de.polygonal.ds.Bits;
+import flash.display3D.Context3D;
 
-class Stage3DTextureFlag
+class AGALSolidColorShader extends AGALShader
 {
-	inline public static var MM_NONE       = Bits.BIT_10;
-	inline public static var MM_NEAREST    = Bits.BIT_11;
-	inline public static var MM_LINEAR     = Bits.BIT_12;
-	inline public static var FM_NEAREST    = Bits.BIT_13;
-	inline public static var FM_LINEAR     = Bits.BIT_14;
-	inline public static var REPEAT_NORMAL = Bits.BIT_15;
-	inline public static var REPEAT_CLAMP  = Bits.BIT_16;
-	
-	inline public static var PRESET_QUALITY_LOW    = MM_NONE    | FM_NEAREST | REPEAT_NORMAL;
-	inline public static var PRESET_QUALITY_MEDIUM = MM_NONE    | FM_LINEAR  | REPEAT_NORMAL;
-	inline public static var PRESET_QUALITY_HIGH   = MM_NEAREST | FM_LINEAR  | REPEAT_NORMAL;
-	inline public static var PRESET_QUALITY_ULTRA  = MM_LINEAR  | FM_LINEAR  | REPEAT_NORMAL;
-	
-	inline public static var SHIFT = 9;
-	
-	public static function print(flags:Int):String
+	public function new(context:Context3D, effectMask:Int)
 	{
-		if (flags <= 0) return '-';
+		super(context, effectMask, 0);
+	}
+	
+	override function getVertexShader():String
+	{
+		//|r11 r12 1 tx| vc0
+		//|r21 r22 - ty| vc1
+		//| -   -  - - | vc2
+		//| -   -  - - |
 		
-		var a = [];
-		for (i in 0...7)
-		{
-			if ((flags >> 9) & (1 << i) > 0)
-			{
-				a.push(
-				switch (i) 
-				{
-					case 0: 'mipnone';
-					case 1: 'mipnearest';
-					case 2: 'miplinear';
-					case 3: 'nearest';
-					case 4: 'linear';
-					case 5: 'repeat';
-					case 6: 'clamp';
-					default: 'unknown';
-				});
-			}
-		}
-		return a.join(',');
+		var s = '';
+		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clip space row1
+		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clip space row2
+		s += 'mov op.zw, vc0.z \n';				//z = 1, w = 1
+		return s;
+	}
+	
+	override function getFragmentShader():String
+	{
+		return 'mov oc, fc0 \n';
 	}
 }

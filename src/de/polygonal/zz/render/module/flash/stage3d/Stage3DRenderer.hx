@@ -27,7 +27,7 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.swf;
+package de.polygonal.zz.render.module.flash.stage3d;
 
 import de.polygonal.core.fmt.NumberFormat;
 import de.polygonal.core.fmt.Sprintf;
@@ -40,14 +40,14 @@ import de.polygonal.zz.render.effect.Effect.*;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
-import de.polygonal.zz.render.module.swf.stage3d.paintbox.Stage3DBrush;
-import de.polygonal.zz.render.module.swf.stage3d.paintbox.Stage3DBrushRectNull;
-import de.polygonal.zz.render.module.swf.stage3d.paintbox.Stage3DBrushRectSolid;
-import de.polygonal.zz.render.module.swf.stage3d.paintbox.Stage3DBrushRectTexture;
-import de.polygonal.zz.render.module.swf.stage3d.paintbox.Stage3DBrushRectTextureBatch;
-import de.polygonal.zz.render.module.swf.stage3d.Stage3DAntiAliasMode;
-import de.polygonal.zz.render.module.swf.stage3d.Stage3DTexture;
-import de.polygonal.zz.render.module.swf.stage3d.Stage3DTextureFlag;
+import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrush;
+import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectNull;
+import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectSolid;
+import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectTexture;
+import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectTextureBatch;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3DAntiAliasMode;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3DTexture;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3DTextureFlag;
 import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Tex;

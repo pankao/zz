@@ -43,6 +43,10 @@ import de.polygonal.zz.scene.Node;
 import de.polygonal.zz.scene.Spatial;
 import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.core.util.Assert;
+import flash.geom.Matrix3D;
+import flash.Lib;
+import flash.Vector;
+import flash.Vector;
 
 using de.polygonal.ds.BitFlags;
 
@@ -291,6 +295,10 @@ class Renderer
 			[a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15]]);
 	}*/
 	
+	/**
+	 * Resolves a texture for a given <code>image</code>.<br/>
+	 * If a texture doesn't exist yet, a new one is created and cached for repeated use.
+	 */
 	public function getTex(image:Image):Tex
 	{
 		var tex = _textureLookup.get(image.key);
@@ -302,11 +310,9 @@ class Renderer
 		return tex;
 	}
 	
-	public function createTex(image:Image):Tex
-	{
-		return throw 'override for implementation';
-	}
-	
+	/**
+	 * 
+	 */
 	public function freeTex(image:Image):Void
 	{
 		var tex = _textureLookup.get(image.key);
@@ -316,6 +322,14 @@ class Renderer
 			_textureLookup.remove(image.key);
 		}
 	}
+	
+	function createTex(image:Image):Tex
+	{
+		//implement in subclass.
+		return throw 'override for implementation';
+	}
+	
+	
 	
 	/*function lookAt(lookAt:Vector3D, position:Vector3D):Matrix3D
 	{
@@ -651,8 +665,11 @@ class Renderer
 		{
 			var f = _camera.frustum;
 			
-			_projMatrix = new Mat44();
+			//var t = makeOrtographicMatrix(0, RenderSurface.width, 0, RenderSurface.height);
+			//var m = new Mat44();
+			//m.ofMatrix3D(t);
 			
+			_projMatrix = new Mat44();
 			//_projMatrix.setOrtho(f.left, f.right, f.bottom, f.top, f.near, f.far);
 			_projMatrix.setOrthoSimple(RenderSurface.width, RenderSurface.height, 0, 1);
 			
@@ -669,29 +686,35 @@ class Renderer
 			//move to upper-right corner
 			_projMatrix.catTranslate(-1, 1, 0);
 			
-			
 			//_viewMatrix.setIdentity();
 			//_viewMatrix.catScale(zoom, -zoom, 1); //flip y-axis
 			//_viewMatrix.catRotateZ(rotation);
-		
+			
 			//_viewMatrix.catTranslate(-surface.w / 2 - eyeX, surface.h/2, 0);
 			//_viewMatrix.catTranslate(-surface.w / 2, -surface.h/2, 0);
 		}
+	}
+	
+	//TODO tmp
+	function makeOrtographicMatrix(left:Float, right:Float, top:Float, bottom:Float, zNear:Float = 0, zFar:Float = 1):Matrix3D
+	{
+		return new Matrix3D(Vector.ofArray([
+				2 / (right - left), 0, 0,  0,
+				0,  2 / (top - bottom), 0, 0,
+				0,  0, 1 / (zFar - zNear), 0,
+				0, 0, zNear / (zNear - zFar), 1
+			]));
 	}
 	
 	public function onFrameChange()
 	{
 		var t = camera.local.getTranslate();
 		
-		trace(camera.zoom);
-		
 		//TODO rebuild matrix
 		_viewMatrix.setIdentity();
 		_viewMatrix.catScale(camera.zoom, camera.zoom, 1);
 		
 		_viewMatrix.catTranslate(t.x, t.y, 0);
-		trace( "_viewMatrix : " + _viewMatrix );
-		
 	}
 	
 	public function drawDeferredRegular()

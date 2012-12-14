@@ -27,45 +27,73 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.swf.stage3d.paintbox;
+package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
-import de.polygonal.core.math.Vec3;
-import de.polygonal.zz.render.module.swf.stage3d.Stage3DIndexBuffer;
-import de.polygonal.zz.render.module.swf.stage3d.Stage3DVertexBuffer;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureShader;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
 import flash.display3D.Context3D;
 
-class Stage3DBrushRect extends Stage3DBrush
+class Stage3DBrushRectTexture extends Stage3DBrushRect
 {
+	inline static var INV_FF = .00392156;
+	
 	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
 	{
 		super(context, effectMask, textureFlags);
+		
+		initVertexBuffer([2]);
+		initIndexBuffer(1);
+		
+		_shader = new AGALTextureShader(_context, effectMask, textureFlags);
 	}
 	
-	function initVertexBuffer(numFloatsPerAttribute:Array<Int>)
+	override public function draw(renderer:Stage3DRenderer):Void
 	{
-		_vb = new Stage3DVertexBuffer(_context);
-		_vb.allocate(numFloatsPerAttribute, 4);
-		_vb.addFloat2(new Vec3(0, 0));
-		_vb.addFloat2(new Vec3(1, 0));
-		_vb.addFloat2(new Vec3(1, 1));
-		_vb.addFloat2(new Vec3(0, 1));
-		_vb.upload();
-	}
-	
-	function initIndexBuffer(numQuads:Int)
-	{
-		_ib = new Stage3DIndexBuffer(_context);
-		for (i in 0...numQuads)
+		var constantRegisters = _scratchVector;
+		var indexBuffer = _ib.handle;
+		
+		_shader.bindProgram();
+		_shader.bindTexture(0, renderer.currStage3DTexture.handle);
+		
+		for (i in 0..._batch.size())
 		{
-			var offset = i << 2;
-			_ib.add(offset + 0);
-			_ib.add(offset + 1);
-			_ib.add(offset + 2);
+			var geometry = _batch.get(i);
 			
-			_ib.add(offset + 0);
-			_ib.add(offset + 2);
-			_ib.add(offset + 3);
+			var mvp = renderer.setModelViewProjMatrix(renderer.currGeometry);
+			var e = renderer.currEffect.__textureEffect;
+			var crop = e.crop;
+			
+			mvp.m13 = e.alpha;
+			mvp.m23 = 1; //op.zw
+			mvp.m31 = crop.w + e.uvScale.x;
+			mvp.m32 = crop.h + e.uvScale.y;
+			mvp.m33 = crop.x + e.uvOffset.x;
+			mvp.m34 = crop.y + e.uvOffset.y;
+			mvp.toVector(constantRegisters);
+			
+			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 3);
+			
+			if (_shader.supportsColorXForm())
+			{
+				var t = e.colorXForm.multiplier;
+				constantRegisters[0] = t.r;
+				constantRegisters[1] = t.g;
+				constantRegisters[2] = t.b;
+				constantRegisters[3] = t.a;
+				
+				t = e.colorXForm.offset;
+				constantRegisters[4] = t.r * INV_FF;
+				constantRegisters[5] = t.g * INV_FF;
+				constantRegisters[6] = t.b * INV_FF;
+				constantRegisters[7] = t.a * INV_FF;
+				
+				_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.FRAGMENT, 0, constantRegisters, 2);
+			}
+			
+			_context.drawTriangles(indexBuffer, 0, 2);
+			renderer.numCallsToDrawTriangle++;
 		}
-		_ib.upload();
+		
+		super.draw(renderer);
 	}
 }

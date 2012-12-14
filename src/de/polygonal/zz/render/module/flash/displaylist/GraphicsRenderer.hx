@@ -27,7 +27,7 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.swf;
+package de.polygonal.zz.render.module.flash.displaylist;
 
 import de.polygonal.core.math.Vec2;
 import de.polygonal.core.math.Vec3;

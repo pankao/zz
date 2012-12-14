@@ -27,73 +27,57 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.swf.stage3d.paintbox;
+package de.polygonal.zz.render.module.flash.stage3d.shader;
 
-import de.polygonal.zz.render.module.swf.stage3d.shader.AGALTextureShader;
-import de.polygonal.zz.render.module.swf.Stage3DRenderer;
 import flash.display3D.Context3D;
 
-class Stage3DBrushRectTexture extends Stage3DBrushRect
+class AGALTextureShader extends AGALShader
 {
-	inline static var INV_FF = .00392156;
-	
 	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
 	{
 		super(context, effectMask, textureFlags);
-		
-		initVertexBuffer([2]);
-		initIndexBuffer(1);
-		
-		_shader = new AGALTextureShader(_context, effectMask, textureFlags);
 	}
 	
-	override public function draw(renderer:Stage3DRenderer):Void
+	override function getVertexShader():String
 	{
-		var constantRegisters = _scratchVector;
-		var indexBuffer = _ib.handle;
+		//|r11 r12  a   tx| vc0
+		//|r21 r22  1   ty| vc1
+		//|uvw uvh uvx uvy| vc2
+		//| -   -   -   - |
 		
-		_shader.bindProgram();
-		_shader.bindTexture(0, renderer.currStage3DTexture.handle);
+		var s = '';
 		
-		for (i in 0..._batch.size())
+		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clip space row1
+		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clip space row2
+		s += 'mov op.zw, vc1.z \n';				//z = 1, w = 1
+		
+		s += 'mul vt0, va0, vc2.xy \n';			//scale uv
+		s += 'add vt0.xy, vt0.xy, vc2.zw \n';	//offset uv
+		s += 'mov v0, vt0 \n';	 				//copy uv
+		
+		if (supportsAlpha())
+			s += 'mov v1, vc0.z \n';			//copy alpha
+		
+		return s;
+	}
+	
+	override function getFragmentShader():String
+	{
+		var s = '';
+		
+		s += 'tex ft0, v0, fs0 <TEX_FLAGS> \n';	//sample texture from uv
+		
+		if (supportsAlpha())
+			s += 'mul ft0.w, v1, ft0 \n';		//* alpha
+		
+		if (supportsColorXForm())
 		{
-			var geometry = _batch.get(i);
-			
-			var mvp = renderer.setModelViewProjMatrix(renderer.currGeometry);
-			var e = renderer.currEffect.__textureEffect;
-			var crop = e.crop;
-			
-			mvp.m13 = e.alpha;
-			mvp.m23 = 1; //op.zw
-			mvp.m31 = crop.w;
-			mvp.m32 = crop.h;
-			mvp.m33 = crop.x;
-			mvp.m34 = crop.y;
-			mvp.toVector(constantRegisters);
-			
-			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 3);
-			
-			if (_shader.supportsColorXForm())
-			{
-				var t = e.colorXForm.multiplier;
-				constantRegisters[0] = t.r;
-				constantRegisters[1] = t.g;
-				constantRegisters[2] = t.b;
-				constantRegisters[3] = t.a;
-				
-				t = e.colorXForm.offset;
-				constantRegisters[4] = t.r * INV_FF;
-				constantRegisters[5] = t.g * INV_FF;
-				constantRegisters[6] = t.b * INV_FF;
-				constantRegisters[7] = t.a * INV_FF;
-				
-				_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.FRAGMENT, 0, constantRegisters, 2);
-			}
-			
-			_context.drawTriangles(indexBuffer, 0, 2);
-			renderer.numCallsToDrawTriangle++;
+			s += 'mul ft0, ft0, fc0 \n';		//* color multiplier
+			s += 'add ft0, fc1, ft0 \n';		//+ color offset
 		}
 		
-		super.draw(renderer);
+		s += 'mov oc, ft0 \n';
+		
+		return s;
 	}
 }

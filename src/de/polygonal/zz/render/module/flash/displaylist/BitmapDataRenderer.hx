@@ -27,14 +27,14 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.swf;
+package de.polygonal.zz.render.module.flash.displaylist;
 
 import de.polygonal.ds.IntHashTable;
 import de.polygonal.gl.color.RGBA;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
-import de.polygonal.zz.render.flash.util.DisplayListUtil;
+import de.polygonal.zz.render.module.flash.util.DisplayListUtil;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.zz.scene.Renderer;
@@ -52,7 +52,7 @@ import de.polygonal.core.util.Assert;
 
 import de.polygonal.zz.render.effect.Effect.*;
 
-class BitmapRenderer extends Renderer
+class BitmapDataRenderer extends Renderer
 {
 	public var bitmap(default, null):Bitmap;
 	

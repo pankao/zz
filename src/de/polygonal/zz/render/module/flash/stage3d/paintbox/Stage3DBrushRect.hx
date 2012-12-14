@@ -27,12 +27,45 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.swf.stage3d;
+package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
-enum Stage3DAntiAliasMode
+import de.polygonal.core.math.Vec3;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3DIndexBuffer;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3DVertexBuffer;
+import flash.display3D.Context3D;
+
+class Stage3DBrushRect extends Stage3DBrush
 {
-	None;
-	Low;
-	High;
-	Ultra;
+	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
+	{
+		super(context, effectMask, textureFlags);
+	}
+	
+	function initVertexBuffer(numFloatsPerAttribute:Array<Int>)
+	{
+		_vb = new Stage3DVertexBuffer(_context);
+		_vb.allocate(numFloatsPerAttribute, 4);
+		_vb.addFloat2(new Vec3(0, 0));
+		_vb.addFloat2(new Vec3(1, 0));
+		_vb.addFloat2(new Vec3(1, 1));
+		_vb.addFloat2(new Vec3(0, 1));
+		_vb.upload();
+	}
+	
+	function initIndexBuffer(numQuads:Int)
+	{
+		_ib = new Stage3DIndexBuffer(_context);
+		for (i in 0...numQuads)
+		{
+			var offset = i << 2;
+			_ib.add(offset + 0);
+			_ib.add(offset + 1);
+			_ib.add(offset + 2);
+			
+			_ib.add(offset + 0);
+			_ib.add(offset + 2);
+			_ib.add(offset + 3);
+		}
+		_ib.upload();
+	}
 }

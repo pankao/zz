@@ -27,10 +27,10 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.swf.stage3d.paintbox;
+package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
-import de.polygonal.zz.render.module.swf.stage3d.shader.AGALNullShader;
-import de.polygonal.zz.render.module.swf.Stage3DRenderer;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AGALNullShader;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
 import flash.display3D.Context3D;
 
 class Stage3DBrushRectNull extends Stage3DBrushRect
