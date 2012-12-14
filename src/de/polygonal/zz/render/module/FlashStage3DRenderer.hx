@@ -147,7 +147,6 @@ class FlashStage3DRenderer extends Renderer
 		_batch = new DA();
 		configureBackBuffer();
 		
-		//batch rendering is on by default
 		drawDeferred = drawDeferredBatch;
 	}
 	
@@ -224,7 +223,7 @@ class FlashStage3DRenderer extends Renderer
 		return t;
 	}
 	
-	public function freeStage3DTexture(tex:Tex):Void
+	public function freeStage3DTexture(tex:Tex)
 	{
 		var t = _textureHandles.get(tex.key);
 		if (t != null)
@@ -327,7 +326,7 @@ class FlashStage3DRenderer extends Renderer
 		throw 'todo';
 	}*/
 	
-	override public function drawDeferredBatch()
+	override public function drawDeferredBatch():Void
 	{
 		if (_deferredObjects.isEmpty()) return;
 		
@@ -342,19 +341,13 @@ class FlashStage3DRenderer extends Renderer
 		
 		var numBatchCalls = 0;
 		
+		//TODO support shaders with no textures
+		
 		for (i in 0..._deferredObjects.size())
 		{
 			var o = _deferredObjects.get(i);
 			
-			//TODO untested
-			if (o.isNode())
-			{
-				//TODO if a node has a batch flag, just send all child nodes to the renderer...
-				//just draw them batched..
-				//if (o.effect == o.effect.__spriteSheetBatchEffect)
-					//o.draw(this, noCulling);
-				continue;
-			}
+			if (o.isNode()) continue;
 			
 			#if debug
 			D.assert(o.effect != null, 'no effect assigned');
@@ -363,63 +356,72 @@ class FlashStage3DRenderer extends Renderer
 			var effect = o.effect;
 			var effectFlags = effect.flags;
 			
-			//first geometry node?
-			if (currEffectFlags == -1)
+			//first geometry node
+			if (currEffectFlags < 0)
 			{
 				currEffectFlags = effectFlags;
 				currTexture = effect.tex;
 				
-				if (currTexture != null)
-				{
-					currStage3DTexture = initStage3DTexture(currTexture);
-					currBrush = getBrush(effectFlags, currStage3DTexture.flags, true);
-				}
-				else
-					currBrush = getBrush(effectFlags, 0, false);
+				#if debug
+				D.assert(currTexture != null, 'currTexture != null');
+				#end
+				
+				currStage3DTexture = initStage3DTexture(currTexture);
+				prevBrush = null;
+				currBrush = getBrush(effectFlags, currStage3DTexture.flags, true);
+				currBrush.bindVertexBuffer();
 				
 				currBrush.add(o.__geometry);
+				continue;
 			}
-			else
+			
+			var effectsChanged = effectFlags != currEffectFlags;
+			var textureChanged = effect.tex != currTexture;
+			var batchExhausted = currBrush.isFull();
+			
+			if (effectsChanged || textureChanged || batchExhausted)
 			{
-				//effect state change or batch exhausted?
-				if (effectFlags != currEffectFlags || effect.tex != currTexture || currBrush.isFull())
+				//prevBrush is initially null;
+				//so this binds the vertex buffer for the first time
+				if (prevBrush != currBrush)
 				{
-					//draw current batch
-					if (currBrush != prevBrush)
-					{
-						if (prevBrush != null) prevBrush.unbindVertexBuffer();
-						currBrush.bindVertexBuffer();
-					}
-					prevBrush = currBrush;
-					
-					currBrush.draw(this);
-					numBatchCalls++;
-					
-					//start new batch with current geometry
-					currEffectFlags = effectFlags;
-					currTexture = effect.tex;
-					currStage3DTexture = initStage3DTexture(currTexture);
-					currBrush = getBrush(effectFlags, currStage3DTexture.flags, true);
+					if (prevBrush != null)
+						prevBrush.unbindVertexBuffer();
+					currBrush.bindVertexBuffer();
 				}
 				
-				currBrush.add(o.__geometry);
+				//draw batched geometry
+				currBrush.draw(this);
+				numBatchCalls++;
+				
+				//start new batch with current geometry
+				currEffectFlags = effectFlags;
+				currTexture = effect.tex;
+				
+				#if debug
+				D.assert(currTexture != null, 'currTexture != null');
+				#end
+				
+				currStage3DTexture = initStage3DTexture(currTexture);
+				
+				prevBrush = currBrush;
+				if (effectsChanged || textureChanged)
+					currBrush = getBrush(effectFlags, currStage3DTexture.flags, true);
 			}
+			
+			currBrush.add(o.__geometry);
 		}
 		
 		//draw remainder
 		if (!currBrush.isEmpty())
 		{
-			if (currBrush != prevBrush)
-			{
-				if (prevBrush != null)
-					prevBrush.unbindVertexBuffer();
-				currBrush.bindVertexBuffer();
-			}
+			currBrush.unbindVertexBuffer();
 			currBrush.draw(this);
 			numBatchCalls++;
 		}
 		
-		currBrush.unbindVertexBuffer();
+		currStage3DTexture = null;
+		currTexture = null;
 		
 		//restore deferred drawing
 		drawDeferred = save;
