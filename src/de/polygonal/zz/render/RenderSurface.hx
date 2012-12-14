@@ -40,6 +40,9 @@ typedef SurfaceArgs =
 	#if flash
 	?hardware:Bool,
 	?resizable:Bool
+	#if flash11_4
+	,?profile:flash.display3D.Context3DProfile
+	#end
 	#elseif nme
 	?width:Int,
 	?height:Int,
@@ -105,6 +108,9 @@ class RenderSurface
 	public static var root(default, null):flash.display.Sprite = null;
 	#if flash11
 	public static var stage3D:flash.display.Stage3D = null;
+	#if flash11_4
+	public static var profile = flash.display3D.Context3DProfile.BASELINE;
+	#end
 	#end
 	#end
 	
@@ -164,6 +170,11 @@ class RenderSurface
 		{
 			if (args.hasField('hardware') && args.hardware)
 				_flags |= HARDWARE;
+				
+			#if flash11_4
+			if (args.hasField('profile') && args.hardware)
+				profile = args.field('profile');
+			#end
 		}
 		initDisplayList();
 		#elseif nme
@@ -300,7 +311,12 @@ class RenderSurface
 		stage = flash.Lib.current.stage;
 		stage3D = flash.Lib.current.stage.stage3Ds[0];
 		stage3D.addEventListener(flash.events.Event.CONTEXT3D_CREATE, onContext3DCreate);
+		
+		#if flash11_4
+		stage3D.requestContext3D(cast flash.display3D.Context3DRenderMode.AUTO, profile);
+		#else
 		stage3D.requestContext3D(cast flash.display3D.Context3DRenderMode.AUTO);
+		#end
 	}
 	
 	static function onContext3DCreate(_)
