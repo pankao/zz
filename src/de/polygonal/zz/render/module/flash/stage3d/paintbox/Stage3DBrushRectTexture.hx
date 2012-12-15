@@ -65,10 +65,10 @@ class Stage3DBrushRectTexture extends Stage3DBrushRect
 			
 			mvp.m13 = e.alpha;
 			mvp.m23 = 1; //op.zw
-			mvp.m31 = crop.w + e.uvScale.x;
-			mvp.m32 = crop.h + e.uvScale.y;
-			mvp.m33 = crop.x + e.uvOffset.x;
-			mvp.m34 = crop.y + e.uvOffset.y;
+			mvp.m31 = crop.w * e.uvScaleX;
+			mvp.m32 = crop.h * e.uvScaleY;
+			mvp.m33 = crop.x + e.uvOffsetX;
+			mvp.m34 = crop.y + e.uvOffsetY;
 			mvp.toVector(constantRegisters);
 			
 			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 3);

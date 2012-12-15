@@ -40,17 +40,18 @@ using de.polygonal.ds.BitFlags;
 class TextureEffect extends Effect
 {
 	public var crop:Rect;
-	public var uvOffset:Vec2;
-	public var uvScale:Vec2;
+	
+	public var uvOffsetX = 0.;
+	public var uvOffsetY = 0.;
+	
+	public var uvScaleX = 1.;
+	public var uvScaleY = 1.;
 	
 	public function new(tex:Tex)
 	{
 		super();
 		__textureEffect = this;
 		this.tex = tex;
-		
-		uvOffset = new Vec2();
-		uvScale = new Vec2();
 		
 		setCrop();
 		setf(Effect.UV_CHANGED);
@@ -69,17 +70,37 @@ class TextureEffect extends Effect
 	
 	function setCrop():Void
 	{
-		var w:Float, h:Float;
+		var x:Float = 0, y:Float = 0, w:Float, h:Float;
 		
 		if (tex.isNormalize)
 		{
 			if (tex.isPowerOfTwo)
 			{
-				w = tex.image.w / tex.w;
-				h = tex.image.h / tex.h;
+				/*if (M.isPow2(tex.image.w))
+				{
+					
+				}
+				
+				if (M.isPow2(tex.image.h))
+				{
+					
+				}*/
+				
+				w = (tex.image.w) / (tex.w);
+				h = (tex.image.h) / (tex.h);
+				
+				var tw = (w / tex.image.w);
+				var th = (h / tex.image.h);
+				
+				x = tw/2;
+				y = th/2;
+				w = w - tw;
+				h = h - th;
 			}
 			else
 			{
+				x = 0.;
+				y = 0.;
 				w = 1.;
 				h = 1.;
 			}
@@ -90,6 +111,6 @@ class TextureEffect extends Effect
 			h = tex.image.h;
 		}
 		
-		crop = new Rect(0, 0, w, h);
+		crop = new Rect(x, y, w, h);
 	}
 }

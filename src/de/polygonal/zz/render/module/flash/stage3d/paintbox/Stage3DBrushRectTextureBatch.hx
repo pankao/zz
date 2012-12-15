@@ -231,10 +231,10 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 				for (i in 0...capacity)
 				{
 					geometry = batch.get(next++);
-					effect = geometry.effect;
+					effect = geometry.effect.__textureEffect;
 					
 					mvp = renderer.setModelViewProjMatrix(geometry);
-					crop = effect.__textureEffect.crop;
+					crop = effect.crop;
 					
 					//use 3 constant register (each 4 floats) for mvp matrix, alpha and uv crop (+2 constant registers for color transform)
 					offset = (_numSharedRegisters * NUM_FLOATS_PER_REGISTER) + i * (_numRegistersPerQuad * NUM_FLOATS_PER_REGISTER);
@@ -249,10 +249,10 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 					constantRegisters[offset +  6] = geometry.effect.alpha;
 					constantRegisters[offset +  7] = mvp.m24;
 					
-					constantRegisters[offset +  8] = crop.w;
-					constantRegisters[offset +  9] = crop.h;
-					constantRegisters[offset + 10] = crop.x;
-					constantRegisters[offset + 11] = crop.y;
+					constantRegisters[offset +  8] = crop.w * effect.uvScaleX;
+					constantRegisters[offset +  9] = crop.h * effect.uvScaleY;
+					constantRegisters[offset + 10] = crop.x + effect.uvOffsetX;
+					constantRegisters[offset + 11] = crop.y + effect.uvOffsetY;
 					
 					if (supportsColorXForm)
 					{
@@ -281,9 +281,9 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 				for (i in 0...remainder)
 				{
 					geometry = batch.get(next++);
-					effect = geometry.effect;
+					effect = geometry.effect.__textureEffect;
 					mvp = renderer.setModelViewProjMatrix(geometry);
-					crop = effect.__textureEffect.crop;
+					crop = effect.crop;
 					offset = (_numSharedRegisters * NUM_FLOATS_PER_REGISTER) + i * (_numRegistersPerQuad * NUM_FLOATS_PER_REGISTER);
 					constantRegisters[offset +  0] = mvp.m11;
 					constantRegisters[offset +  1] = mvp.m12;
@@ -295,10 +295,10 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 					constantRegisters[offset +  6] = geometry.effect.alpha;
 					constantRegisters[offset +  7] = mvp.m24;
 					
-					constantRegisters[offset +  8] = crop.w;
-					constantRegisters[offset +  9] = crop.h;
-					constantRegisters[offset + 10] = crop.x;
-					constantRegisters[offset + 11] = crop.y;
+					constantRegisters[offset +  8] = crop.w * effect.uvScaleX;
+					constantRegisters[offset +  9] = crop.h * effect.uvScaleY;
+					constantRegisters[offset + 10] = crop.x + effect.uvOffsetX;
+					constantRegisters[offset + 11] = crop.y + effect.uvOffsetY;
 					
 					if (supportsColorXForm)
 					{
@@ -371,10 +371,10 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			
 			//update uv
 			crop = effect.crop;
-			x = crop.x;
-			y = crop.y;
-			w = crop.w;
-			h = crop.h;
+			x = crop.x + effect.uvOffsetX;
+			y = crop.y + effect.uvOffsetY;
+			w = crop.w * effect.uvScaleX;
+			h = crop.h * effect.uvScaleY;
 			
 			uv0.x = x;		//0 * w + x
 			uv0.y = y;		//0 * h + y
