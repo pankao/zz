@@ -1,4 +1,6 @@
-#A cross-platform 2d rendering library called "Zero-Z" (zz)
+#ZeroZ - a cross-platform 2D rendering library (zz)
+
+![zz logo](http://polygonal.github.com/zz/images/zz.png)
 
 ## Installation
 Install [Haxe](http://haxe.org/download) and run `$ haxelib install polygonal-zz` from the console.
