@@ -36,7 +36,8 @@ class SpriteAtlas extends SpriteSheet
 		super(tex);
 		__spriteAtlas = this;
 		
-		for (i in 0...format.frames.length)
+		frameCount = format.frames.length;
+		for (i in 0...frameCount)
 		{
 			var frame = format.frames[i];
 			if (frame != null)

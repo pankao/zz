@@ -36,6 +36,8 @@ class SpriteSheet
 {
 	public var tex(default, null):Tex;
 	
+	public var frameCount(default, null):Int;
+	
 	var _cropMap:Hash<Rect>;
 	var _sizeMap:Hash<Size>;
 	

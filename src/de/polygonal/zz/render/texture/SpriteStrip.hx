@@ -53,6 +53,8 @@ class SpriteStrip extends SpriteSheet
 		frameW = Std.int(w / cols);
 		frameH = Std.int(h / rows);
 		
+		frameCount = rows * cols;
+		
 		for (y in 0...rows)
 			for (x in 0...cols)
 				addCropRectAt(y * cols + x, x + '' + y,
