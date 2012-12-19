@@ -134,7 +134,7 @@ class Stage3DRenderer extends Renderer
 		drawDeferred = drawDeferredBatch;
 	}
 	
-	override public function free()
+	override public function free():Void
 	{
 		for (handle in _textureHandles)
 		{
@@ -155,7 +155,7 @@ class Stage3DRenderer extends Renderer
 		return new Tex(image, true, true);
 	}
 	
-	override public function onViewPortChange()
+	override public function onViewPortChange():Void
 	{
 		super.onViewPortChange();
 		configureBackBuffer();
@@ -164,7 +164,7 @@ class Stage3DRenderer extends Renderer
 	/**
 	 * Default is <em>Stage3DAntiAliasMode.Low</em>.
 	 */
-	public function setAntiAlias(mode:Stage3DAntiAliasMode)
+	public function setAntiAlias(mode:Stage3DAntiAliasMode):Void
 	{
 		var mode = 
 		switch (mode) 
@@ -185,7 +185,7 @@ class Stage3DRenderer extends Renderer
 	/**
 	 * Default value is false.
 	 */
-	public function enableDepthBufferAndStencil(x:Bool)
+	public function enableDepthBufferAndStencil(x:Bool):Void
 	{
 		if (x != _enableDepthBufferAndStencil)
 		{
@@ -207,7 +207,7 @@ class Stage3DRenderer extends Renderer
 		return t;
 	}
 	
-	public function freeStage3DTexture(tex:Tex)
+	public function freeStage3DTexture(tex:Tex):Void
 	{
 		var t = _textureHandles.get(tex.key);
 		if (t != null)
@@ -218,7 +218,7 @@ class Stage3DRenderer extends Renderer
 		}
 	}
 	
-	override public function drawEffect(effect:Effect)
+	override public function drawEffect(effect:Effect):Void
 	{
 		var brush = getBrush(effect.flags, 0, false);
 		brush.bindVertexBuffer();
@@ -227,7 +227,7 @@ class Stage3DRenderer extends Renderer
 		brush.unbindVertexBuffer();
 	}
 	
-	override public function drawTextureEffect(effect:TextureEffect)
+	override public function drawTextureEffect(effect:TextureEffect):Void
 	{
 		super.drawTextureEffect(effect);
 		
@@ -241,7 +241,7 @@ class Stage3DRenderer extends Renderer
 		brush.unbindVertexBuffer();
 	}
 	
-	override public function drawSpriteSheetEffect(effect:SpriteSheetEffect)
+	override public function drawSpriteSheetEffect(effect:SpriteSheetEffect):Void
 	{
 		if (_batchActive)
 		{

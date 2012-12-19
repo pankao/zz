@@ -20,7 +20,7 @@ class Triangles extends Geometry
 		return throw 'override for implementation';
 	}
 	
-	public function updateModelNormals()
+	public function updateModelNormals():Void
 	{
 		normals = new Array<Vec3>();
 		
@@ -68,7 +68,7 @@ class Triangles extends Geometry
 		return null;
 	}
 	
-	public function generateNormals()
+	public function generateNormals():Void
 	{
 		updateModelNormals();
 	}

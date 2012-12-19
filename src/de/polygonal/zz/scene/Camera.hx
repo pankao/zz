@@ -127,14 +127,14 @@ class Camera extends Spatial
 		zoom = 1;
 	}
 	
-	override public function free()
+	override public function free():Void
 	{
 		super.free();
 		frustum = null;
 		_renderer = null;
 	}
 	
-	public function setEye(location:Vec3)
+	public function setEye(location:Vec3):Void
 	{
 		local.setTranslate(location.x, location.y, location.z);
 		
@@ -152,7 +152,7 @@ class Camera extends Spatial
 	/**
 	 * Specifies an orthographic view frustum.
 	 */
-	public function setFrustumOrtho(w:Int, h:Int)
+	public function setFrustumOrtho(w:Int, h:Int):Void
 	{
 		frustum.setOrtho(w, h);
 		if (_renderer != null) _renderer.onFrustumChange();
@@ -226,7 +226,7 @@ class Camera extends Spatial
 	/**
 	 * Do nothing.
 	 */
-	override public function draw(renderer:Renderer, noCull:Bool) {}
+	override public function draw(renderer:Renderer, noCull:Bool):Void {}
 	
 	override function updateWorldBound()
 	{

@@ -61,7 +61,7 @@ class SphereBV extends BoundingVolume
 		_scratchVec32 = new Vec3();
 	}
 	
-	override public function free()
+	override public function free():Void
 	{
 		sphere = null;
 		_c = null;
@@ -80,18 +80,18 @@ class SphereBV extends BoundingVolume
 		return sphere.r;
 	}
 	
-	inline override public function setCenter(c:Vec3)
+	inline override public function setCenter(c:Vec3):Void
 	{
 		_c.x = c.x;
 		_c.y = c.y;
 	}
 	
-	inline override public function setRadius(r:Float)
+	inline override public function setRadius(r:Float):Void
 	{
 		sphere.r = r;
 	}
 	
-	override public function computeFromData(vertices:Array<Vec3>)
+	override public function computeFromData(vertices:Array<Vec3>):Void
 	{
 		var tmp = [];
 		var i = 0;
@@ -104,7 +104,7 @@ class SphereBV extends BoundingVolume
 		MinimumAreaCircle.findExact(tmp, sphere);
 	}
 	
-	override public function growToContain(other:BoundingVolume)
+	override public function growToContain(other:BoundingVolume):Void
 	{
 		sphere.addSphere(other.sphereBV.sphere);
 	}
@@ -114,7 +114,7 @@ class SphereBV extends BoundingVolume
 		return PointInsideSphere.test5(point.x, point.y, sphere.c.x, sphere.c.y, sphere.r);
 	}
 	
-	override public function transformBy(transform:XForm, output:BoundingVolume)
+	override public function transformBy(transform:XForm, output:BoundingVolume):Void
 	{
 		//var c = transform.timesVector(new Vec3(sphere.c.x, sphere.c.y));
 		//var r = sphere.r * world.RSNorm();
@@ -144,7 +144,7 @@ class SphereBV extends BoundingVolume
 		out.sphere.r   = transform.getNorm() * sphere.r;
 	}
 	
-	override public function set(other:BoundingVolume)
+	override public function set(other:BoundingVolume):Void
 	{
 		sphere.set(other.sphereBV.sphere);
 	}

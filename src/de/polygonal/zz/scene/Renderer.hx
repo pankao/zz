@@ -43,10 +43,6 @@ import de.polygonal.zz.scene.Node;
 import de.polygonal.zz.scene.Spatial;
 import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.core.util.Assert;
-import flash.geom.Matrix3D;
-import flash.Lib;
-import flash.Vector;
-import flash.Vector;
 
 using de.polygonal.ds.BitFlags;
 
@@ -146,7 +142,7 @@ class Renderer
 		_deferredObjects = new DA();
 	}
 	
-	public function free()
+	public function free():Void
 	{
 		currScene = null;
 		currNode = null;
@@ -173,7 +169,7 @@ class Renderer
 	/**
 	 * Make this renderer the active one.
 	 */
-	public function activate()
+	public function activate():Void
 	{
 		Renderer.type = getType();
 		
@@ -185,7 +181,7 @@ class Renderer
 		if (_camera != null) onFrameChange();
 	}
 	
-	public function setBackgroundColor(r:Float, g:Float, b:Float, a:Float)
+	public function setBackgroundColor(r:Float, g:Float, b:Float, a:Float):Void
 	{
 		_backgroundColor.x = r;
 		_backgroundColor.y = g;
@@ -193,12 +189,12 @@ class Renderer
 		_backgroundColor.w = a;
 	}
 	
-	public function resize(w:Int, h:Int)
+	public function resize(w:Int, h:Int):Void
 	{
 		onViewPortChange();
 	}
 	
-	public function setGlobalState(state:DA<GlobalState>)
+	public function setGlobalState(state:DA<GlobalState>):Void
 	{
 		if (state == null) return;
 		
@@ -217,12 +213,12 @@ class Renderer
 		}
 	}
 	
-	public function setAlphaState(state:AlphaState) {}
+	public function setAlphaState(state:AlphaState):Void {}
 	
 	//var perspectiveProjectionMatrix:Matrix3D;
 	//var orthoProjectionMatrix:Matrix3D;
 	
-	public function drawScene(scene:Node)
+	public function drawScene(scene:Node):Void
 	{
 		if (scene == null || _camera == null) return;
 		
@@ -328,8 +324,6 @@ class Renderer
 		//implement in subclass.
 		return throw 'override for implementation';
 	}
-	
-	
 	
 	/*function lookAt(lookAt:Vector3D, position:Vector3D):Matrix3D
 	{
@@ -696,7 +690,8 @@ class Renderer
 	}
 	
 	//TODO tmp
-	function makeOrtographicMatrix(left:Float, right:Float, top:Float, bottom:Float, zNear:Float = 0, zFar:Float = 1):Matrix3D
+	#if flash
+	/*function makeOrtographicMatrix(left:Float, right:Float, top:Float, bottom:Float, zNear:Float = 0, zFar:Float = 1):Matrix3D
 	{
 		return new Matrix3D(Vector.ofArray([
 				2 / (right - left), 0, 0,  0,
@@ -704,7 +699,8 @@ class Renderer
 				0,  0, 1 / (zFar - zNear), 0,
 				0, 0, zNear / (zNear - zFar), 1
 			]));
-	}
+	}*/
+	#end
 	
 	public function onFrameChange()
 	{

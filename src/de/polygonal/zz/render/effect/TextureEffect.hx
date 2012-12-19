@@ -63,7 +63,7 @@ class TextureEffect extends Effect
 		crop = null;
 	}
 	
-	override public function draw(renderer:Renderer)
+	override public function draw(renderer:Renderer):Void
 	{
 		renderer.drawTextureEffect(this);
 	}

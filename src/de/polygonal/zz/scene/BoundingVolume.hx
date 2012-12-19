@@ -45,7 +45,7 @@ class BoundingVolume
 		sphereBV = null;
 	}
 	
-	public function free()
+	public function free():Void
 	{
 		sphereBV = null;
 	}
@@ -60,27 +60,27 @@ class BoundingVolume
 		return 0;
 	}
 	
-	public function setCenter(c:Vec3)
+	public function setCenter(c:Vec3):Void
 	{
 	}
 	
-	public function setRadius(r:Float)
+	public function setRadius(r:Float):Void
 	{
 	}
 	
-	public function growToContain(other:BoundingVolume)
+	public function growToContain(other:BoundingVolume):Void
 	{
 	}
 	
-	public function transformBy(transform:XForm, output:BoundingVolume)
+	public function transformBy(transform:XForm, output:BoundingVolume):Void
 	{
 	}
 	
-	public function computeFromData(vertices:Array<Vec3>)
+	public function computeFromData(vertices:Array<Vec3>):Void
 	{
 	}
 	
-	public function set(other:BoundingVolume)
+	public function set(other:BoundingVolume):Void
 	{
 	}
     

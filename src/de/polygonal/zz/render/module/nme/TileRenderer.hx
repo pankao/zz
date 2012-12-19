@@ -91,7 +91,7 @@ class TileRenderer extends Renderer
 	override public function drawSpriteSheetEffect(effect:SpriteSheetEffect):Void
 	{
 		var frame = effect.frame;
-		_currTilesheetFlags = draw(effect.sheet.getCropRect(frame), frame, effect);
+		_currTilesheetFlags = draw(effect.sheet.getCropRectAt(frame), frame, effect);
 		_currTilesheet = getTilesheet(effect);
 		
 		if (!_batchActive) flush();
@@ -226,7 +226,7 @@ class TileRenderer extends Renderer
 			var src = geometry.vertices;
 			var i = 0;
 			var k = src.length;
-			while (i < k) v.push(_toScreen(geometry, src[i++])); //TODO 2d or 3d
+			while (i < k) v.push(toScreen(geometry, src[i++])); //TODO 2d or 3d
 			
 			var indices = geometry.indices;
 			var i = 0;
@@ -236,7 +236,7 @@ class TileRenderer extends Renderer
 				var a = v[indices[i++]];
 				var b = v[indices[i++]];
 				var c = v[indices[i++]];
-				_drawTriangle(a, b, c, 0);
+				drawTriangle(a, b, c, 0);
 			}
 		}
 	}
@@ -343,7 +343,7 @@ class TileRenderer extends Renderer
 				var sheet = effect.__spriteSheetEffect.sheet;
 				for (i in 0...sheet.frameCount)
 				{
-					var rect = sheet.getCropRect(i);
+					var rect = sheet.getCropRectAt(i);
 					tilesheet.addTileRect(new Rectangle(rect.x, rect.y, rect.w, rect.h));
 				}
 			}

@@ -201,7 +201,7 @@ class Spatial implements Visitable
 	/**
 	 * Destroys this object by explicitly nullifying all references for GC'ing used resources.
 	 */
-	public function free()
+	public function free():Void
 	{
 		removeAllGlobalStates();
 		local.free();

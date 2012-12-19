@@ -88,7 +88,7 @@ class Stage3DTexture
 		scaleY = srcH / newH;
 	}
 	
-	public function free()
+	public function free():Void
 	{
 		trace('free Stage3DTexture [' + sourceTexture.key + ']');
 		
@@ -104,7 +104,7 @@ class Stage3DTexture
 		atf = null;
 	}
 	
-	public function upload(context:Context3D)
+	public function upload(context:Context3D):Void
 	{
 		if (handle != null) return;
 		

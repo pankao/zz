@@ -73,19 +73,19 @@ class AGALShader
 		initShaders('2d,' + Stage3DTextureFlag.print(textureFlags));
 	}
 	
-	public function free()
+	public function free():Void
 	{
 		_shaderProgram.dispose();
 		_shaderProgram = null;
 		_context = null;
 	}
 	
-	inline public function bindProgram()
+	inline public function bindProgram():Void
 	{
 		_context.setProgram(_shaderProgram);
 	}
 	
-	inline public function bindTexture(samplerIndex:Int, texture:Texture)
+	inline public function bindTexture(samplerIndex:Int, texture:Texture):Void
 	{
 		_context.setTextureAt(samplerIndex, texture);
 	}

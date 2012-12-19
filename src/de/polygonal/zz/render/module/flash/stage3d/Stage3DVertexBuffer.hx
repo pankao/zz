@@ -126,11 +126,6 @@ class Stage3DVertexBuffer
 		buffer[offset + 3] = data.w;
 	}
 	
-	inline function push(x:Float)
-	{
-		buffer[_size++] = x;
-	}
-	
 	public function allocate(numFloatsPerAttribute:Array<Int>, numVertices:Int):Void
 	{
 		numFloatsPerVertex = 0;
@@ -190,5 +185,10 @@ class Stage3DVertexBuffer
 	public function toString():String
 	{
 		return Sprintf.format("{VertexBuffer: attributes=%s, #vertices=%d}", [_attributes.join(','), Std.int(_size / numFloatsPerVertex)]);
+	}
+	
+	inline function push(x:Float)
+	{
+		buffer[_size++] = x;
 	}
 }

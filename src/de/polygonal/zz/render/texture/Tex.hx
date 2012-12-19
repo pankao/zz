@@ -75,7 +75,7 @@ class Tex extends HashableItem
 		}
 	}
 	
-	public function free()
+	public function free():Void
 	{
 		if (image != null)
 		{
