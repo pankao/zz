@@ -131,7 +131,7 @@ class SpriteSheet
 		return _nameMap.get(index);
 	}
 	
-	function addCropRectAt(index:Int, id:String, crop:Rect, normalize:Bool, pack:Bool)
+	function addCropRectAt(index:Int, id:String, crop:Rect, normalize:Bool)
 	{
 		_indexMap.set(id, index);
 		_nameMap.set(index, id);
@@ -148,13 +148,10 @@ class SpriteSheet
 		_cropList.set(index, crop);
 		_sizeList.set(index, size);
 		
-		if (pack)
-		{
-			crop.x += .5;
-			crop.y += .5;
-			crop.w -= 1.;
-			crop.h -= 1.;
-		}
+		crop.x += .5;
+		crop.y += .5;
+		crop.w -= 1.;
+		crop.h -= 1.;
 		
 		if (normalize)
 		{

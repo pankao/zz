@@ -29,7 +29,6 @@
  */
 package de.polygonal.zz.render.effect;
 
-import de.polygonal.core.math.Vec2;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.texture.Rect;
 import de.polygonal.zz.render.texture.Tex;
@@ -70,45 +69,17 @@ class TextureEffect extends Effect
 	
 	function setCrop():Void
 	{
-		var x:Float = 0, y:Float = 0, w:Float, h:Float;
+		var x = .5;
+		var y = .5;
+		var w = tex.image.w - 1.;
+		var h = tex.image.h - 1.;
 		
 		if (tex.isNormalize)
 		{
-			if (tex.isPowerOfTwo)
-			{
-				/*if (M.isPow2(tex.image.w))
-				{
-					
-				}
-				
-				if (M.isPow2(tex.image.h))
-				{
-					
-				}*/
-				
-				w = (tex.image.w) / (tex.w);
-				h = (tex.image.h) / (tex.h);
-				
-				var tw = (w / tex.image.w);
-				var th = (h / tex.image.h);
-				
-				x = tw/2;
-				y = th/2;
-				w = w - tw;
-				h = h - th;
-			}
-			else
-			{
-				x = 0.;
-				y = 0.;
-				w = 1.;
-				h = 1.;
-			}
-		}
-		else
-		{
-			w = tex.image.w;
-			h = tex.image.h;
+			x /= tex.w;
+			y /= tex.h;
+			w /= tex.w;
+			h /= tex.h;
 		}
 		
 		crop = new Rect(x, y, w, h);

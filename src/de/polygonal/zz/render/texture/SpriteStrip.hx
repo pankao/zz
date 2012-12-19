@@ -59,7 +59,7 @@ class SpriteStrip extends SpriteSheet
 			for (x in 0...cols)
 				addCropRectAt(y * cols + x, x + '' + y,
 					new Rect(x * frameW, y * frameH, frameW, frameH),
-					tex.isNormalize, tex.isPack);
+					tex.isNormalize);
 	}
 	
 	override public function free():Void

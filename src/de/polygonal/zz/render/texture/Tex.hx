@@ -42,7 +42,6 @@ class Tex extends HashableItem
 	 * If true, UV coordinates are normalized to [0,1].
 	 */
 	public var isNormalize(default, null):Bool = true;
-	public var isPack(default, null):Bool = false;
 	
 	/**
 	 * The width of the texture in pixels.<br/>
