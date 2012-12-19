@@ -108,6 +108,7 @@ class RenderSurface
 	public static var root(default, null):flash.display.Sprite = null;
 	#if flash11
 	public static var stage3D:flash.display.Stage3D = null;
+	public static var numDeviceLost = -1;
 	#if flash11_4
 	public static var profile = flash.display3D.Context3DProfile.BASELINE;
 	#end
@@ -321,8 +322,8 @@ class RenderSurface
 	
 	static function onContext3DCreate(_)
 	{
-		stage3D.removeEventListener(flash.events.Event.CONTEXT3D_CREATE, onContext3DCreate);
-		_onCreate();
+		if (++numDeviceLost == 0)
+			_onCreate();
 	}
 	#end
 	

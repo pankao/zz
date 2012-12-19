@@ -59,8 +59,11 @@ class Stage3DIndexBuffer
 	
 	public function free():Void
 	{
-		handle.dispose();
-		handle = null;
+		if (handle != null)
+		{
+			handle.dispose();
+			handle = null;
+		}
 		
 		_buffer = null;
 		_context = null;
@@ -76,7 +79,7 @@ class Stage3DIndexBuffer
 		_buffer[numIndices++] = i;
 	}
 	
-	public function upload(?count = -1):Void
+	public function upload(count = -1):Void
 	{
 		if (count == -1) count = numIndices;
 		

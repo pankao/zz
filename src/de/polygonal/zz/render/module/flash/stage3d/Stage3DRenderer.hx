@@ -82,6 +82,9 @@ class Stage3DRenderer extends Renderer
 	var _textureHandles:IntHashTable<Stage3DTexture>;
 	var _srcBlendFactorLUT:Array<Context3DBlendFactor>;
 	var _dstBlendFactorLUT:Array<Context3DBlendFactor>;
+	var _alphaState:AlphaState;
+	
+	var _numDeviceLost:Int;
 	
 	public function new()
 	{
@@ -90,32 +93,13 @@ class Stage3DRenderer extends Renderer
 		if (!RenderSurface.isHardware())
 			throw 'stage3d not available';
 		
-		context = RenderSurface.stage3D.context3D;
-		context.setCulling(Context3DTriangleFace.NONE);
-		context.setDepthTest(false, Context3DCompareMode.ALWAYS);
+		_numDeviceLost = RenderSurface.numDeviceLost;
 		
-		#if debug
-		trace('driverInfo: ' + context.driverInfo);
-		context.enableErrorChecking = true;
-		#end
+		initContext();
 		
 		setAntiAlias(Stage3DAntiAliasMode.Low);
 		
-		_paintBox = new IntHashTable(256, 256, false, 256);
-		
-		registerBrush(Stage3DBrushRectNull, 0, 0);
-		
-		registerSharedBrush(Stage3DBrushRectSolid, EFF_COLOR | EFF_ALPHA | EFF_COLOR_XFORM, 0);
-		
-		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE                              , DEFAULT_TEXTURE_FLAGS, false);
-		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE | EFF_ALPHA                  , DEFAULT_TEXTURE_FLAGS, false);
-		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE | EFF_COLOR_XFORM            , DEFAULT_TEXTURE_FLAGS, false);
-		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE | EFF_ALPHA | EFF_COLOR_XFORM, DEFAULT_TEXTURE_FLAGS, false);
-		
-		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE                              , DEFAULT_TEXTURE_FLAGS, true);
-		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE | EFF_ALPHA                  , DEFAULT_TEXTURE_FLAGS, true);
-		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE | EFF_COLOR_XFORM            , DEFAULT_TEXTURE_FLAGS, true);
-		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE | EFF_ALPHA | EFF_COLOR_XFORM, DEFAULT_TEXTURE_FLAGS, true);
+		initPaintBox();
 		
 		_srcBlendFactorLUT = 
 		[
@@ -427,8 +411,9 @@ class Stage3DRenderer extends Renderer
 		drawDeferred = save;
 	}
 	
-	override public function setAlphaState(state:AlphaState)
+	override public function setAlphaState(state:AlphaState):Void
 	{
+		_alphaState = state;
 		context.setBlendFactors
 		(
 			_srcBlendFactorLUT[Type.enumIndex(state.src)],
@@ -475,6 +460,13 @@ class Stage3DRenderer extends Renderer
 	
 	override function onBeginScene()
 	{
+		if (RenderSurface.numDeviceLost != _numDeviceLost)
+		{
+			trace('device lost!');
+			_numDeviceLost = RenderSurface.numDeviceLost;
+			handleDeviceLost();
+		}
+		
 		context.clear(_backgroundColor.r, _backgroundColor.g, _backgroundColor.b, _backgroundColor.a);
 		numCallsToDrawTriangle = 0;
 	}
@@ -482,6 +474,64 @@ class Stage3DRenderer extends Renderer
 	override function onEndScene()
 	{
 		context.present();
+	}
+	
+	function handleDeviceLost()
+	{
+		initContext();
+		configureBackBuffer();
+		setAlphaState(_alphaState);
+		
+		//upload textures to new context
+		for (tex in _textureLookup)
+		{
+			if (_textureHandles.hasKey(tex.key))
+				_textureHandles.get(tex.key).free();
+		}
+		_textureHandles.clear(true);
+		for (tex in _textureLookup)
+			initStage3DTexture(tex);
+		
+		//init index & vertex buffers, shaders and programs
+		initPaintBox();
+	}
+	
+	function initContext()
+	{
+		context = RenderSurface.stage3D.context3D;
+		context.setCulling(Context3DTriangleFace.NONE);
+		context.setDepthTest(false, Context3DCompareMode.ALWAYS);
+		
+		#if debug
+		trace('driverInfo: ' + context.driverInfo);
+		context.enableErrorChecking = true;
+		#end
+	}
+	
+	function initPaintBox()
+	{
+		if (_paintBox != null)
+		{
+			//some brushes are shared
+			for (brush in _paintBox.toValSet()) brush.free();
+			_paintBox.clear(true);
+		}
+		
+		_paintBox = new IntHashTable(256, 256, false, 256);
+		
+		registerBrush(Stage3DBrushRectNull, 0, 0);
+		
+		registerSharedBrush(Stage3DBrushRectSolid, EFF_COLOR | EFF_ALPHA | EFF_COLOR_XFORM, 0);
+		
+		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE                              , DEFAULT_TEXTURE_FLAGS, false);
+		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE | EFF_ALPHA                  , DEFAULT_TEXTURE_FLAGS, false);
+		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE | EFF_COLOR_XFORM            , DEFAULT_TEXTURE_FLAGS, false);
+		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE | EFF_ALPHA | EFF_COLOR_XFORM, DEFAULT_TEXTURE_FLAGS, false);
+		
+		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE                              , DEFAULT_TEXTURE_FLAGS, true);
+		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE | EFF_ALPHA                  , DEFAULT_TEXTURE_FLAGS, true);
+		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE | EFF_COLOR_XFORM            , DEFAULT_TEXTURE_FLAGS, true);
+		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE | EFF_ALPHA | EFF_COLOR_XFORM, DEFAULT_TEXTURE_FLAGS, true);
 	}
 	
 	function configureBackBuffer()

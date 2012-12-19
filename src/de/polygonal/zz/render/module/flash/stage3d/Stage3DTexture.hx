@@ -90,9 +90,11 @@ class Stage3DTexture
 	
 	public function free()
 	{
+		trace('free Stage3DTexture [' + sourceTexture.key + ']');
+		
 		if (handle != null)
 		{
-			handle.dispose();
+			try { handle.dispose(); } catch (error:Dynamic) {}
 			handle = null;
 		}
 		
