@@ -49,9 +49,6 @@ class Stage3DTexture
 	
 	public var atf:ByteArray;
 	
-	public var scaleX:Float;
-	public var scaleY:Float;
-	
 	public var flags:Int;
 	
 	public function new(tex:Tex, flags = 0)
@@ -83,9 +80,6 @@ class Stage3DTexture
 		var data = new BitmapData(newW, newH, true, 0);
 		data.copyPixels(srcImage.data, srcImage.data.rect, new Point());
 		image = new Image(data, newW, newH);
-		
-		scaleX = srcW / newW;
-		scaleY = srcH / newH;
 	}
 	
 	public function free():Void
@@ -108,7 +102,7 @@ class Stage3DTexture
 	{
 		if (handle != null) return;
 		
-		handle = context.createTexture(image.w, image.h, Context3DTextureFormat.BGRA, image == null);
+		handle = context.createTexture(image.w, image.h, Context3DTextureFormat.BGRA, false, 0);
 		
 		if (atf != null)
 		{
