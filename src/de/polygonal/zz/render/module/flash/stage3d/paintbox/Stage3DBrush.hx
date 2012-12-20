@@ -57,8 +57,6 @@ class Stage3DBrush
 	var _scratchVector:Vector<Float>;
 	var _scratchVec3:Vec3;
 	
-	var _prevTexture:Stage3DTexture;
-	
 	public function new(context:Context3D, effectFlags:Int, textureFlags:Int)
 	{
 		_context = context;
@@ -86,22 +84,21 @@ class Stage3DBrush
 	
 	public function draw(renderer:Stage3DRenderer):Void
 	{
-		if (renderer.currBrush != this) _shader.bindProgram();
+		//bind vertex buffer & program
+		var t = renderer.currBrush;
+		if (t != this)
+		{
+			if (t != null) t._vb.unbind();
+			_vb.bind();
+			_shader.bindProgram();
+		}
 		renderer.currBrush = this;
 		
-		var t = renderer.currStage3DTexture;
-		if (t != _prevTexture) _shader.bindTexture(0, t.handle);
-		_prevTexture = t;
-	}
-	
-	public function bindVertexBuffer():Void
-	{
-		_vb.bind();
-	}
-	
-	inline public function unbindVertexBuffer():Void
-	{
-		_vb.unbind();
+		//bind texture
+		var t0 = renderer.prevStage3DTexture;
+		var t1 = renderer.currStage3DTexture;
+		if (t0 != t1) _shader.bindTexture(0, t1 == null ? null : t1.handle);
+		renderer.prevStage3DTexture = t1;
 	}
 	
 	inline public function add(x:Geometry):Void
@@ -117,11 +114,6 @@ class Stage3DBrush
 	inline public function isEmpty():Bool
 	{
 		return _batch.isEmpty();
-	}
-	
-	inline function clear()
-	{
-		_batch.clear();
 	}
 	
 	//TODO add UVs and indices

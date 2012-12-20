@@ -36,7 +36,7 @@ import flash.display3D.Context3D;
 
 class Stage3DBrushRect extends Stage3DBrush
 {
-	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
+	function new(context:Context3D, effectMask:Int, textureFlags:Int)
 	{
 		super(context, effectMask, textureFlags);
 	}

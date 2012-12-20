@@ -63,6 +63,6 @@ class Stage3DBrushRectNull extends Stage3DBrushRect
 			renderer.numCallsToDrawTriangle++;
 		}
 		
-		clear();
+		_batch.clear();
 	}
 }

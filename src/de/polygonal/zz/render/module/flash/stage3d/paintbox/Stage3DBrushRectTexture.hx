@@ -93,6 +93,6 @@ class Stage3DBrushRectTexture extends Stage3DBrushRect
 			renderer.numCallsToDrawTriangle++;
 		}
 		
-		clear();
+		_batch.clear();
 	}
 }

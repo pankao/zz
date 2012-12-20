@@ -29,13 +29,8 @@
  */
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
-import de.polygonal.core.math.Vec3;
-import de.polygonal.gl.color.RGBA;
 import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColorShader;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DIndexBuffer;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DVertexBuffer;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
-import de.polygonal.zz.scene.Geometry;
 import flash.display3D.Context3D;
 
 using de.polygonal.gl.color.RGBA;
@@ -93,12 +88,11 @@ class Stage3DBrushRectSolid extends Stage3DBrushRect
 				constantRegisters[3] = e.alpha;
 			}
 			
-			_context.setTextureAt(0, null);
 			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.FRAGMENT, 0, constantRegisters, 1);
 			_context.drawTriangles(indexBuffer, 0, 2);
 			renderer.numCallsToDrawTriangle++;
 		}
 		
-		clear();
+		_batch.clear();
 	}
 }

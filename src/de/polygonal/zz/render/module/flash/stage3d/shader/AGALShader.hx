@@ -90,6 +90,11 @@ class AGALShader
 		_context.setTextureAt(samplerIndex, texture);
 	}
 	
+	inline public function unbindTexture(samplerIndex:Int):Void
+	{
+		_context.setTextureAt(samplerIndex, null);
+	}
+	
 	inline public function supportsAlpha():Bool
 	{
 		return _effectMask & EFF_ALPHA > 0;

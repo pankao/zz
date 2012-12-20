@@ -30,12 +30,9 @@
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
 import de.polygonal.core.math.Vec3;
-import de.polygonal.ds.DA;
 import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureBatchConstantShader;
 import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureBatchVertexShader;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
-import de.polygonal.zz.scene.Geometry;
-import de.polygonal.zz.scene.Spatial;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DProgramType;
 
@@ -59,8 +56,6 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 	var _uv3:Vec3;
 	var _uvs:Array<Vec3>;
 	
-	var _bindVertexBuffer:Bool;
-	
 	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
 	{
 		super(context, effectMask, textureFlags);
@@ -75,7 +70,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		_uv3 = new Vec3();
 		_uvs = [_uv0, _uv1, _uv2, _uv3];
 		
-		if (_strategy == 0)
+		if (_strategy == 0) //"vertex batching"
 		{
 			_shader = Type.createInstance(AGALTextureBatchVertexShader, [_context, effectMask, textureFlags]);
 			
@@ -92,7 +87,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			_vb.allocate(numFloatsPerAttribute, _batchCapacity * 4);
 		}
 		else
-		if (_strategy == 1)
+		if (_strategy == 1) //"constant batching"
 		{
 			_shader = Type.createInstance(AGALTextureBatchConstantShader, [_context, effectMask, textureFlags]);
 			
@@ -158,11 +153,6 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		_uvs = null;
 	}
 	
-	override public function bindVertexBuffer():Void
-	{
-		_bindVertexBuffer = true;
-	}
-	
 	override public function draw(renderer:Stage3DRenderer):Void
 	{
 		super.draw(renderer);
@@ -179,12 +169,8 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			
 			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 2);
 			
-			if (_bindVertexBuffer) _vb.bind();
-			
 			_context.drawTriangles(_ib.handle, 0, _batch.size() << 1);
 			renderer.numCallsToDrawTriangle++;
-			
-			_batch.clear();
 		}
 		else
 		if (_strategy == 1) //"constant batching"
@@ -211,10 +197,6 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			var size = batch.size();
 			
 			var supportsColorXForm = _shader.supportsColorXForm();
-			
-			var texture = renderer.currTexture;
-			
-			if (_bindVertexBuffer) _vb.bind();
 			
 			var geometry, effect, mvp, crop;
 			var offset;
@@ -317,11 +299,9 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 				_context.drawTriangles(_ib.handle, 0, remainder * 2);
 				renderer.numCallsToDrawTriangle++;
 			}
-			
-			_batch.clear();
 		}
 		
-		clear();
+		_batch.clear();
 	}
 	
 	function updateVertexBuffer()

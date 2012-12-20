@@ -151,7 +151,7 @@ class Stage3DVertexBuffer
 	
 	public function upload(max = Limits.INT16_MAX):Void
 	{
-		var numVertices = Std.int(buffer.length / numFloatsPerVertex);
+		var numVertices:Int = cast buffer.length / numFloatsPerVertex;
 		if (numVertices > max) numVertices = max;
 		handle.uploadFromVector(buffer, 0, numVertices);
 		

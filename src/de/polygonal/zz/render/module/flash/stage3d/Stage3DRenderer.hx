@@ -72,6 +72,7 @@ class Stage3DRenderer extends Renderer
 	public var context(default, null):Context3D;
 	public var numCallsToDrawTriangle:Int;
 	
+	public var prevStage3DTexture:Stage3DTexture;
 	public var currStage3DTexture:Stage3DTexture;
 	public var currBrush:Stage3DBrush;
 	
@@ -222,11 +223,10 @@ class Stage3DRenderer extends Renderer
 	
 	override public function drawEffect(effect:Effect):Void
 	{
+		currStage3DTexture = null;
 		var brush = getBrush(effect.flags, 0, false);
-		brush.bindVertexBuffer();
 		brush.add(currGeometry);
 		brush.draw(this);
-		brush.unbindVertexBuffer();
 	}
 	
 	override public function drawTextureEffect(effect:TextureEffect):Void
@@ -237,10 +237,8 @@ class Stage3DRenderer extends Renderer
 		currStage3DTexture = initStage3DTexture(currTexture);
 		
 		var brush = getBrush(effect.flags, currStage3DTexture.flags, false);
-		brush.bindVertexBuffer();
 		brush.add(currGeometry);
 		brush.draw(this);
-		brush.unbindVertexBuffer();
 	}
 	
 	override public function drawSpriteSheetEffect(effect:SpriteSheetEffect):Void
@@ -278,10 +276,8 @@ class Stage3DRenderer extends Renderer
 			currStage3DTexture = initStage3DTexture(currTexture);
 			
 			var brush = getBrush(effect.flags, currStage3DTexture.flags, false);
-			brush.bindVertexBuffer();
 			brush.add(currGeometry);
 			brush.draw(this);
-			brush.unbindVertexBuffer();
 		}
 	}
 	
@@ -355,8 +351,6 @@ class Stage3DRenderer extends Renderer
 				currStage3DTexture = initStage3DTexture(currTexture);
 				prevBrush = null;
 				currBrush = getBrush(effectFlags, currStage3DTexture.flags, true);
-				currBrush.bindVertexBuffer();
-				
 				currBrush.add(o.__geometry);
 				continue;
 			}
@@ -367,15 +361,6 @@ class Stage3DRenderer extends Renderer
 			
 			if (effectsChanged || textureChanged || batchExhausted)
 			{
-				//prevBrush is initially null;
-				//so this binds the vertex buffer for the first time
-				if (prevBrush != currBrush)
-				{
-					if (prevBrush != null)
-						prevBrush.unbindVertexBuffer();
-					currBrush.bindVertexBuffer();
-				}
-				
 				//draw batched geometry
 				currBrush.draw(this);
 				numBatchCalls++;
@@ -401,7 +386,7 @@ class Stage3DRenderer extends Renderer
 		//draw remainder
 		if (!currBrush.isEmpty())
 		{
-			currBrush.unbindVertexBuffer();
+			//currBrush.unbindVertexBuffer();
 			currBrush.draw(this);
 			numBatchCalls++;
 		}
@@ -448,10 +433,8 @@ class Stage3DRenderer extends Renderer
 				e &= ~EFF_TEXTURE;
 			
 			var brush = getBrush(e, textureFlags, false);
-			brush.bindVertexBuffer();
 			brush.add(currGeometry);
 			brush.draw(this);
-			brush.unbindVertexBuffer();
 		}
 		else
 		if (currGeometry.type == GeometryType.TRIMESH)
