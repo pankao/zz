@@ -165,6 +165,8 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 	
 	override public function draw(renderer:Stage3DRenderer):Void
 	{
+		super.draw(renderer);
+		
 		var constantRegisters = _scratchVector;
 		
 		if (_strategy == 0) //"vertex batching"
@@ -176,8 +178,6 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			vp.toVector(constantRegisters);
 			
 			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 2);
-			
-			_shader.bindProgram();
 			
 			_shader.bindTexture(0, renderer.currStage3DTexture.handle);
 			
@@ -216,7 +216,6 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			
 			var texture = renderer.currTexture;
 			_shader.bindTexture(0, renderer.currStage3DTexture.handle);
-			_shader.bindProgram();
 			
 			if (_bindVertexBuffer) _vb.bind();
 			
@@ -325,7 +324,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			_batch.clear();
 		}
 		
-		super.draw(renderer);
+		clear();
 	}
 	
 	function updateVertexBuffer()

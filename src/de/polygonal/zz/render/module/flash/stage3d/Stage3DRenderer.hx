@@ -71,7 +71,9 @@ class Stage3DRenderer extends Renderer
 	
 	public var context(default, null):Context3D;
 	public var numCallsToDrawTriangle:Int;
+	
 	public var currStage3DTexture:Stage3DTexture;
+	public var currBrush:Stage3DBrush;
 	
 	var _antiAliasMode:Int;
 	var _enableDepthBufferAndStencil:Bool;

@@ -56,7 +56,7 @@ class Stage3DBrushRectSolid extends Stage3DBrushRect
 	
 	override public function draw(renderer:Stage3DRenderer):Void
 	{
-		_shader.bindProgram();
+		super.draw(renderer);
 		
 		var constantRegisters = _scratchVector;
 		var indexBuffer = _ib.handle;
@@ -99,6 +99,6 @@ class Stage3DBrushRectSolid extends Stage3DBrushRect
 			renderer.numCallsToDrawTriangle++;
 		}
 		
-		super.draw(renderer);
+		clear();
 	}
 }

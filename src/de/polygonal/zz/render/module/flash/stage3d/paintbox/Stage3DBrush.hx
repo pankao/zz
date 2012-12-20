@@ -38,7 +38,6 @@ import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.module.flash.stage3d.shader.AGALShader;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DTextureFlag;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
 import de.polygonal.zz.scene.Geometry;
 import de.polygonal.zz.scene.GeometryType;
 import de.polygonal.zz.scene.TriMesh;
@@ -82,6 +81,17 @@ class Stage3DBrush
 		_shader.free();
 	}
 	
+	public function draw(renderer:Stage3DRenderer):Void
+	{
+		if (renderer.currBrush != this)
+		{
+			_shader.bindProgram();
+			trace('bind');
+		}
+		
+		renderer.currBrush = this;
+	}
+	
 	public function bindVertexBuffer():Void
 	{
 		_vb.bind();
@@ -107,7 +117,7 @@ class Stage3DBrush
 		return _batch.isEmpty();
 	}
 	
-	public function draw(renderer:Stage3DRenderer):Void
+	inline function clear()
 	{
 		_batch.clear();
 	}

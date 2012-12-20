@@ -45,14 +45,14 @@ using de.polygonal.ds.Bits;
 class AGALShader
 {
 	var _context:Context3D;
-	var _shaderProgram:Program3D;
+	var _program:Program3D;
 	var _effectMask:Int;
 	
 	function new(context:Context3D, effectMask:Int, textureFlags:Int)
 	{
 		_context = context;
 		_effectMask = effectMask;
-		_shaderProgram = null;
+		_program = null;
 		
 		if (textureFlags == 0)
 		{
@@ -75,14 +75,14 @@ class AGALShader
 	
 	public function free():Void
 	{
-		_shaderProgram.dispose();
-		_shaderProgram = null;
+		_program.dispose();
+		_program = null;
 		_context = null;
 	}
 	
 	inline public function bindProgram():Void
 	{
-		_context.setProgram(_shaderProgram);
+		_context.setProgram(_program);
 	}
 	
 	inline public function bindTexture(samplerIndex:Int, texture:Texture):Void
@@ -112,8 +112,8 @@ class AGALShader
 			fragmentSource = StringTools.replace(fragmentSource, 'TEX_FLAGS', texFlags);
 		fragmentShaderAssembler.assemble(Context3DProgramType.FRAGMENT, fragmentSource);
 		
-		_shaderProgram = _context.createProgram();
-		_shaderProgram.upload(vertexShaderAssembler.agalcode, fragmentShaderAssembler.agalcode);
+		_program = _context.createProgram();
+		_program.upload(vertexShaderAssembler.agalcode, fragmentShaderAssembler.agalcode);
 	}
 	
 	function getVertexShader():String
