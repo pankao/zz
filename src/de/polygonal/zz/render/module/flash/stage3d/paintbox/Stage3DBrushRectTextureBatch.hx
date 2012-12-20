@@ -179,8 +179,6 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			
 			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 2);
 			
-			_shader.bindTexture(0, renderer.currStage3DTexture.handle);
-			
 			if (_bindVertexBuffer) _vb.bind();
 			
 			_context.drawTriangles(_ib.handle, 0, _batch.size() << 1);
@@ -215,7 +213,6 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			var supportsColorXForm = _shader.supportsColorXForm();
 			
 			var texture = renderer.currTexture;
-			_shader.bindTexture(0, renderer.currStage3DTexture.handle);
 			
 			if (_bindVertexBuffer) _vb.bind();
 			

@@ -54,8 +54,6 @@ class Stage3DBrushRectTexture extends Stage3DBrushRect
 		var constantRegisters = _scratchVector;
 		var indexBuffer = _ib.handle;
 		
-		_shader.bindTexture(0, renderer.currStage3DTexture.handle);
-		
 		for (i in 0..._batch.size())
 		{
 			var geometry = _batch.get(i);

@@ -36,6 +36,7 @@ import de.polygonal.ds.BitVector;
 import de.polygonal.ds.DA;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.module.flash.stage3d.shader.AGALShader;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3DTexture;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DTextureFlag;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
 import de.polygonal.zz.scene.Geometry;
@@ -55,6 +56,8 @@ class Stage3DBrush
 	var _batchCapacity:Int;
 	var _scratchVector:Vector<Float>;
 	var _scratchVec3:Vec3;
+	
+	var _prevTexture:Stage3DTexture;
 	
 	public function new(context:Context3D, effectFlags:Int, textureFlags:Int)
 	{
@@ -83,13 +86,12 @@ class Stage3DBrush
 	
 	public function draw(renderer:Stage3DRenderer):Void
 	{
-		if (renderer.currBrush != this)
-		{
-			_shader.bindProgram();
-			trace('bind');
-		}
-		
+		if (renderer.currBrush != this) _shader.bindProgram();
 		renderer.currBrush = this;
+		
+		var t = renderer.currStage3DTexture;
+		if (t != _prevTexture) _shader.bindTexture(0, t.handle);
+		_prevTexture = t;
 	}
 	
 	public function bindVertexBuffer():Void
