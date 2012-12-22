@@ -29,13 +29,13 @@
  */
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColorShader;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColor;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
 import flash.display3D.Context3D;
 
 using de.polygonal.gl.color.RGBA;
 
-class Stage3DBrushRectSolid extends Stage3DBrushRect
+class Stage3DBrushRectSolidColor extends Stage3DBrushRect
 {
 	inline static var INV_FF = .00392156;
 	
@@ -46,7 +46,7 @@ class Stage3DBrushRectSolid extends Stage3DBrushRect
 		initVertexBuffer([2]);
 		initIndexBuffer(1);
 		
-		_shader = new AGALSolidColorShader(_context, effectMask);
+		_shader = new AGALSolidColor(_context, effectMask);
 	}
 	
 	override public function draw(renderer:Stage3DRenderer):Void

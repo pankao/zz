@@ -31,7 +31,7 @@ package de.polygonal.zz.render.module.flash.stage3d.shader;
 
 import flash.display3D.Context3D;
 
-class AGALSolidColorBatchConstantShader extends AGALSolidColorShader
+class AGALSolidColorVertexBatch extends AGALSolidColor
 {
 	public function new(context:Context3D, vertexAttributes:Int)
 	{
@@ -46,10 +46,11 @@ class AGALSolidColorBatchConstantShader extends AGALSolidColorShader
 		//| -   -   -   - |
 		
 		var s = '';
-		s += 'dp4 op.x, va0, vc[va1.x] \n';		//vertex * clipspace row1
-		s += 'dp4 op.y, va0, vc[va1.y] \n';		//vertex * clipspace row2
-		s += 'mov op.zw, vc[va1.x].z \n';		//z = 1, w = 1
-		s += 'mov v0 vc[va1.z] \n';
+		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clipspace row1
+		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clipspace row2
+		s += 'mov op.zw, vc0.z \n';				//z = 1, w = 1
+		s += 'mov v0, va1 \n';					//copy color
+		
 		return s;
 	}
 	

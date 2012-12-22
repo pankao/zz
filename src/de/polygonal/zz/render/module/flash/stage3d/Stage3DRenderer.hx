@@ -42,7 +42,7 @@ import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
 import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrush;
 import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectNull;
-import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectSolid;
+import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectSolidColor;
 import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectSolidColorBatch;
 import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectTexture;
 import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectTextureBatch;
@@ -514,7 +514,7 @@ class Stage3DRenderer extends Renderer
 		
 		registerBrush(Stage3DBrushRectNull, 0, 0);
 		
-		registerSharedBrush(Stage3DBrushRectSolid          , EFF_COLOR | EFF_ALPHA | EFF_COLOR_XFORM, 0, false);
+		registerSharedBrush(Stage3DBrushRectSolidColor          , EFF_COLOR | EFF_ALPHA | EFF_COLOR_XFORM, 0, false);
 		registerSharedBrush(Stage3DBrushRectSolidColorBatch, EFF_COLOR | EFF_ALPHA | EFF_COLOR_XFORM, 0, true);
 		
 		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE                              , DEFAULT_TEXTURE_FLAGS, false);

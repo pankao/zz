@@ -31,31 +31,29 @@ package de.polygonal.zz.render.module.flash.stage3d.shader;
 
 import flash.display3D.Context3D;
 
-class AGALSolidColorBatchVertexShader extends AGALSolidColorShader
+class AGALSolidColor extends AGALShader
 {
-	public function new(context:Context3D, vertexAttributes:Int)
+	public function new(context:Context3D, effectMask:Int)
 	{
-		super(context, vertexAttributes);
+		super(context, effectMask, 0);
 	}
 	
 	override function getVertexShader():String
 	{
-		//|r11 r12  1   tx| vc0
-		//|r21 r22  -   ty| vc1
-		//| r   g   b   a | vc2
-		//| -   -   -   - |
+		//|r11 r12 1 tx| vc0
+		//|r21 r22 - ty| vc1
+		//| -   -  - - |
+		//| -   -  - - |
 		
 		var s = '';
-		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clipspace row1
-		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clipspace row2
+		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clip space row1
+		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clip space row2
 		s += 'mov op.zw, vc0.z \n';				//z = 1, w = 1
-		s += 'mov v0, va1 \n';					//copy color
-		
 		return s;
 	}
 	
 	override function getFragmentShader():String
 	{
-		return 'mov oc, v0 \n';
+		return 'mov oc, fc0 \n';
 	}
 }

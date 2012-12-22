@@ -29,7 +29,7 @@
  */
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALNullShader;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AGALNull;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
 import flash.display3D.Context3D;
 
@@ -42,7 +42,7 @@ class Stage3DBrushRectNull extends Stage3DBrushRect
 		initVertexBuffer([2]);
 		initIndexBuffer(1);
 		
-		_shader = new AGALNullShader(_context, effectMask);
+		_shader = new AGALNull(_context, effectMask);
 	}
 	
 	override public function draw(renderer:Stage3DRenderer):Void

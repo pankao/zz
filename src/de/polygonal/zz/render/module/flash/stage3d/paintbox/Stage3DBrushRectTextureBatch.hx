@@ -30,8 +30,8 @@
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
 import de.polygonal.core.math.Vec3;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureBatchConstantShader;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureBatchVertexShader;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureConstantBatch;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureVertexBatch;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DProgramType;
@@ -72,7 +72,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		
 		if (_strategy == Stage3DRenderer.VERTEX_BATCH)
 		{
-			_shader = new AGALTextureBatchVertexShader(_context, effectMask, textureFlags);
+			_shader = new AGALTextureVertexBatch(_context, effectMask, textureFlags);
 			
 			var numFloatsPerAttribute = [2, 2];
 			
@@ -89,7 +89,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		else
 		if (_strategy == Stage3DRenderer.CONSTANT_BATCH)
 		{
-			_shader = new AGALTextureBatchConstantShader(_context, effectMask, textureFlags);
+			_shader = new AGALTextureConstantBatch(_context, effectMask, textureFlags);
 			
 			_numSharedRegisters = 0;
 			_numRegistersPerQuad = _shader.supportsColorXForm() ? 5 : 3;

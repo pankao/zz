@@ -31,7 +31,9 @@ package de.polygonal.zz.render.module.flash.stage3d.shader;
 
 import flash.display3D.Context3D;
 
-class AGALTextureBatchConstantShader extends AGALTextureShader
+using de.polygonal.ds.Bits;
+
+class AGALTextureVertexBatch extends AGALTextureShader
 {
 	public function new(context:Context3D, vertexAttributes:Int, textureFlags:Int)
 	{
@@ -41,26 +43,23 @@ class AGALTextureBatchConstantShader extends AGALTextureShader
 	override function getVertexShader():String
 	{
 		//|r11 r12  1   tx| vc0
-		//|r21 r22  a   ty| vc1
-		//|uvw uvh uvx uvy| vc2
+		//|r21 r22  -   ty| vc1
+		//| -   -   -   - |
 		//| -   -   -   - |
 		
 		var s = '';
-		s += 'dp4 op.x, va0, vc[va1.x] \n';		//vertex * clipspace row1
-		s += 'dp4 op.y, va0, vc[va1.y] \n';		//vertex * clipspace row2
-		s += 'mov op.zw, vc[va1.x].z \n';		//z = 1, w = 1
-		
-		s += 'mul vt0 va0 vc[va1.z].xy \n';		//scale uv
-		s += 'add vt0 vt0 vc[va1.z].zw \n';		//offset uv
-		s += 'mov v0, vt0 \n';					//copy uv
+		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clipspace row1
+		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clipspace row2
+		s += 'mov op.zw, vc0.z \n';				//z = 1, w = 1
+		s += 'mov v0, va1 \n';					//copy uv
 		
 		if (supportsAlpha())
-			s += 'mov v1, vc[va1.y].z \n'; 		//copy alpha
+			s += 'mov v1, va2 \n';				//copy alpha
 		
 		if (supportsColorXForm())
 		{
-			s += 'mov v1, vc[va2.x] \n'; 		//copy color multiplier
-			s += 'mov v2, vc[va2.y] \n'; 		//copy color offset
+			s += 'mov v1, va2 \n';				//copy color multiplier
+			s += 'mov v2, va3 \n';				//copy color offset
 		}
 		
 		return s;
@@ -72,12 +71,12 @@ class AGALTextureBatchConstantShader extends AGALTextureShader
 		s += 'tex ft0, v0, fs0 <TEX_FLAGS> \n';	//sample texture from uv
 		
 		if (supportsAlpha())
-			s += 'mul ft0.w, v1, ft0 \n';		//* alpha
+			s += 'mul ft0.w, v1.x, ft0 \n';		//* alpha
 		
 		if (supportsColorXForm())
 		{
-			s += 'mul ft0, v1, ft0 \n';		//* color multiplier
-			s += 'add ft0, v2, ft0 \n';		//+ color offset
+			s += 'mul ft0, ft0, v1 \n';			//* color multiplier
+			s += 'add ft0, ft0, v2 \n';			//+ color offset
 		}
 		
 		s += 'mov oc, ft0 \n';

@@ -30,11 +30,10 @@
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
 import de.polygonal.core.math.Vec3;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColorBatchConstantShader;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColorBatchVertexShader;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColorBatchVertexShader;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureBatchConstantShader;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureBatchVertexShader;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColorConstantBatch;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColorVertexBatch;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColorVertexBatch;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureConstantBatch;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DProgramType;
@@ -64,7 +63,7 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 		
 		if (_strategy == Stage3DRenderer.VERTEX_BATCH)
 		{
-			_shader = new AGALSolidColorBatchVertexShader(_context, effectMask);
+			_shader = new AGALSolidColorVertexBatch(_context, effectMask);
 			
 			var numFloatsPerAttribute = [2, 4];
 			_vb = new Stage3DVertexBuffer(_context);
@@ -73,7 +72,7 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 		else
 		if (_strategy == Stage3DRenderer.CONSTANT_BATCH)
 		{
-			_shader = new AGALSolidColorBatchConstantShader(_context, effectMask);
+			_shader = new AGALSolidColorConstantBatch(_context, effectMask);
 			
 			_numSharedRegisters = 0;
 			_numRegistersPerQuad = 3;
