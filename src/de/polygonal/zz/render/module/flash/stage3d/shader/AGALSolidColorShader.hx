@@ -42,7 +42,7 @@ class AGALSolidColorShader extends AGALShader
 	{
 		//|r11 r12 1 tx| vc0
 		//|r21 r22 - ty| vc1
-		//| -   -  - - | vc2
+		//| -   -  - - |
 		//| -   -  - - |
 		
 		var s = '';

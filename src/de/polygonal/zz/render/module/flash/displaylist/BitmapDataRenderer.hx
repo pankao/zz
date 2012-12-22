@@ -125,7 +125,7 @@ class BitmapDataRenderer extends Renderer
 			if (effect.alpha == 1)
 				(0xff << 24) | effect.color;
 			else
-				(Std.int(effect.alpha * 0xff) << 24) | effect.color;
+				cast(effect.alpha * 0xff, Int) << 24) | effect.color;
 			
 			if (effect.flags & EFF_COLOR_XFORM > 0)
 				color = effect.colorXForm.transformRGBA(color);
@@ -167,7 +167,7 @@ class BitmapDataRenderer extends Renderer
 			_scratchPoint.x = 0;
 			_scratchPoint.y = 0;
 			
-			var bmd = new BitmapData(Std.int(uv.w), Std.int(uv.h), true, 0);
+			var bmd = new BitmapData(cast uv.w, cast uv.h, true, 0);
 			bmd.copyPixels(tex.image.data, _scratchRect, _scratchPoint);
 			
 			tile = new Tile();
@@ -220,7 +220,7 @@ class BitmapDataRenderer extends Renderer
 			_scratchPoint.x = 0;
 			_scratchPoint.y = 0;
 			
-			var bmd = new BitmapData(Std.int(uv.w), Std.int(uv.h), true, 0);
+			var bmd = new BitmapData(cast uv.w, cast uv.h, true, 0);
 			bmd.copyPixels(tex.image.data, _scratchRect, _scratchPoint);
 			
 			tile = new Tile();

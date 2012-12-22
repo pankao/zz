@@ -70,9 +70,9 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		_uv3 = new Vec3();
 		_uvs = [_uv0, _uv1, _uv2, _uv3];
 		
-		if (_strategy == 0) //"vertex batching"
+		if (_strategy == Stage3DRenderer.VERTEX_BATCH)
 		{
-			_shader = Type.createInstance(AGALTextureBatchVertexShader, [_context, effectMask, textureFlags]);
+			_shader = new AGALTextureBatchVertexShader(_context, effectMask, textureFlags);
 			
 			var numFloatsPerAttribute = [2, 2];
 			
@@ -87,9 +87,9 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			_vb.allocate(numFloatsPerAttribute, _batchCapacity * 4);
 		}
 		else
-		if (_strategy == 1) //"constant batching"
+		if (_strategy == Stage3DRenderer.CONSTANT_BATCH)
 		{
-			_shader = Type.createInstance(AGALTextureBatchConstantShader, [_context, effectMask, textureFlags]);
+			_shader = new AGALTextureBatchConstantShader(_context, effectMask, textureFlags);
 			
 			_numSharedRegisters = 0;
 			_numRegistersPerQuad = _shader.supportsColorXForm() ? 5 : 3;
@@ -97,7 +97,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			_scratchVector.length = MAX_SUPPORTED_REGISTERS * NUM_FLOATS_PER_REGISTER;
 			_scratchVector.fixed = true;
 			
-			var maxBatchSize = Std.int((MAX_SUPPORTED_REGISTERS - _numSharedRegisters) / _numRegistersPerQuad);
+			var maxBatchSize:Int = cast ((MAX_SUPPORTED_REGISTERS - _numSharedRegisters) / _numRegistersPerQuad);
 			if (_batchCapacity > maxBatchSize) _batchCapacity = maxBatchSize;
 			
 			_vb = new Stage3DVertexBuffer(_context);
@@ -175,19 +175,20 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		else
 		if (_strategy == 1) //"constant batching"
 		{
+			var geometry;
 			var changed = false;
 			var stride = _vb.numFloatsPerVertex;
 			for (i in 0..._batch.size())
 			{
-				var g = _batch.get(i);
-				if (g.hasModelChanged())
+				geometry = _batch.get(i);
+				if (geometry.hasModelChanged())
 				{
 					changed = true;
 					var address = (i << 2) * stride;
-					_vb.setFloat2(address, g.vertices[0]); address += stride;
-					_vb.setFloat2(address, g.vertices[1]); address += stride;
-					_vb.setFloat2(address, g.vertices[2]); address += stride;
-					_vb.setFloat2(address, g.vertices[3]);
+					_vb.setFloat2(address, geometry.vertices[0]); address += stride;
+					_vb.setFloat2(address, geometry.vertices[1]); address += stride;
+					_vb.setFloat2(address, geometry.vertices[2]); address += stride;
+					_vb.setFloat2(address, geometry.vertices[3]);
 				}
 			}
 			
@@ -198,10 +199,10 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			
 			var supportsColorXForm = _shader.supportsColorXForm();
 			
-			var geometry, effect, mvp, crop;
+			var effect, mvp, crop;
 			var offset;
 			var capacity = _batchCapacity;
-			var fullPasses = Std.int(size / capacity);
+			var fullPasses:Int = cast size / capacity;
 			var remainder = size % capacity;
 			var next = 0;
 			for (pass in 0...fullPasses)
@@ -214,7 +215,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 					mvp = renderer.setModelViewProjMatrix(geometry);
 					crop = effect.crop;
 					
-					//use 3 constant register (each 4 floats) for mvp matrix, alpha and uv crop (+2 constant registers for color transform)
+					//use 3 constant registers (each 4 floats) for mvp matrix, alpha and uv crop (+2 constant registers for color transform)
 					offset = (_numSharedRegisters * NUM_FLOATS_PER_REGISTER) + i * (_numRegistersPerQuad * NUM_FLOATS_PER_REGISTER);
 					
 					constantRegisters[offset +  0] = mvp.m11;
@@ -224,7 +225,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 					
 					constantRegisters[offset +  4] = mvp.m21;
 					constantRegisters[offset +  5] = mvp.m22;
-					constantRegisters[offset +  6] = geometry.effect.alpha;
+					constantRegisters[offset +  6] = effect.alpha;
 					constantRegisters[offset +  7] = mvp.m24;
 					
 					constantRegisters[offset +  8] = crop.w * effect.uvScaleX;
@@ -270,7 +271,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 					
 					constantRegisters[offset +  4] = mvp.m21;
 					constantRegisters[offset +  5] = mvp.m22;
-					constantRegisters[offset +  6] = geometry.effect.alpha;
+					constantRegisters[offset +  6] = effect.alpha;
 					constantRegisters[offset +  7] = mvp.m24;
 					
 					constantRegisters[offset +  8] = crop.w * effect.uvScaleX;

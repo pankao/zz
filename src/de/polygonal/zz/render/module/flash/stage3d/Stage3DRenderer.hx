@@ -66,8 +66,11 @@ import flash.display3D.Context3DTriangleFace;
 
 class Stage3DRenderer extends Renderer
 {
-	public static var BATCH_STRATEGY        = 1; //0 => use vertex buffer, 1 => use constant registers (better for mobile)
-	public static var MAX_BATCH_SIZE        = 4096;
+	inline public static var VERTEX_BATCH   = 0;	//use vertex buffer
+	inline public static var CONSTANT_BATCH = 1;	//use constant registers (better for mobile)
+	
+	public static var BATCH_STRATEGY = CONSTANT_BATCH;
+	public static var MAX_BATCH_SIZE = 4096;
 	public static var DEFAULT_TEXTURE_FLAGS = Stage3DTextureFlag.PRESET_QUALITY_MEDIUM;
 	
 	public var context(default, null):Context3D;
@@ -336,6 +339,7 @@ class Stage3DRenderer extends Renderer
 			#end
 			
 			var effect = o.effect;
+			
 			var effectFlags = effect.flags;
 			
 			//first geometry node

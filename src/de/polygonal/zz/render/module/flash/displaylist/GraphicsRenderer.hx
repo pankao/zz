@@ -321,7 +321,7 @@ class GraphicsRenderer extends Renderer
 		_vr.clearStroke();
 		_vr.setFillColor(color, 1);
 		_vr.fillStart();
-		_font.write(text, Std.int(x), Std.int(y));
+		_font.write(text, cast x, cast y);
 		_vr.fillEnd();
 	}
 	

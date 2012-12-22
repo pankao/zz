@@ -62,7 +62,7 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 		
 		_batchCapacity = MAX_BATCH_SIZE_QUADS;
 		
-		if (_strategy == 0) //"vertex batching"
+		if (_strategy == Stage3DRenderer.VERTEX_BATCH)
 		{
 			_shader = new AGALSolidColorBatchVertexShader(_context, effectMask);
 			
@@ -71,7 +71,7 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 			_vb.allocate(numFloatsPerAttribute, _batchCapacity * 4);
 		}
 		else
-		if (_strategy == 1) //"constant batching"
+		if (_strategy == Stage3DRenderer.CONSTANT_BATCH)
 		{
 			_shader = new AGALSolidColorBatchConstantShader(_context, effectMask);
 			
@@ -81,7 +81,7 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 			_scratchVector.length = MAX_SUPPORTED_REGISTERS * NUM_FLOATS_PER_REGISTER;
 			_scratchVector.fixed = true;
 			
-			var maxBatchSize = Std.int((MAX_SUPPORTED_REGISTERS - _numSharedRegisters) / _numRegistersPerQuad);
+			var maxBatchSize:Int = cast ((MAX_SUPPORTED_REGISTERS - _numSharedRegisters) / _numRegistersPerQuad);
 			if (_batchCapacity > maxBatchSize) _batchCapacity = maxBatchSize;
 			
 			_vb = new Stage3DVertexBuffer(_context);

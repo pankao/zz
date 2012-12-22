@@ -107,7 +107,7 @@ class Stage3DTexture
 		if (atf != null)
 		{
 			var textureFormat = (atf[6] == 2 ? Context3DTextureFormat.COMPRESSED : Context3DTextureFormat.BGRA);
-			handle = context.createTexture(Std.int(Math.pow(2, atf[7])), Std.int(Math.pow(2, atf[8])), textureFormat, false);
+			handle = context.createTexture(cast Math.pow(2, atf[7]), cast Math.pow(2, atf[8]), textureFormat, false);
 			handle.uploadCompressedTextureFromByteArray(atf, 0, false);
 			return;
 		}
