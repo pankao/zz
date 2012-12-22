@@ -354,7 +354,10 @@ class Stage3DRenderer extends Renderer
 					currStage3DTexture = initStage3DTexture(currTexture);
 					currStage3DTexture.flags;
 				}
-				else 0;
+				{
+					currStage3DTexture = null;
+					0;
+				}
 				
 				prevBrush = null;
 				currBrush = findBrush(effectFlags, textureFlags, true);
@@ -382,7 +385,11 @@ class Stage3DRenderer extends Renderer
 					currStage3DTexture = initStage3DTexture(currTexture);
 					currStage3DTexture.flags;
 				}
-				else 0;
+				else
+				{
+					currStage3DTexture = null;
+					0;
+				}
 				
 				prevBrush = currBrush;
 				if (effectsChanged || textureChanged)
