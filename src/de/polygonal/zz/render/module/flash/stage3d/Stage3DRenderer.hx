@@ -43,6 +43,7 @@ import de.polygonal.zz.render.effect.TextureEffect;
 import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrush;
 import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectNull;
 import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectSolid;
+import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectSolidColorBatch;
 import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectTexture;
 import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrushRectTextureBatch;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DAntiAliasMode;
@@ -169,8 +170,8 @@ class Stage3DRenderer extends Renderer
 	 */
 	public function setAntiAlias(mode:Stage3DAntiAliasMode):Void
 	{
-		var mode = 
-		switch (mode) 
+		var flag =
+		switch (mode)
 		{
 			case Stage3DAntiAliasMode.None:   0;
 			case Stage3DAntiAliasMode.Low:    2;
@@ -178,9 +179,9 @@ class Stage3DRenderer extends Renderer
 			case Stage3DAntiAliasMode.Ultra: 16;
 		}
 		
-		if (mode != _antiAliasMode)
+		if (flag != _antiAliasMode)
 		{
-			_antiAliasMode = mode;
+			_antiAliasMode = flag;
 			if (context != null) configureBackBuffer();
 		}
 	}
@@ -224,7 +225,7 @@ class Stage3DRenderer extends Renderer
 	override public function drawEffect(effect:Effect):Void
 	{
 		currStage3DTexture = null;
-		var brush = getBrush(effect.flags, 0, false);
+		var brush = findBrush(effect.flags, 0, false);
 		brush.add(currGeometry);
 		brush.draw(this);
 	}
@@ -236,7 +237,7 @@ class Stage3DRenderer extends Renderer
 		currTexture = effect.tex;
 		currStage3DTexture = initStage3DTexture(currTexture);
 		
-		var brush = getBrush(effect.flags, currStage3DTexture.flags, false);
+		var brush = findBrush(effect.flags, currStage3DTexture.flags, false);
 		brush.add(currGeometry);
 		brush.draw(this);
 	}
@@ -250,7 +251,7 @@ class Stage3DRenderer extends Renderer
 			//accumulate for batch rendering
 			if (_currBrush == null)
 			{
-				_currBrush = getBrush(effectFlags, currStage3DTexture.flags, true);
+				_currBrush = findBrush(effectFlags, currStage3DTexture.flags, true);
 			}
 			
 			//currEffectFlags = effectFlags;
@@ -275,7 +276,7 @@ class Stage3DRenderer extends Renderer
 			currTexture = effect.tex;
 			currStage3DTexture = initStage3DTexture(currTexture);
 			
-			var brush = getBrush(effect.flags, currStage3DTexture.flags, false);
+			var brush = findBrush(effect.flags, currStage3DTexture.flags, false);
 			brush.add(currGeometry);
 			brush.draw(this);
 		}
@@ -316,14 +317,13 @@ class Stage3DRenderer extends Renderer
 		var save = drawDeferred;
 		drawDeferred = null;
 		
+		var numBatchCalls = 0;
 		var currEffectFlags = -1;
 		var prevBrush:Stage3DBrush = null;
 		var currBrush:Stage3DBrush = null;
+		var textureFlags = 0;
+		
 		currTexture = null;
-		
-		var numBatchCalls = 0;
-		
-		//TODO support shaders with no textures
 		
 		for (i in 0..._deferredObjects.size())
 		{
@@ -344,13 +344,16 @@ class Stage3DRenderer extends Renderer
 				currEffectFlags = effectFlags;
 				currTexture = effect.tex;
 				
-				#if debug
-				D.assert(currTexture != null, 'currTexture != null');
-				#end
+				textureFlags =
+				if (currTexture != null)
+				{
+					currStage3DTexture = initStage3DTexture(currTexture);
+					currStage3DTexture.flags;
+				}
+				else 0;
 				
-				currStage3DTexture = initStage3DTexture(currTexture);
 				prevBrush = null;
-				currBrush = getBrush(effectFlags, currStage3DTexture.flags, true);
+				currBrush = findBrush(effectFlags, textureFlags, true);
 				currBrush.add(o.__geometry);
 				continue;
 			}
@@ -369,15 +372,17 @@ class Stage3DRenderer extends Renderer
 				currEffectFlags = effectFlags;
 				currTexture = effect.tex;
 				
-				#if debug
-				D.assert(currTexture != null, 'currTexture != null');
-				#end
-				
-				currStage3DTexture = initStage3DTexture(currTexture);
+				textureFlags =
+				if (currTexture != null)
+				{
+					currStage3DTexture = initStage3DTexture(currTexture);
+					currStage3DTexture.flags;
+				}
+				else 0;
 				
 				prevBrush = currBrush;
 				if (effectsChanged || textureChanged)
-					currBrush = getBrush(effectFlags, currStage3DTexture.flags, true);
+					currBrush = findBrush(effectFlags, textureFlags, true);
 			}
 			
 			currBrush.add(o.__geometry);
@@ -386,7 +391,6 @@ class Stage3DRenderer extends Renderer
 		//draw remainder
 		if (!currBrush.isEmpty())
 		{
-			//currBrush.unbindVertexBuffer();
 			currBrush.draw(this);
 			numBatchCalls++;
 		}
@@ -432,7 +436,7 @@ class Stage3DRenderer extends Renderer
 			else
 				e &= ~EFF_TEXTURE;
 			
-			var brush = getBrush(e, textureFlags, false);
+			var brush = findBrush(e, textureFlags, false);
 			brush.add(currGeometry);
 			brush.draw(this);
 		}
@@ -506,7 +510,8 @@ class Stage3DRenderer extends Renderer
 		
 		registerBrush(Stage3DBrushRectNull, 0, 0);
 		
-		registerSharedBrush(Stage3DBrushRectSolid, EFF_COLOR | EFF_ALPHA | EFF_COLOR_XFORM, 0);
+		registerSharedBrush(Stage3DBrushRectSolid          , EFF_COLOR | EFF_ALPHA | EFF_COLOR_XFORM, 0, false);
+		registerSharedBrush(Stage3DBrushRectSolidColorBatch, EFF_COLOR | EFF_ALPHA | EFF_COLOR_XFORM, 0, true);
 		
 		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE                              , DEFAULT_TEXTURE_FLAGS, false);
 		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE | EFF_ALPHA                  , DEFAULT_TEXTURE_FLAGS, false);
@@ -578,7 +583,7 @@ class Stage3DRenderer extends Renderer
 				_paintBox.set(getBrushKey(mask, textureFlags, supportsBatching), brush);
 	}
 	
-	inline function getBrush(supportedEffects:Int, textureFlags:Int, preferBatching:Bool):Stage3DBrush
+	inline function findBrush(supportedEffects:Int, textureFlags:Int, preferBatching:Bool):Stage3DBrush
 	{
 		var key = getBrushKey(supportedEffects, textureFlags, preferBatching);
 		
