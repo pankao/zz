@@ -33,7 +33,7 @@ import de.polygonal.core.math.Vec3;
 import de.polygonal.ds.IntHashTable;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.effect.Effect.*;
-import de.polygonal.zz.render.effect.FontEffect;
+import de.polygonal.zz.render.effect.TextEffect;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
 import de.polygonal.zz.render.texture.Image;
@@ -119,7 +119,7 @@ class TileRenderer extends Renderer
 			{
 				currNode = o.__node;
 				
-				if (Std.is(o.effect, FontEffect))
+				if (Std.is(o.effect, TextEffect))
 				{
 					if (_batchActive)
 					{

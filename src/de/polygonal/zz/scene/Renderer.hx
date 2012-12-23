@@ -750,7 +750,7 @@ class Renderer
 	
 	//public function drawSpriteSheetBatchEffect(effect:SpriteSheetBatchEffect) {}
 	
-	//public function drawBitmapFont(effect:FontEffect) {}
+	//public function drawBitmapFont(effect:TextEffect) {}
 	
 	function drawElements() {}
 	

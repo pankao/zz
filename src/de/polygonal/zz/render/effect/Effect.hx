@@ -135,6 +135,7 @@ class Effect
 	
 	public var __textureEffect:TextureEffect;
 	public var __spriteSheetEffect:SpriteSheetEffect;
+	public var __textEffect:TextEffect;
 	
 	var _color:Int;
 	
