@@ -125,7 +125,7 @@ class BitmapDataRenderer extends Renderer
 			if (effect.alpha == 1)
 				(0xff << 24) | effect.color;
 			else
-				cast(effect.alpha * 0xff, Int) << 24) | effect.color;
+				(cast(effect.alpha * 0xff, Int) << 24) | effect.color;
 			
 			if (effect.flags & EFF_COLOR_XFORM > 0)
 				color = effect.colorXForm.transformRGBA(color);

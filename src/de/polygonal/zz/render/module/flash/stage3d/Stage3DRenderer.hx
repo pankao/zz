@@ -176,10 +176,10 @@ class Stage3DRenderer extends Renderer
 		var flag =
 		switch (mode)
 		{
-			case Stage3DAntiAliasMode.None:   0;
-			case Stage3DAntiAliasMode.Low:    2;
-			case Stage3DAntiAliasMode.High:   4;
-			case Stage3DAntiAliasMode.Ultra: 16;
+			case None:   0;
+			case Low:    2;
+			case High:   4;
+			case Ultra: 16;
 		}
 		
 		if (flag != _antiAliasMode)
@@ -324,7 +324,6 @@ class Stage3DRenderer extends Renderer
 		var currEffectFlags = -1;
 		var prevBrush:Stage3DBrush = null;
 		var currBrush:Stage3DBrush = null;
-		var textureFlags = 0;
 		
 		currTexture = null;
 		
@@ -348,19 +347,14 @@ class Stage3DRenderer extends Renderer
 				currEffectFlags = effectFlags;
 				currTexture = effect.tex;
 				
-				textureFlags =
+				currStage3DTexture =
 				if (currTexture != null)
-				{
-					currStage3DTexture = initStage3DTexture(currTexture);
-					currStage3DTexture.flags;
-				}
-				{
-					currStage3DTexture = null;
-					0;
-				}
+					initStage3DTexture(currTexture);
+				else
+					null;
 				
 				prevBrush = null;
-				currBrush = findBrush(effectFlags, textureFlags, true);
+				currBrush = findBrush(effectFlags, currStage3DTexture != null ? currStage3DTexture.flags : 0, true);
 				currBrush.add(o.__geometry);
 				continue;
 			}
@@ -379,21 +373,15 @@ class Stage3DRenderer extends Renderer
 				currEffectFlags = effectFlags;
 				currTexture = effect.tex;
 				
-				textureFlags =
+				currStage3DTexture =
 				if (currTexture != null)
-				{
-					currStage3DTexture = initStage3DTexture(currTexture);
-					currStage3DTexture.flags;
-				}
+					initStage3DTexture(currTexture);
 				else
-				{
-					currStage3DTexture = null;
-					0;
-				}
+					null;
 				
 				prevBrush = currBrush;
 				if (effectsChanged || textureChanged)
-					currBrush = findBrush(effectFlags, textureFlags, true);
+					currBrush = findBrush(effectFlags, currStage3DTexture != null ? currStage3DTexture.flags : 0, true);
 			}
 			
 			currBrush.add(o.__geometry);
