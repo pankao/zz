@@ -30,6 +30,7 @@
 package de.polygonal.zz.scene;
 
 import de.polygonal.core.math.Mat44;
+import de.polygonal.core.math.Mathematics;
 import de.polygonal.ds.Bits;
 import de.polygonal.ds.DA;
 import de.polygonal.gl.color.ColorRGBA;
@@ -43,6 +44,10 @@ import de.polygonal.zz.scene.Node;
 import de.polygonal.zz.scene.Spatial;
 import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.core.util.Assert;
+import flash.geom.Matrix3D;
+import flash.geom.Vector3D;
+import flash.Vector;
+import flash.Vector;
 
 using de.polygonal.ds.BitFlags;
 
@@ -51,12 +56,15 @@ using de.polygonal.ds.BitFlags;
  */
 class Renderer
 {
-	inline public static var TYPE_FLASH_SOFTWARE = Bits.BIT_01;
-	inline public static var TYPE_FLASH_HARDWARE = Bits.BIT_02;
-	inline public static var TYPE_NME_TILES      = Bits.BIT_03;
-	inline public static var TYPE_HTML5_CANVAS   = Bits.BIT_04;
+	/**
+	 * Viewport width in pixels.
+	 */
+	public var width(default, null):Int;
 	
-	public static var type = 0;
+	/**
+	 * Viewport height in pixels.
+	 */
+	public var height(default, null):Int;
 	
 	public var currScene(default, null):Node;
 	public var currNode(default, null):Node;
@@ -68,11 +76,13 @@ class Renderer
 	public var currTexture:Tex;
 	
 	public var drawDeferred:Void->Void;
+	
+	public var numCulledObjects:Int;
 
 	/**
 	 * If true, culling is disabled. Default is false.
 	 */
-	public var noCulling:Bool;
+	public var noCulling = false;
 	
 	public var allowGlobalState:Bool;
 	public var allowAlphaState:Bool;
@@ -80,42 +90,20 @@ class Renderer
 	
 	public var currAlphaState:AlphaState;
 	
-	/**
-	 * Drawable surface and window dimensions.
-	 */
-	public var surface(default, null):RenderSurface;
-	
-	public var camera(get_camera, set_camera):Camera;
-	inline function get_camera():Camera
-	{
-		return _camera;
-	}
-	function set_camera(value:Camera):Camera
-	{
-		_camera = value;
-		if (_camera != null)
-		{
-			var friend:{private var _renderer:Renderer;} = _camera;
-			friend._renderer = this;
-		}
-		return value;
-	}
-	
+	var _camera:Camera;
 	var _viewMatrix:Mat44;
 	var _projMatrix:Mat44;
-	
-	var _camera:Camera;
 	var _backgroundColor:ColorRGBA;
 	var _deferredObjects:DA<Spatial>;
-	
 	var _textureLookup:IntHash<Tex>;
 	
-	public function new()
+	public function new(width:Int, height:Int)
 	{
-		if (!RenderSurface.isReady()) throw 'Surface not initialized.';
+		if (RenderSurface.isReady() == false) throw 'Surface not initialized.';
+		if (RenderSurface.isResizable()) RenderSurface.onResize = function(w, h) resize(w, h);
 		
-		if (RenderSurface.isResizable())
-			RenderSurface.onResize = function(w, h) resize(w, h);
+		this.width = width;
+		this.height = height;
 		
 		currMVP = new Mat44();
 		currScene = null;
@@ -124,22 +112,22 @@ class Renderer
 		currEffect = null;
 		currGlobalEffect = null;
 		currViewProjMatrix = new Mat44();
-		
-		currAlphaState = new AlphaState(AlphaState.SrcBlendFactor.Zero, AlphaState.DstBlendFactor.Zero);
-		currAlphaState.key = -1;
-		
-		_camera = null;
-		_viewMatrix = new Mat44();
-		_projMatrix = new Mat44();
-		_backgroundColor = new ColorRGBA(1, 1, 1, 1);
-		_textureLookup = new IntHash();
-		
-		noCulling = false;
 		drawDeferred = null;
 		allowGlobalState = true;
 		allowAlphaState = true;
 		allowTextures = true;
 		_deferredObjects = new DA();
+		
+		currAlphaState = new AlphaState(AlphaState.SrcBlendFactor.Zero, AlphaState.DstBlendFactor.Zero);
+		currAlphaState.key = -1;
+		
+		_viewMatrix = new Mat44();
+		_projMatrix = new Mat44();
+		_backgroundColor = new ColorRGBA(1, 1, 1, 1);
+		_textureLookup = new IntHash();
+		
+		setCamera(new Camera());
+		onViewPortChange();
 	}
 	
 	public function free():Void
@@ -166,19 +154,15 @@ class Renderer
 		}
 	}
 	
-	/**
-	 * Make this renderer the active one.
-	 */
-	public function activate():Void
+	inline public function getCamera():Camera
 	{
-		Renderer.type = getType();
-		
-		onViewPortChange();
-		
-		//view frustum -> projection matrix
-		onFrustumChange();
-		
-		if (_camera != null) onFrameChange();
+		return _camera;
+	}
+	
+	public function setCamera(camera:Camera):Void
+	{
+		_camera = camera;
+		_camera.setRenderer(this);
 	}
 	
 	public function setBackgroundColor(r:Float, g:Float, b:Float, a:Float):Void
@@ -189,8 +173,10 @@ class Renderer
 		_backgroundColor.w = a;
 	}
 	
-	public function resize(w:Int, h:Int):Void
+	public function resize(width:Int, height:Int):Void
 	{
+		this.width = width;
+		this.height = height;
 		onViewPortChange();
 	}
 	
@@ -213,48 +199,13 @@ class Renderer
 		}
 	}
 	
-	public function setAlphaState(state:AlphaState):Void {}
-	
-	//var perspectiveProjectionMatrix:Matrix3D;
-	//var orthoProjectionMatrix:Matrix3D;
+	public function setAlphaState(state:AlphaState):Void
+	{
+	}
 	
 	public function drawScene(scene:Node):Void
 	{
 		if (scene == null || _camera == null) return;
-		
-		//orthoProjectionMatrix = makeOrtographicMatrix(0, surface.w, 0, surface.h);
-		//trace(printMatrix3D(orthoProjectionMatrix));
-		
-		//+0.0025    +0.0000    +0.0000    +0.0000   
-		//+0.0000    -0.0033    +0.0000    +0.0000   
-		//+0.0000    +0.0000    +1.0000    +0.0000   
-		//+0.0000    +0.0000    +0.0000    +1.0000
-		
-		//n =0, f = 1
-		//+0.0025    +0.0000    +0.0000    +0.0000   
-		//+0.0000    +0.0033    +0.0000    +0.0000   
-		//+0.0000    +0.0000    -2.0000    -1.0000   
-		//+0.0000    +0.0000    +0.0000    +1.0000   
-	
-		/*var f = _camera.frustum;
-		throw f;
-		var m = new Mat44();
-		m.setOrtho(f.left, f.right, f.bottom, f.top, f.near, f.far);
-		trace(m);*/
-		
-		//_projMatrix.setOrtho(f.left, f.right, f.bottom, f.top, f.near, f.far);
-		
-		/*var fovDegree = 60.0;
-		var magicNumber = Math.tan((fovDegree * 0.5) * de.polygonal.core.math.Mathematics.DEG_RAD);
-		var projMat:Matrix3D = makeProjectionMatrix(0.1, 2000.0, fovDegree, surface.w / surface.h);
-		var lookAtPosition:Vector3D = new Vector3D(0.0, 0.0, 0.0);
-		// zEye distance from origin: sceneHeight * 0.5 / tan(a) 
-		var eye = new Vector3D(0, 0, -(surface.h * 0.5) / magicNumber);
-		var lookAtMat:Matrix3D = lookAt(lookAtPosition, eye);
-		lookAtMat.append(projMat);
-		perspectiveProjectionMatrix = lookAtMat;
-		var m = getViewProjectionMatrix(true);
-		currViewProjMatrix.ofVector(m.rawData);*/
 		
 		//precompute view-projection matrix (camera coordinates => homogeneous coordinates)
 		Mat44.matrixProduct(_projMatrix, _viewMatrix, currViewProjMatrix);
@@ -263,6 +214,7 @@ class Renderer
 		
 		onBeginScene();
 		
+		numCulledObjects = 0;
 		scene.cull(this, noCulling);
 		
 		if (drawDeferred != null)
@@ -277,201 +229,7 @@ class Renderer
 		scene.treeNode.preorder();
 	}
 	
-	
-	/*public function printMatrix3D(m:Matrix3D):String
-	{
-		var a = m.rawData;
-		
-		var format = '\nMat44\n' +
-			'%-+10.4f %-+10.4f %-+10.4f %-+10.4f\n' +
-			'%-+10.4f %-+10.4f %-+10.4f %-+10.4f\n' +
-			'%-+10.4f %-+10.4f %-+10.4f %-+10.4f\n' +
-			'%-+10.4f %-+10.4f %-+10.4f %-+10.4f\n';
-		return de.polygonal.core.fmt.Sprintf.format(format,
-			[a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15]]);
-	}*/
-	
-	/**
-	 * Resolves a texture for a given <code>image</code>.<br/>
-	 * If a texture doesn't exist yet, a new one is created and cached for repeated use.
-	 */
-	public function getTex(image:Image):Tex
-	{
-		var tex = _textureLookup.get(image.key);
-		if (tex == null)
-		{
-			tex = createTex(image);
-			_textureLookup.set(image.key, tex);
-		}
-		return tex;
-	}
-	
-	/**
-	 * 
-	 */
-	public function freeTex(image:Image):Void
-	{
-		var tex = _textureLookup.get(image.key);
-		if (tex != null)
-		{
-			tex.free();
-			_textureLookup.remove(image.key);
-		}
-	}
-	
-	function createTex(image:Image):Tex
-	{
-		//implement in subclass.
-		return throw 'override for implementation';
-	}
-	
-	/*function lookAt(lookAt:Vector3D, position:Vector3D):Matrix3D
-	{
-		var up:Vector3D = new Vector3D();
-		up.x = Math.sin(0.0);
-		up.y = -Math.cos(0.0);
-		up.z = 0;
-		
-		var forward:Vector3D = new Vector3D();
-		forward.x = lookAt.x - position.x;
-		forward.y = lookAt.y - position.y;
-		forward.z = lookAt.z - position.z;
-		forward.normalize();
-
-		var right:Vector3D = up.crossProduct(forward);
-		right.normalize();
-
-		up = right.crossProduct(forward);
-		up.normalize();
-
-		var rawData = new Vector<Float>();
-		rawData.push(-right.x);
-		rawData.push(-right.y);
-		rawData.push(-right.z);
-		rawData.push(0);
-		
-		rawData.push(up.x);
-		rawData.push(up.y);
-		rawData.push(up.z);
-		rawData.push(0);
-		
-		rawData.push(-forward.x);
-		rawData.push(-forward.y);
-		rawData.push(-forward.z);
-		rawData.push(0);
-		
-		rawData.push(0);
-		rawData.push(0);
-		rawData.push(0);
-		rawData.push(1);
-
-		var mat:Matrix3D = new Matrix3D(rawData);
-		mat.prependTranslation(-position.x, -position.y, -position.z);
-
-		return mat;
-	}*/
-	/*function makeProjectionMatrix(zNear:Float, zFar:Float, fovDegrees:Float, aspect:Float):Matrix3D
-	{
-		var yval:Float = zNear * Math.tan(fovDegrees * (Math.PI / 360.0));
-		var xval:Float = yval * aspect;
-		return makeFrustumMatrix(-xval, xval, -yval, yval, zNear, zFar);
-	}*/
-	/*function makeFrustumMatrix(left:Float, right:Float, top:Float, bottom:Float, zNear:Float, zFar:Float):Matrix3D
-	{
-		var values:flash.Vector<Float> = Vector.ofArray(
-		[
-								(2 * zNear) / (right - left),
-								0,
-								(right + left) / (right - left),
-								0,
-
-								0,
-								(2 * zNear) / (top - bottom),
-								(top + bottom) / (top - bottom),
-								0,
-
-								0,
-								0,
-								zFar / (zNear - zFar),
-								-1,
-
-								0,
-								0,
-								(zNear * zFar) / (zNear - zFar),
-								0
-							]);
-		return new Matrix3D(values);
-		throw 1;
-		return null;
-	}*/
-	/*function makeOrtographicMatrix(left:Float, right:Float, top:Float, bottom:Float, zNear:Float = 0, zFar:Float = 1):Matrix3D
-	{
-		var values:flash.Vector<Float> = Vector.ofArray(
-			[
-				2 / (right - left), 0, 0,  0,
-				0,  2 / (top - bottom), 0, 0,
-				0,  0, 1 / (zFar - zNear), 0,
-				0, 0, zNear / (zNear - zFar), 1
-			]);
-			return new Matrix3D(values);
-		return null;
-	}*/
-	
-	/*public function getViewProjectionMatrix(useOrthoMatrix:Bool):Matrix3D
-	{
-		var x = 0;
-		var y = 0;
-		var zoom = 1;
-		var rotation = 0;
-		var viewMatrix = new Matrix3D();
-		viewMatrix.identity();
-		viewMatrix.appendTranslation(-surface.w / 2 - x, -surface.h / 2 - y, 0.0);
-		viewMatrix.appendScale(zoom, zoom, 1.0);
-		viewMatrix.appendRotation(0, Vector3D.Z_AXIS);
-
-		var renderMatrixOrtho = new Matrix3D();
-		renderMatrixOrtho.identity();
-		renderMatrixOrtho.append(viewMatrix);
-		renderMatrixOrtho.append(orthoProjectionMatrix);
-
-		var renderMatrixPerspective = new Matrix3D();
-		renderMatrixPerspective.identity();
-		renderMatrixPerspective.append(viewMatrix);
-		renderMatrixPerspective.append(perspectiveProjectionMatrix);
-
-		return useOrthoMatrix ? renderMatrixOrtho : renderMatrixPerspective;
-	}*/
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	public function drawNode(node:Node)
+	public function drawNode(node:Node):Void
 	{
 		if (drawDeferred == null)
 		{
@@ -491,7 +249,7 @@ class Renderer
 			_deferredObjects.pushBack(node);
 	}
 	
-	public function drawGeometry(geometry:Geometry)
+	public function drawGeometry(geometry:Geometry):Void
 	{
 		if (drawDeferred == null)
 		{
@@ -510,9 +268,9 @@ class Renderer
 			_deferredObjects.pushBack(geometry);
 	}
 	
-	//TODO only invoked when no effect available
-	public function drawPrimitive()
+	public function drawPrimitive():Void
 	{
+		//TODO only invoked when no effect available
 		var geometry = currGeometry;
 		
 		if (allowGlobalState)
@@ -522,6 +280,41 @@ class Renderer
 			currTexture = currEffect.tex;
 		
 		drawElements();
+	}
+	
+	public function drawDeferredRegular():Void
+	{
+		//disable deferred drawing
+		var save = drawDeferred;
+		drawDeferred = null;
+		
+		for (o in _deferredObjects)
+		{
+			if (o.isGeometry()) drawGeometry(o.__geometry);
+			if (o.isNode()) drawNode(o.__node);
+		}
+		
+		//restore deferred drawing
+		drawDeferred = save;
+	}
+	
+	public function drawDeferredBatch():Void
+	{
+	}
+
+	public function drawEffect(effect:Effect):Void
+	{
+		if (allowGlobalState) setGlobalState(currGeometry.states);
+	}
+	
+	public function drawTextureEffect(effect:TextureEffect):Void
+	{
+		if (allowGlobalState) setGlobalState(currGeometry.states);
+	}
+	
+	public function drawSpriteSheetEffect(effect:SpriteSheetEffect):Void
+	{
+		if (allowGlobalState) setGlobalState(currGeometry.states);
 	}
 	
 	/**
@@ -537,17 +330,17 @@ class Renderer
 		
 		//set MVP (model-view-projection) matrix
 		
-		//convert transformation to 4x4 matrix
+		//1.) convert transformation to 4x4 matrix
 		getModelMatrix(spatial, currMVP);
 		
-		//concatenate with view and projection matrix
+		//2.) concatenate with view and projection matrix
 		currMVP.cat(currViewProjMatrix);
 		
 		return currMVP;
 	}
 	
 	/**
-	 * Computes the combined model-to-world matrix from <code>spatial</code>'s world transformation</code>
+	 * Computes the combined model-to-world matrix from <code>spatial</code>'s world transformation
 	 * and stores the result in <code>output</code>.
 	 * @return a reference to <code>output</code>.
 	 */
@@ -555,9 +348,9 @@ class Renderer
 	{
 		var xform = spatial.world;
 		
-		//#if debug
-		//D.assert(!xform.isIdentity(), '!xform.isIdentity()');
-		//#end
+		#if debug
+		D.assert(!xform.isIdentity(), '!xform.isIdentity()');
+		#end
 		
 		if (spatial.hasf(Spatial.BIT_USE_2D_XFORM))
 		{
@@ -648,117 +441,63 @@ class Renderer
 		return output;
 	}
 	
-	/**
-	 * Called whenever the viewport dimensions change.
-	 */
-	public function onViewPortChange() {}
-	
-	public function onFrustumChange()
+	public function onViewPortChange():Void
 	{
-		if (_camera != null)
-		{
-			var f = _camera.frustum;
-			
-			//var t = makeOrtographicMatrix(0, RenderSurface.width, 0, RenderSurface.height);
-			//var m = new Mat44();
-			//m.ofMatrix3D(t);
-			
-			_projMatrix = new Mat44();
-			//_projMatrix.setOrtho(f.left, f.right, f.bottom, f.top, f.near, f.far);
-			_projMatrix.setOrthoSimple(RenderSurface.width, RenderSurface.height, 0, 1);
-			
-			//TODO why transpose?
-			//var t = makeOrtographicMatrix(0, surface.w, 0, surface.h);
-			//_projMatrix.ofVector(t.rawData);
-			_projMatrix.transpose();
-			
-			//left-hand coordinates starting at the upper-right corner of the viewport
-			
-			//flip y-axis
-			_projMatrix.catScale(1, -1, 1);
-			
-			//move to upper-right corner
-			_projMatrix.catTranslate(-1, 1, 0);
-			
-			//_viewMatrix.setIdentity();
-			//_viewMatrix.catScale(zoom, -zoom, 1); //flip y-axis
-			//_viewMatrix.catRotateZ(rotation);
-			
-			//_viewMatrix.catTranslate(-surface.w / 2 - eyeX, surface.h/2, 0);
-			//_viewMatrix.catTranslate(-surface.w / 2, -surface.h/2, 0);
-		}
+		_projMatrix.setOrtho(-width / 2, width / 2, -height / 2, height / 2, 0, 1);
+		
+		//screen coordinates where the origin is at the upper-left corner of the screen
+		_projMatrix.catScale(1, -1, 1);
+		_projMatrix.catTranslate(-1, 1, 0);
 	}
 	
-	//TODO tmp
-	#if flash
-	/*function makeOrtographicMatrix(left:Float, right:Float, top:Float, bottom:Float, zNear:Float = 0, zFar:Float = 1):Matrix3D
+	public function onFrameChange():Void
 	{
-		return new Matrix3D(Vector.ofArray([
-				2 / (right - left), 0, 0,  0,
-				0,  2 / (top - bottom), 0, 0,
-				0,  0, 1 / (zFar - zNear), 0,
-				0, 0, zNear / (zNear - zFar), 1
-			]));
-	}*/
-	#end
-	
-	public function onFrameChange()
-	{
-		var t = camera.local.getTranslate();
+		var t = _camera.local.getTranslate();
 		
-		//TODO rebuild matrix
 		_viewMatrix.setIdentity();
-		_viewMatrix.catScale(camera.zoom, camera.zoom, 1);
-		
-		_viewMatrix.catTranslate(t.x, t.y, 0);
+		_viewMatrix.catScale(_camera.zoom, _camera.zoom, 1.);
+		_viewMatrix.catTranslate(-t.x, -t.y, 0.);
+		_viewMatrix.catRotateZ(_camera.rotation);
 	}
 	
-	public function drawDeferredRegular()
+	/**
+	 * Resolves a texture for a given <code>image</code>.<br/>
+	 * If a texture doesn't exist yet, a new one is created and cached for repeated use.
+	 */
+	public function getTex(image:Image):Tex
 	{
-		//disable deferred drawing
-		var save = drawDeferred;
-		drawDeferred = null;
-		
-		for (o in _deferredObjects)
+		var tex = _textureLookup.get(image.key);
+		if (tex == null)
 		{
-			if (o.isGeometry()) drawGeometry(o.__geometry);
-			if (o.isNode()) drawNode(o.__node);
+			tex = createTex(image);
+			_textureLookup.set(image.key, tex);
 		}
-		
-		//restore deferred drawing
-		drawDeferred = save;
+		return tex;
 	}
 	
-	public function drawDeferredBatch() {}
-
-	//public function drawDisplayObject(effect:DisplayObjectEffect) {}
-	
-	public function drawEffect(effect:Effect)
+	public function freeTex(image:Image):Void
 	{
-		if (allowGlobalState) setGlobalState(currGeometry.states);
+		var tex = _textureLookup.get(image.key);
+		if (tex != null)
+		{
+			tex.free();
+			_textureLookup.remove(image.key);
+		}
 	}
 	
-	public function drawTextureEffect(effect:TextureEffect)
+	function onBeginScene()
 	{
-		if (allowGlobalState) setGlobalState(currGeometry.states);
 	}
 	
-	public function drawSpriteSheetEffect(effect:SpriteSheetEffect)
+	function onEndScene()
 	{
-		if (allowGlobalState) setGlobalState(currGeometry.states);
 	}
 	
-	//public function drawSpriteSheetBatchEffect(effect:SpriteSheetBatchEffect) {}
+	function drawElements()
+	{
+	}
 	
-	//public function drawBitmapFont(effect:TextEffect) {}
-	
-	function drawElements() {}
-	
-	function onBeginScene() {}
-	
-	function onEndScene() {}
-	
-	function getType():Int
+	function createTex(image:Image):Tex
 	{
 		return throw 'override for implementation';
 	}

@@ -308,7 +308,7 @@ class Spatial implements Visitable
 	{
 		if (hasf(BIT_FORCE_CULL)) return;
 		
-		var camera = renderer.camera;
+		var camera = renderer.getCamera();
 		
 		var planeCullState = camera.planeCullState;
 		if (noCull || !camera.isCulled(worldBound)) draw(renderer, noCull);

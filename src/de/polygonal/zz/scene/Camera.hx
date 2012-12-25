@@ -30,69 +30,12 @@
 package de.polygonal.zz.scene;
 
 import de.polygonal.core.fmt.Sprintf;
-import de.polygonal.core.math.Mat33;
 import de.polygonal.core.math.Vec3;
 import de.polygonal.ds.Bits;
 import de.polygonal.zz.render.RenderSurface;
-import de.polygonal.zz.scene.Renderer;
 import de.polygonal.core.math.Mathematics;
 
 using de.polygonal.ds.BitFlags;
-
-class ViewFrustum
-{
-	public var left:Float;
-	public var right:Float;
-	
-	public var top:Float;
-	public var bottom:Float;
-	
-	public var near:Float;
-	public var far:Float;
-	
-	public function new() {}
-	
-	public function toString():String
-	{
-		return Sprintf.format("{ViewFrustum: left=%.3f, right=%.3f, top=%.3f, bottom=%.3f, near=%.3f, far=%.3f}",
-			[left, right, top, bottom, near, far]);
-	}
-	
-	public function setOrtho(w:Int, h:Int):Void
-	{
-		left   = -w / 2;
-		right  =  w / 2;
-		top    =  h / 2;
-		bottom = -h / 2;
-		near   = 0;
-		far    = 1;
-	}
-	
-	public function getUpFovDegrees():Float
-	{
-		return 2 * Math.atan(top / near) * M.RAD_DEG;
-	}
-
-	public function getAspectRatio():Float
-	{
-		return right / top;
-	}
-	
-	public function clone():ViewFrustum
-	{
-		var f = new ViewFrustum();
-		f.left   = left;
-		f.right  = right;
-		f.top    = top;
-		f.bottom = bottom;
-		f.near   = near;
-		f.far    = far;
-		return f;
-	}
-}
-
-//TODO bug in culling regarding flags?
-//TODO additional culling planes
 
 @:build(de.polygonal.core.util.IntEnum.build(
 [
@@ -107,37 +50,35 @@ class Camera extends Spatial
 	
 	public var zoom:Float;
 	
-	/**
-	 * The view frustum.
-	 */
-	public var frustum(default, null):ViewFrustum;
-	
 	var _renderer:Renderer;
+	var _scratchVec:Vec3;
 	
 	public function new()
 	{
 		super(null);
 		
-		frustum = new ViewFrustum();
-		_renderer = null;
-		
-		setf(Spatial.BIT_IS_CAMERA);
 		planeCullState = Bits.mask(4);
-		
 		zoom = 1;
+		
+		_scratchVec = new Vec3();
+		setf(Spatial.BIT_IS_CAMERA);
 	}
 	
 	override public function free():Void
 	{
 		super.free();
-		frustum = null;
 		_renderer = null;
+	}
+	
+	public function setRenderer(renderer:Renderer):Void
+	{
+		_renderer = renderer;
+		_renderer.onFrameChange();
 	}
 	
 	public function setEye(location:Vec3):Void
 	{
 		local.setTranslate(location.x, location.y, location.z);
-		
 		if (_renderer != null)
 			_renderer.onFrameChange();
 	}
@@ -149,13 +90,11 @@ class Camera extends Spatial
 			_renderer.onFrameChange();
 	}
 	
-	/**
-	 * Specifies an orthographic view frustum.
-	 */
-	public function setFrustumOrtho(w:Int, h:Int):Void
+	public function setRotation(value:Float):Void
 	{
-		frustum.setOrtho(w, h);
-		if (_renderer != null) _renderer.onFrustumChange();
+		rotation = value;
+		if (_renderer != null)
+			_renderer.onFrameChange();
 	}
 	
 	/**
@@ -164,37 +103,12 @@ class Camera extends Spatial
 	 */
 	public function isCulled(bound:BoundingVolume):Bool
 	{
-		var sphere = bound.sphereBV.sphere;
+		var sphere = bound.__sphereBV.sphere;
 		var c = sphere.c;
 		var r = sphere.r;
-		/*var w = _renderer.window;
 		
-		if (planeCullState & BIT_PLANE_T > 0)
-		{
-			if (c.y < w.minY - r) return true;
-			planeCullState &= ~BIT_PLANE_T;
-		}
-		
-		if (planeCullState & BIT_PLANE_R > 0)
-		{
-			if (c.x > w.maxX + r) return true;
-			planeCullState &= ~BIT_PLANE_R;
-		}
-		
-		if (planeCullState & BIT_PLANE_B > 0)
-		{
-			if (c.y > w.maxY + r) return true;
-			planeCullState &= ~BIT_PLANE_B;
-		}
-		
-		if (planeCullState & BIT_PLANE_L > 0)
-		{
-			if (c.x < w.minX - r) return true;
-			planeCullState &= ~BIT_PLANE_L;
-		}*/
-		
-		var w = RenderSurface.width;
-		var h = RenderSurface.height;
+		var w = _renderer.width;
+		var h = _renderer.height;
 		
 		if (planeCullState & BIT_PLANE_T > 0)
 		{
@@ -231,7 +145,7 @@ class Camera extends Spatial
 	override function updateWorldBound()
 	{
 		//the camera has an implicit model bound whose center is the camera's position and whose radius is zero.
-		worldBound.setCenter(world.applyForward(local.getTranslate(), new Vec3()));
+		worldBound.setCenter(world.applyForward(local.getTranslate(), _scratchVec));
 		worldBound.setRadius(0);
 	}
 }

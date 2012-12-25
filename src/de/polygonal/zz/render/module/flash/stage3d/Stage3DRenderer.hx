@@ -93,19 +93,14 @@ class Stage3DRenderer extends Renderer
 	
 	var _numDeviceLost:Int;
 	
-	public function new()
+	public function new(width:Int, height:Int)
 	{
-		super();
-		
-		if (!RenderSurface.isHardware())
-			throw 'stage3d not available';
+		if (!RenderSurface.isHardware()) throw 'stage3d not available';
 		
 		_numDeviceLost = RenderSurface.numDeviceLost;
+		_antiAliasMode = 1 << Type.enumIndex(Stage3DAntiAliasMode.Low);
 		
 		initContext();
-		
-		setAntiAlias(Stage3DAntiAliasMode.Low);
-		
 		initPaintBox();
 		
 		_srcBlendFactorLUT = 
@@ -132,13 +127,13 @@ class Stage3DRenderer extends Renderer
 			Context3DBlendFactor.ONE_MINUS_DESTINATION_ALPHA
 		];
 		
-		_camera = null;
 		_textureHandles = new IntHashTable(32, 32, false, 32);
 		_enableDepthBufferAndStencil = false;
 		_batch = new DA();
-		configureBackBuffer();
 		
 		drawDeferred = drawDeferredBatch;
+		
+		super(width, height);
 	}
 	
 	override public function free():Void
@@ -527,7 +522,7 @@ class Stage3DRenderer extends Renderer
 	{
 		try
 		{
-			context.configureBackBuffer(RenderSurface.width, RenderSurface.height, _antiAliasMode, _enableDepthBufferAndStencil);
+			context.configureBackBuffer(width, height, _antiAliasMode, _enableDepthBufferAndStencil);
 		}
 		catch (unknown:Dynamic)
 		{
@@ -606,10 +601,5 @@ class Stage3DRenderer extends Renderer
 	inline function getBrushKey(supportedEffects:Int, textureFlags:Int, supportsBatching:Bool):Int
 	{
 		return supportedEffects | textureFlags | (supportsBatching ? (1 << 25) : 0);
-	}
-	
-	override function getType():Int 
-	{
-		return Renderer.TYPE_FLASH_HARDWARE;
 	}
 }
