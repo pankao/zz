@@ -50,8 +50,10 @@ using de.polygonal.ds.BitFlags;
 	BIT_FORCE_CULL,
 	BIT_IS_CAMERA,
 	BIT_USE_2D_XFORM,
+	BIT_HAS_ROTATION,
 	BIT_MODEL_CHANGED,		//used in Geometry
 	BIT_WORLD_BOUND_CURRENT //used in Node
+	
 ], true))
 class Spatial implements Visitable
 {
@@ -473,7 +475,7 @@ class Spatial implements Visitable
 		var sync = !hasf(BIT_IS_CAMERA);
 		if (sync)
 		{
-			hasf(Spatial.BIT_USE_2D_XFORM) ? syncLocalXForm2() : syncLocalXForm();
+			hasf(Spatial.BIT_USE_2D_XFORM) ? syncLocalXForm2d() : syncLocalXForm3d();
 			clrf(BIT_LOCAL_CHANGED);
 			setf(BIT_WORLD_CHANGED);
 		}
@@ -516,7 +518,7 @@ class Spatial implements Visitable
 	
 	function propagateRenderStateUpdate(stacks:GlobalStateStacks) {}
 	
-	inline function syncLocalXForm()
+	inline function syncLocalXForm2d()
 	{
 		#if debug
 		D.assert(!hasf(BIT_IS_CAMERA), '!hasf(BIT_IS_CAMERA)');
@@ -524,6 +526,43 @@ class Spatial implements Visitable
 		
 		if (rotation != 0)
 		{
+			setf(BIT_HAS_ROTATION);
+			var r = local.getRotate();
+			var sineCosine = TrigApprox.sinCos(rotation, r.sineCosine);
+			var s = sineCosine.x;
+			var c = sineCosine.y;
+			r.m11 = c; r.m12 =-s;
+			r.m21 = s; r.m22 = c;
+			
+			if (anchorX != 0 || anchorY != 0)
+				local.setTranslate2(x - (c * anchorX - s * anchorY), y - (s * anchorX + c * anchorY));
+			else
+				local.setTranslate2(x - anchorX, y - anchorY);
+		}
+		else
+		{
+			if (hasf(BIT_HAS_ROTATION))
+			{
+				clrf(BIT_HAS_ROTATION);
+				var r = local.getRotate();
+				r.m11 = 1; r.m12 = 0;
+				r.m21 = 0; r.m22 = 1;
+			}
+			local.setTranslate2(x - anchorX, y - anchorY);
+		}
+		
+		(scaleX == scaleY) ? local.setUniformScale2(scaleX) : local.setScale2(scaleX, scaleY);
+	}
+	
+	inline function syncLocalXForm3d()
+	{
+		#if debug
+		D.assert(!hasf(BIT_IS_CAMERA), '!hasf(BIT_IS_CAMERA)');
+		#end
+		
+		if (rotation != 0)
+		{
+			setf(BIT_HAS_ROTATION);
 			var r = local.getRotate();
 			r.setRotateZ(rotation);
 			
@@ -545,35 +584,16 @@ class Spatial implements Visitable
 				local.setTranslate(x - anchorX, y - anchorY, 0);
 		}
 		else
+		{
+			if (hasf(BIT_HAS_ROTATION))
+			{
+				clrf(BIT_HAS_ROTATION);
+				local.getRotate().setIdentity();
+			}
 			local.setTranslate(x - anchorX, y - anchorY, 0);
+		}
 		
 		(scaleX == scaleY) ? local.setUniformScale(scaleX) : local.setScale(scaleX, scaleY, 1);
-	}
-	
-	inline public function syncLocalXForm2()
-	{
-		#if debug
-		D.assert(!hasf(BIT_IS_CAMERA), '!hasf(BIT_IS_CAMERA)');
-		#end
-		
-		if (rotation != 0)
-		{
-			var r = local.getRotate();
-			var sineCosine = TrigApprox.sinCos(rotation, r.sineCosine);
-			var s = sineCosine.x;
-			var c = sineCosine.y;
-			r.m11 = c; r.m12 =-s;
-			r.m21 = s; r.m22 = c;
-			
-			if (anchorX != 0 || anchorY != 0)
-				local.setTranslate2(x - (c * anchorX - s * anchorY), y - (s * anchorX + c * anchorY));
-			else
-				local.setTranslate2(x - anchorX, y - anchorY);
-		}
-		else
-			local.setTranslate2(x - anchorX, y - anchorY);
-		
-		(scaleX == scaleY) ? local.setUniformScale2(scaleX) : local.setScale2(scaleX, scaleY);
 	}
 	
 	inline function pushState(stacks:GlobalStateStacks)
