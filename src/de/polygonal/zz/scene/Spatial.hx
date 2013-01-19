@@ -524,6 +524,9 @@ class Spatial implements Visitable
 		D.assert(!hasf(BIT_IS_CAMERA), '!hasf(BIT_IS_CAMERA)');
 		#end
 		
+		var ax = anchorX * M.fsgn(scaleX);
+		var ay = anchorY * M.fsgn(scaleY);
+		
 		if (rotation != 0)
 		{
 			setf(BIT_HAS_ROTATION);
@@ -533,22 +536,20 @@ class Spatial implements Visitable
 			var c = sineCosine.y;
 			r.m11 = c; r.m12 =-s;
 			r.m21 = s; r.m22 = c;
-			
-			if (anchorX != 0 || anchorY != 0)
-				local.setTranslate2(x - (c * anchorX - s * anchorY), y - (s * anchorX + c * anchorY));
-			else
-				local.setTranslate2(x - anchorX, y - anchorY);
+			local.setTranslate2(x - (c * ax - s * ay), y - (s * ax + c * ay));
 		}
 		else
 		{
 			if (hasf(BIT_HAS_ROTATION))
 			{
+				//rotation was set to zero so reset rotation matrix
 				clrf(BIT_HAS_ROTATION);
 				var r = local.getRotate();
 				r.m11 = 1; r.m12 = 0;
 				r.m21 = 0; r.m22 = 1;
 			}
-			local.setTranslate2(x - anchorX, y - anchorY);
+			
+			local.setTranslate2(x - ax, y - ay);
 		}
 		
 		(scaleX == scaleY) ? local.setUniformScale2(scaleX) : local.setScale2(scaleX, scaleY);
