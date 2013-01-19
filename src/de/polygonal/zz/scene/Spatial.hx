@@ -333,16 +333,17 @@ class Spatial implements Visitable
 	 * Recomputes world transformations and world bounding volumes.
 	 * @param intiator if true, the change in world bounding volume occuring at
 	 * this node is propagated to the root node.
+	 * @param updateBV if false, skips recomputing bounding volumes.
 	 */
-	public function updateGeometricState(initiator = true):Void
+	public function updateGeometricState(initiator = true, updateBV = true):Void
 	{
 		//propagate transformations: parent => children
-		updateWorldData();
+		updateWorldData(updateBV);
 		
-		//propagate world bounding volumes children => parents
-		updateWorldBound(); //implement in subclass
+		//propagate world bounding volumes: children => parents
+		if (updateBV) updateWorldBound(); //hook; implement in subclass
 		
-		if (initiator) propagateBoundToRoot();
+		if (initiator && updateBV) propagateBoundToRoot();
 	}
 	
 	/**
@@ -468,7 +469,7 @@ class Spatial implements Visitable
 		return Sprintf.format("? id=%s userData=%s", [id, userData]);
 	}
 	
-	function updateWorldData()
+	function updateWorldData(updateBV:Bool):Void
 	{
 		if (hasf(BIT_WORLD_CURRENT)) return;
 		

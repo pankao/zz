@@ -175,7 +175,7 @@ class Node extends Spatial
 		return c;
 	}
 	
-	override function propagateRenderStateUpdate(stack:GlobalStateStacks)
+	override function propagateRenderStateUpdate(stack:GlobalStateStacks):Void
 	{
 		//downward pass: propagate render state to children
 		var n = treeNode.children;
@@ -186,20 +186,20 @@ class Node extends Spatial
 		}
 	}
 	
-	override function updateWorldData()
+	override function updateWorldData(updateBV:Bool):Void
 	{
-		super.updateWorldData();
+		super.updateWorldData(updateBV);
 		
 		//downward pass: propagate geometric update to children
 		var n = treeNode.children;
 		while (n != null)
 		{
-			n.val.updateGeometricState(false);
+			n.val.updateGeometricState(false, updateBV);
 			n = n.next;
 		}
 	}
 	
-	override function updateWorldBound()
+	override function updateWorldBound():Void
 	{
 		if (hasf(Spatial.BIT_WORLD_BOUND_CURRENT)) return;
 		
