@@ -146,13 +146,13 @@ class Spatial implements Visitable
 	 * Local rotation anchor, x-axis.<br/>
 	 * The default value is 0.
 	 */
-	public var anchorX:Float;
+	public var centerX:Float;
 	
 	/**
 	 * Local rotation anchor, y-axis.<br/>
 	 * The default value is 0.
 	 */
-	public var anchorY:Float;
+	public var centerY:Float;
 	
 	/**
 	 * Uniform scale.
@@ -194,8 +194,8 @@ class Spatial implements Visitable
 		rotation = 0;
 		scaleX = 1;
 		scaleY = 1;
-		anchorX = 0;
-		anchorY = 0;
+		centerX = 0;
+		centerY = 0;
 		
 		setf(BIT_LOCAL_CHANGED | BIT_USE_2D_XFORM);
 	}
@@ -525,8 +525,8 @@ class Spatial implements Visitable
 		D.assert(!hasf(BIT_IS_CAMERA), '!hasf(BIT_IS_CAMERA)');
 		#end
 		
-		var ax = anchorX * M.fsgn(scaleX);
-		var ay = anchorY * M.fsgn(scaleY);
+		var cx = centerX * M.fsgn(scaleX);
+		var cy = centerY * M.fsgn(scaleY);
 		
 		if (rotation != 0)
 		{
@@ -537,7 +537,7 @@ class Spatial implements Visitable
 			var c = sineCosine.y;
 			r.m11 = c; r.m12 =-s;
 			r.m21 = s; r.m22 = c;
-			local.setTranslate2(x - (c * ax - s * ay), y - (s * ax + c * ay));
+			local.setTranslate2(x - (c * cx - s * cy), y - (s * cx + c * cy));
 		}
 		else
 		{
@@ -550,7 +550,7 @@ class Spatial implements Visitable
 				r.m21 = 0; r.m22 = 1;
 			}
 			
-			local.setTranslate2(x - ax, y - ay);
+			local.setTranslate2(x - cx, y - cy);
 		}
 		
 		(scaleX == scaleY) ? local.setUniformScale2(scaleX) : local.setScale2(scaleX, scaleY);
@@ -568,22 +568,22 @@ class Spatial implements Visitable
 			var r = local.getRotate();
 			r.setRotateZ(rotation);
 			
-			if (anchorX != 0 || anchorY != 0)
+			if (centerX != 0 || centerY != 0)
 			{
 				//1. translate anchor to the origin (-a)
 				//2. rotate about the origin
 				//3. translate back (+a)
 				//var M = new Mat44();
 				//M.setScale(sx, sy, 1);
-				//M.catTranslate(-ax, -ay, 0);
+				//M.catTranslate(-cx, -cy, 0);
 				//M.catRotateZ(rotation);
-				//M.catTranslate(ax + x, ay + y, 0);
+				//M.catTranslate(cx + x, cy + y, 0);
 				var s = r.sineCosine.x;
 				var c = r.sineCosine.y;
-				local.setTranslate(x - (c * anchorX - s * anchorY), y - (s * anchorX + c * anchorY), 0);
+				local.setTranslate(x - (c * centerX - s * centerY), y - (s * centerX + c * centerY), 0);
 			}
 			else
-				local.setTranslate(x - anchorX, y - anchorY, 0);
+				local.setTranslate(x - centerX, y - centerY, 0);
 		}
 		else
 		{
@@ -592,7 +592,7 @@ class Spatial implements Visitable
 				clrf(BIT_HAS_ROTATION);
 				local.getRotate().setIdentity();
 			}
-			local.setTranslate(x - anchorX, y - anchorY, 0);
+			local.setTranslate(x - centerX, y - centerY, 0);
 		}
 		
 		(scaleX == scaleY) ? local.setUniformScale(scaleX) : local.setScale(scaleX, scaleY, 1);
