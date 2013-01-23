@@ -289,13 +289,6 @@ class Spatial implements Visitable
 		return value;
 	}
 	
-	
-	
-	
-	
-	
-	
-	
 	public function visit(preflight:Bool, userData:Dynamic):Bool
 	{
 		clrf(BIT_WORLD_CHANGED);
@@ -303,9 +296,6 @@ class Spatial implements Visitable
 		return true;
 	}
 	
-	/**
-	 * TODO
-	 */
 	public function cull(renderer:Renderer, noCull:Bool):Void
 	{
 		if (hasf(BIT_FORCE_CULL)) return;
@@ -376,12 +366,9 @@ class Spatial implements Visitable
 		//propagate new state to the subtree rooted here
 		propagateRenderStateUpdate(stacks);
 		
-		initiator ? GlobalState.getStacks() : popState(stacks);
+		initiator ? GlobalState.clrStacks() : popState(stacks);
 	}
 	
-	/**
-	 * TODO
-	 */
 	public function getGlobalState(type:GlobalStateType):GlobalState
 	{
 		var node = _globalStates;
@@ -393,9 +380,6 @@ class Spatial implements Visitable
 		return null;
 	}
 	
-	/**
-	 * TODO
-	 */
 	public function setGlobalState(state:GlobalState):Void
 	{
 		#if debug
@@ -403,6 +387,7 @@ class Spatial implements Visitable
 		D.assert(state.next == null, 'state.next == null');
 		#end
 		
+		//set initial state
 		if (_globalStates == null)
 		{
 			_globalStates = state;
@@ -496,9 +481,9 @@ class Spatial implements Visitable
 			world.set(local); //root node
 	}
 	
-	function updateWorldBound() {}
+	function updateWorldBound():Void {}
 	
-	function propagateBoundToRoot()
+	function propagateBoundToRoot():Void
 	{
 		var parent = treeNode.parent;
 		if (parent != null)
@@ -509,7 +494,7 @@ class Spatial implements Visitable
 		}
 	}
 	
-	function propageStateFromRoot(stacks:GlobalStateStacks)
+	function propageStateFromRoot(stacks:GlobalStateStacks):Void
 	{
 		//traverse to root to allow downward state propagation
 		var parent = treeNode.parent;
@@ -517,9 +502,9 @@ class Spatial implements Visitable
 		pushState(stacks);
 	}
 	
-	function propagateRenderStateUpdate(stacks:GlobalStateStacks) {}
+	function propagateRenderStateUpdate(stacks:GlobalStateStacks):Void {}
 	
-	inline function syncLocalXForm2d()
+	inline function syncLocalXForm2d():Void
 	{
 		#if debug
 		D.assert(!hasf(BIT_IS_CAMERA), '!hasf(BIT_IS_CAMERA)');
@@ -556,7 +541,7 @@ class Spatial implements Visitable
 		(scaleX == scaleY) ? local.setUniformScale2(scaleX) : local.setScale2(scaleX, scaleY);
 	}
 	
-	inline function syncLocalXForm3d()
+	inline function syncLocalXForm3d():Void
 	{
 		#if debug
 		D.assert(!hasf(BIT_IS_CAMERA), '!hasf(BIT_IS_CAMERA)');
@@ -598,7 +583,7 @@ class Spatial implements Visitable
 		(scaleX == scaleY) ? local.setUniformScale(scaleX) : local.setScale(scaleX, scaleY, 1);
 	}
 	
-	inline function pushState(stacks:GlobalStateStacks)
+	inline function pushState(stacks:GlobalStateStacks):Void
 	{
 		var node = _globalStates;
 		while (node != null)
@@ -608,7 +593,7 @@ class Spatial implements Visitable
 		}
 	}
 	
-	inline function popState(stacks:GlobalStateStacks)
+	inline function popState(stacks:GlobalStateStacks):Void
 	{
 		var node = _globalStates;
 		while (node != null)

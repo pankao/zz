@@ -55,12 +55,14 @@ import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.zz.scene.AlphaState;
 import de.polygonal.zz.scene.Camera;
 import de.polygonal.zz.scene.GeometryType;
+import de.polygonal.zz.scene.GlobalState;
 import de.polygonal.zz.scene.Renderer;
 import de.polygonal.zz.scene.Spatial;
 import de.polygonal.zz.scene.TriMesh;
 import flash.display.Stage3D;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DBlendFactor;
+import flash.display3D.Context3DClearMask;
 import flash.display3D.Context3DCompareMode;
 import flash.display3D.Context3DTriangleFace;
 
@@ -81,7 +83,6 @@ class Stage3DRenderer extends Renderer
 	public var currBrush:Stage3DBrush;
 	
 	var _antiAliasMode:Int;
-	var _enableDepthBufferAndStencil:Bool;
 	var _batchActive:Bool;
 	var _batch:DA<Spatial>;
 	var _currBrush:Stage3DBrush;
@@ -93,7 +94,7 @@ class Stage3DRenderer extends Renderer
 	
 	var _numDeviceLost:Int;
 	
-	public function new(width:Int, height:Int)
+	public function new(width = 0, height = 0)
 	{
 		if (!RenderSurface.isHardware()) throw 'stage3d not available';
 		
@@ -128,11 +129,7 @@ class Stage3DRenderer extends Renderer
 		];
 		
 		_textureHandles = new IntHashTable(32, 32, false, 32);
-		_enableDepthBufferAndStencil = false;
 		_batch = new DA();
-		
-		drawDeferred = drawDeferredBatch;
-		
 		super(width, height);
 	}
 	
@@ -181,18 +178,6 @@ class Stage3DRenderer extends Renderer
 		{
 			_antiAliasMode = flag;
 			if (context != null) configureBackBuffer();
-		}
-	}
-	
-	/**
-	 * Default value is false.
-	 */
-	public function enableDepthBufferAndStencil(x:Bool):Void
-	{
-		if (x != _enableDepthBufferAndStencil)
-		{
-			_enableDepthBufferAndStencil = x;
-			configureBackBuffer();
 		}
 	}
 	
@@ -309,14 +294,17 @@ class Stage3DRenderer extends Renderer
 	
 	override public function drawDeferredBatch():Void
 	{
+		//nothing to draw
 		if (_deferredObjects.isEmpty()) return;
 		
-		//disable deferred drawing
+		//temporarily disable deferred drawing
 		var save = drawDeferred;
 		drawDeferred = null;
 		
 		var numBatchCalls = 0;
 		var currEffectFlags = -1;
+		var currStateFlags = -1;
+		var states:DA<GlobalState> = null;
 		var prevBrush:Stage3DBrush = null;
 		var currBrush:Stage3DBrush = null;
 		
@@ -325,6 +313,7 @@ class Stage3DRenderer extends Renderer
 		for (i in 0..._deferredObjects.size())
 		{
 			var o = _deferredObjects.get(i);
+			var g = o.__geometry;
 			
 			if (o.isNode()) continue;
 			
@@ -333,14 +322,15 @@ class Stage3DRenderer extends Renderer
 			#end
 			
 			var effect = o.effect;
-			
 			var effectFlags = effect.flags;
 			
-			//first geometry node
 			if (currEffectFlags < 0)
 			{
+				//insert first first geometry node into batch
 				currEffectFlags = effectFlags;
 				currTexture = effect.tex;
+				currStateFlags = g.stateFlags;
+				states = g.states;
 				
 				currStage3DTexture =
 				if (currTexture != null)
@@ -350,23 +340,28 @@ class Stage3DRenderer extends Renderer
 				
 				prevBrush = null;
 				currBrush = findBrush(effectFlags, currStage3DTexture != null ? currStage3DTexture.flags : 0, true);
-				currBrush.add(o.__geometry);
+				currBrush.add(g);
 				continue;
 			}
 			
 			var effectsChanged = effectFlags != currEffectFlags;
 			var textureChanged = effect.tex != currTexture;
+			var stateChanged   = g.stateFlags != currStateFlags;
 			var batchExhausted = currBrush.isFull();
-			
-			if (effectsChanged || textureChanged || batchExhausted)
+			if (effectsChanged || textureChanged || stateChanged || batchExhausted)
 			{
-				//draw batched geometry
+				if (allowGlobalState)
+					setGlobalState(states);
+				
+				//current batch needs to be drawn
 				currBrush.draw(this);
 				numBatchCalls++;
 				
-				//start new batch with current geometry
+				//initialize new batch for current geometry
 				currEffectFlags = effectFlags;
 				currTexture = effect.tex;
+				currStateFlags = g.stateFlags;
+				states = g.states;
 				
 				currStage3DTexture =
 				if (currTexture != null)
@@ -379,12 +374,15 @@ class Stage3DRenderer extends Renderer
 					currBrush = findBrush(effectFlags, currStage3DTexture != null ? currStage3DTexture.flags : 0, true);
 			}
 			
-			currBrush.add(o.__geometry);
+			currBrush.add(g);
 		}
 		
 		//draw remainder
 		if (!currBrush.isEmpty())
 		{
+			if (allowGlobalState)
+				setGlobalState(states);
+			
 			currBrush.draw(this);
 			numBatchCalls++;
 		}
@@ -411,9 +409,7 @@ class Stage3DRenderer extends Renderer
 		if (currGeometry.type == GeometryType.QUAD)
 		{
 			if (currEffect == null)
-			{
 				return;
-			}
 			
 			var e = currEffect.flags;
 			
@@ -522,7 +518,7 @@ class Stage3DRenderer extends Renderer
 	{
 		try
 		{
-			context.configureBackBuffer(width, height, _antiAliasMode, _enableDepthBufferAndStencil);
+			context.configureBackBuffer(width, height, _antiAliasMode, false);
 		}
 		catch (unknown:Dynamic)
 		{

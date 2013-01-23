@@ -41,14 +41,14 @@ class GlobalState
 	{
 		if (_stacks == null)
 		{
-			_stacks = new Array();
+			_stacks = [];
 			for (i in 0...Type.getEnumConstructs(GlobalStateType).length)
 				_stacks[i] = new ArrayedStack();
 		}
 		return _stacks;
 	}
 	
-	public static function clearStacks():Void
+	public static function clrStacks():Void
 	{
 		for (i in _stacks) i.clear();
 	}
@@ -62,6 +62,7 @@ class GlobalState
 	}
 	
 	public var type(default, null):GlobalStateType;
+	public var flag(default, null):Int;
 	
 	public var index(default, null):Int;
 	public var enabled:Bool;

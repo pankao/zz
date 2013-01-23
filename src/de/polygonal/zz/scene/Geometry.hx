@@ -61,6 +61,7 @@ class Geometry extends Spatial
 	public var modelBound:BoundingVolume;
 	
 	public var states:DA<GlobalState>;
+	public var stateFlags:Int;
 	
 	function new(geometryType:Int, id:String = null)
 	{
@@ -82,7 +83,7 @@ class Geometry extends Spatial
 		super.free();
 		modelBound.free();
 		modelBound = null;
-		//states.free();
+		states.free();
 		states = null;
 	}
 	
@@ -101,6 +102,7 @@ class Geometry extends Spatial
 	override public function draw(renderer:Renderer, noCull:Bool):Void
 	{
 		renderer.drawGeometry(this);
+		renderer.numCallsToDrawGeometry++;
 	}
 	
 	public function updateModelState():Void
@@ -110,7 +112,7 @@ class Geometry extends Spatial
 		setf(Spatial.BIT_MODEL_CHANGED);
 	}
 	
-	override function updateWorldBound()
+	override function updateWorldBound():Void
 	{
 		//apply current world transformation to compute world bounding volume from model bounding volume
 		modelBound.transformBy(world, worldBound);
@@ -127,14 +129,20 @@ class Geometry extends Spatial
 			states.fill(null, max);
 		}
 		
+		stateFlags = 0;
 		for (i in 0...stacks.length)
 		{
 			var stack = stacks[i];
-			if (!stack.isEmpty()) states.set(i, stack.top());
+			if (!stack.isEmpty())
+			{
+				var state = stack.top();
+				states.set(i, state);
+				stateFlags |= state.flag;
+			}
 		}
 	}
 	
-	function updateModelBound()
+	function updateModelBound():Void
 	{
 		//compute model bounding volume from vertices
 		modelBound.computeFromData(vertices);

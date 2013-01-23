@@ -57,28 +57,26 @@ enum DstBlendFactor
 
 class AlphaState extends GlobalState
 {
-	public static var ADD_NO_ALPHA           = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.One);
-    public static var BLEND                  = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.OneMinusSourceAlpha);
-    public static var FILTER                 = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.Zero);
-    public static var MODULATE               = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.Zero);
-    public static var PREMULTIPLIED_ALPHA    = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.OneMinusSourceAlpha);
-    public static var NO_PREMULTIPLIED_ALPHA = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.OneMinusSourceAlpha);
-    public static var ADD                    = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.One);
+	public static var NONE                   = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.Zero);
+	public static var BLEND                  = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.OneMinusSourceAlpha);
+	public static var FILTER                 = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.Zero);
+	public static var MODULATE               = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.Zero);
+	public static var PREMULTIPLIED_ALPHA    = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.OneMinusSourceAlpha);
+	public static var NO_PREMULTIPLIED_ALPHA = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.OneMinusSourceAlpha);
+	public static var ADD                    = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.One);
 	
 	public var src:SrcBlendFactor;
 	public var dst:DstBlendFactor;
 	
-	public var key:Int;
-	
-	public function new(src:SrcBlendFactor = null, dst:DstBlendFactor = null)
+	public function new(src:SrcBlendFactor, dst:DstBlendFactor)
 	{
 		super(GlobalStateType.Alpha);
 		__alphaState = this;
 		
-		this.src = src == null ? SrcBlendFactor.SourceAlpha : src;
-		this.dst = dst == null ? DstBlendFactor.OneMinusSourceAlpha : dst;
+		this.src = src;
+		this.dst = dst;
 		
-		key = (Type.enumIndex(src) + 1) << 16 | (Type.enumIndex(dst) + 1);
+		flag = 1 << index | (1 << Type.enumIndex(src) | 1 << Type.enumIndex(dst)) << 16;
 	}
 	
 	public function toString():String
