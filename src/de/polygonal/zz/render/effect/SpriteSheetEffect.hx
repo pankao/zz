@@ -61,6 +61,12 @@ class SpriteSheetEffect extends TextureEffect
 		__spriteSheetEffect = this;
 	}
 	
+	override public function free():Void
+	{
+		super.free();
+		sheet = null;
+	}
+	
 	override public function draw(renderer:Renderer):Void
 	{
 		renderer.drawSpriteSheetEffect(this);

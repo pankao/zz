@@ -138,19 +138,14 @@ class Effect
 	public var __textEffect:TextEffect;
 	
 	var _color:Int;
-	
 	var _colorXForm:ColorXForm;
-	
 	var _alpha:Float;
-	
 	var _tex:Tex;
 	
 	var _bits:Int;
 	
 	public function new()
 	{
-		free();
-		
 		_alpha = 1;
 		_color = 0xff00ff;
 		_bits = EFF_COLOR;
@@ -160,11 +155,13 @@ class Effect
 	{
 		colors = null;
 		colorXForm = null;
-		_tex = null;
 		uv = null;
+		
+		_tex = null;
 		
 		__textureEffect = null;
 		__spriteSheetEffect = null;
+		__textEffect = null;
 	}
 	
 	public function draw(renderer:Renderer):Void
@@ -172,11 +169,20 @@ class Effect
 		renderer.drawEffect(this);
 	}
 	
-	inline public function hasUVChanged():Bool return hasf(UV_CHANGED)
+	inline public function hasUVChanged():Bool
+	{
+		return hasf(UV_CHANGED);
+	}
 	
-	inline public function hasAlphaChanged():Bool return hasf(ALPHA_CHANGED)
+	inline public function hasAlphaChanged():Bool
+	{
+		return hasf(ALPHA_CHANGED);
+	}
 	
-	inline public function hasColorXFormChanged():Bool return hasf(COLORXFORM_CHANGED)
+	inline public function hasColorXFormChanged():Bool
+	{
+		return hasf(COLORXFORM_CHANGED);
+	}
 	
 	inline public function makeCurrent():Void
 	{

@@ -31,6 +31,7 @@ package de.polygonal.zz.render.texture.thirdparty;
 
 import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Limits;
+import de.polygonal.core.math.Mathematics;
 import de.polygonal.ds.ArrayUtil;
 import de.polygonal.ds.Bits;
 import de.polygonal.zz.render.texture.Rect;
@@ -51,7 +52,7 @@ class BMFontFormat extends SpriteAtlasFormat
 			var fast = new haxe.xml.Fast(Xml.parse(src).firstElement());
 			
 			charSet              = new BitmapCharSet();
-			charSet.renderedSize = fast.node.info.att.size.parseInt();
+			charSet.renderedSize = M.abs(fast.node.info.att.size.parseInt());
 			charSet.lineHeight   = fast.node.common.att.lineHeight.parseInt();
 			charSet.base         = fast.node.common.att.base.parseInt();
 			charSet.textureW     = fast.node.common.att.scaleW.parseInt();
@@ -112,6 +113,12 @@ class BMFontFormat extends SpriteAtlasFormat
 			trace('invalid xml file: ' + error);
 		}
 	}
+	
+	public function free():Void
+	{
+		charSet.free();
+		charSet = null;
+	}
 }
 
 class BitmapChar
@@ -144,6 +151,12 @@ class BitmapCharSet
 		characters = ArrayUtil.alloc(256);
 		ArrayUtil.assign(characters, BitmapChar, [], 256);
 		kerning = new IntHash<Int>();
+	}
+	
+	public function free():Void
+	{
+		characters = null;
+		kerning = null;
 	}
 	
 	public function toString():String
