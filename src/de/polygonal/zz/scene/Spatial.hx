@@ -171,6 +171,8 @@ class Spatial implements Visitable
 		return value;
 	}
 	
+	public var __next:Spatial;
+	
 	var _bits:Int;
 	var _globalStates:GlobalState;
 	
@@ -216,6 +218,7 @@ class Spatial implements Visitable
 		userData = null;
 		__geometry = null;
 		__node = null;
+		__next = null;
 	}
 	
 	/**
