@@ -27,8 +27,10 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.flash.displaylist;
+package de.polygonal.zz.render.module.flash.misc;
 
+import de.polygonal.core.math.Mat44;
+import de.polygonal.core.math.Vec3;
 import de.polygonal.ds.IntHashTable;
 import de.polygonal.gl.color.RGBA;
 import de.polygonal.zz.render.effect.Effect;
@@ -54,8 +56,7 @@ import de.polygonal.zz.render.effect.Effect.*;
 
 class BitmapDataRenderer extends Renderer
 {
-	public var bitmap(default, null):Bitmap;
-	
+	var _bitmap:Bitmap;
 	var _canvas:BitmapData;
 	
 	var _scratchMatrix:Matrix;
@@ -67,12 +68,12 @@ class BitmapDataRenderer extends Renderer
 	
 	var _tileLookup:IntHashTable<Tile>;
 	
-	public function new()
+	public function new(width = 0, height = 0)
 	{
-		super();
+		super(width, height);
 		
-		_canvas = new BitmapData(RenderSurface.width, RenderSurface.height, true, 0);
-		bitmap = new Bitmap(_canvas, PixelSnapping.NEVER, false);
+		_canvas = new BitmapData(this.width, this.height, true, 0);
+		_bitmap = new Bitmap(_canvas, PixelSnapping.NEVER, false);
 		
 		_scratchMatrix = new Matrix();
 		_scratchColorTransform = new ColorTransform();
@@ -82,7 +83,7 @@ class BitmapDataRenderer extends Renderer
 		_tileLookup = new IntHashTable(512, 512, false, 512);
 		_scratchShape = new Shape();
 		
-		RenderSurface.root.addChild(bitmap);
+		drawDeferred = null;
 	}
 	
 	override public function free():Void
@@ -102,8 +103,13 @@ class BitmapDataRenderer extends Renderer
 		_tileLookup.free();
 		_tileLookup = null;
 		
-		DisplayListUtil.remove(bitmap);
-		bitmap = null;
+		DisplayListUtil.remove(_bitmap);
+		_bitmap = null;
+	}
+	
+	public function getBitmap():Bitmap
+	{
+		return _bitmap;
 	}
 	
 	override public function createTex(image:Image):Tex
@@ -125,7 +131,7 @@ class BitmapDataRenderer extends Renderer
 			if (effect.alpha == 1)
 				(0xff << 24) | effect.color;
 			else
-				(cast(effect.alpha * 0xff, Int) << 24) | effect.color;
+				(cast(effect.alpha * 0xff) << 24) | effect.color;
 			
 			if (effect.flags & EFF_COLOR_XFORM > 0)
 				color = effect.colorXForm.transformRGBA(color);
@@ -236,7 +242,7 @@ class BitmapDataRenderer extends Renderer
 		var t = world.getTranslate();
 		
 		//fast blitting if no rotation, scale and effects
-		if (currGeometry.rotation == 0)
+		/*if (currGeometry.rotation == 0)
 		{
 			if (s.x == uv.w && s.y == uv.h)
 			{
@@ -248,12 +254,16 @@ class BitmapDataRenderer extends Renderer
 					return;
 				}
 			}
-		}
+		}*/
 		
 		var flashMatrix = transformationToMatrix(world, uv.w, uv.h, _scratchMatrix);
 		var flashColorTransform = getColorTransform(effect);
-		
 		_canvas.draw(tile.b, flashMatrix, flashColorTransform, null, null, effect.smooth);
+	}
+	
+	override public function onViewPortChange():Void
+	{
+		_projMatrix.setIdentity();
 	}
 	
 	override function onBeginScene():Void
@@ -333,11 +343,6 @@ class BitmapDataRenderer extends Renderer
 		ct.alphaOffset = o.a;
 		
 		return ct;
-	}
-	
-	override function getType():Int
-	{
-		return Renderer.TYPE_FLASH_SOFTWARE;
 	}
 }
 

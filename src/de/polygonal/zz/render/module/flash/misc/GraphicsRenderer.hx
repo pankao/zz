@@ -27,7 +27,7 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.flash.displaylist;
+package de.polygonal.zz.render.module.flash.misc;
 
 import de.polygonal.core.math.Vec2;
 import de.polygonal.core.math.Vec3;
@@ -48,11 +48,11 @@ class GraphicsRenderer extends Renderer
 {
 	public static var ZERO = new Vec3();
 	
-	public var drawNames:Bool;
-	public var drawParentLinks:Bool;
-	public var drawTriangles:Bool;
-	public var drawBounds:Bool;
-	public var drawOrigin:Bool;
+	public var drawNames = false;
+	public var drawParentLinks = true;
+	public var drawTriangles = true;
+	public var drawBounds = true;
+	public var drawOrigin = true;
 	
 	var _vr:VectorRenderer;
 	var _font:VectorFont;
@@ -63,18 +63,15 @@ class GraphicsRenderer extends Renderer
 	
 	var _graphics:Graphics;
 	
-	public function new()
+	public function new(width = 0, height = 0)
 	{
-		super();
+		super(width, height);
+		
+		drawDeferred = null;
+		
 		_graphics = RenderSurface.root.graphics;
 		
 		noCulling = true;
-		
-		drawNames = true;
-		drawParentLinks = false;
-		drawTriangles = true;
-		drawBounds = true;
-		drawOrigin = true;
 		
 		_vr = new VectorRenderer();
 		_font = new de.polygonal.gl.text.fonts.rondaseven.PFRondaSeven();
@@ -323,10 +320,5 @@ class GraphicsRenderer extends Renderer
 		_vr.fillStart();
 		_font.write(text, cast x, cast y);
 		_vr.fillEnd();
-	}
-	
-	override function getType():Int 
-	{
-		return Renderer.TYPE_FLASH_SOFTWARE;
 	}
 }
