@@ -48,7 +48,6 @@ using de.polygonal.ds.BitFlags;
 	BIT_WORLD_CHANGED,
 	BIT_WORLD_CURRENT,
 	BIT_FORCE_CULL,
-	BIT_IS_CAMERA,
 	BIT_USE_2D_XFORM,
 	BIT_HAS_ROTATION,
 	BIT_MODEL_CHANGED,		//used in Geometry
@@ -461,19 +460,15 @@ class Spatial implements Visitable
 	{
 		if (hasf(BIT_WORLD_CURRENT)) return;
 		
-		var sync = !hasf(BIT_IS_CAMERA);
-		if (sync)
-		{
-			hasf(Spatial.BIT_USE_2D_XFORM) ? syncLocalXForm2d() : syncLocalXForm3d();
-			clrf(BIT_LOCAL_CHANGED);
-			setf(BIT_WORLD_CHANGED);
-		}
+		hasf(Spatial.BIT_USE_2D_XFORM) ? syncLocalXForm2d() : syncLocalXForm3d();
+		clrf(BIT_LOCAL_CHANGED);
+		setf(BIT_WORLD_CHANGED);
 		
 		var parent = treeNode.parent;
 		if (parent != null)
 		{
 			var node:Spatial = parent.val;
-			if (sync || node.hasf(BIT_WORLD_CHANGED))
+			if (node.hasf(BIT_WORLD_CHANGED))
 			{
 				//W' = Wp * L
 				hasf(Spatial.BIT_USE_2D_XFORM) ? world.product2(node.world, local) : world.product(node.world, local);
@@ -507,12 +502,8 @@ class Spatial implements Visitable
 	
 	function propagateRenderStateUpdate(stacks:GlobalStateStacks):Void {}
 	
-	inline function syncLocalXForm2d():Void
+	function syncLocalXForm2d():Void
 	{
-		#if debug
-		D.assert(!hasf(BIT_IS_CAMERA), '!hasf(BIT_IS_CAMERA)');
-		#end
-		
 		var cx = centerX * M.fsgn(scaleX);
 		var cy = centerY * M.fsgn(scaleY);
 		
@@ -544,12 +535,8 @@ class Spatial implements Visitable
 		(scaleX == scaleY) ? local.setUniformScale2(scaleX) : local.setScale2(scaleX, scaleY);
 	}
 	
-	inline function syncLocalXForm3d():Void
+	function syncLocalXForm3d():Void
 	{
-		#if debug
-		D.assert(!hasf(BIT_IS_CAMERA), '!hasf(BIT_IS_CAMERA)');
-		#end
-		
 		if (rotation != 0)
 		{
 			setf(BIT_HAS_ROTATION);

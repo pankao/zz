@@ -61,7 +61,6 @@ class Camera extends Spatial
 		zoom = 1;
 		
 		_scratchVec = new Vec3();
-		setf(Spatial.BIT_IS_CAMERA);
 	}
 	
 	override public function free():Void
@@ -140,12 +139,22 @@ class Camera extends Spatial
 	/**
 	 * Do nothing.
 	 */
-	override public function draw(renderer:Renderer, noCull:Bool):Void {}
+	override public function draw(renderer:Renderer, noCull:Bool):Void
+	{
+	}
 	
-	override function updateWorldBound()
+	override function updateWorldBound():Void
 	{
 		//the camera has an implicit model bound whose center is the camera's position and whose radius is zero.
 		worldBound.setCenter(world.applyForward(local.getTranslate(), _scratchVec));
 		worldBound.setRadius(0);
+	}
+	
+	override function syncLocalXForm2d():Void
+	{
+	}
+	
+	override function syncLocalXForm3d():Void
+	{
 	}
 }
