@@ -31,8 +31,10 @@ package de.polygonal.zz.scene;
 
 import de.polygonal.core.math.Mat44;
 import de.polygonal.core.math.Mathematics;
+import de.polygonal.ds.ArrayedStack;
 import de.polygonal.ds.Bits;
 import de.polygonal.ds.DA;
+import de.polygonal.ds.TreeNode;
 import de.polygonal.gl.color.ColorRGBA;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
@@ -48,6 +50,7 @@ import flash.geom.Matrix3D;
 import flash.geom.Vector3D;
 import flash.Vector;
 import flash.Vector;
+import haxe.ds.IntMap;
 
 using de.polygonal.ds.BitFlags;
 
@@ -73,10 +76,11 @@ class Renderer
 	public var currGlobalEffect(default, null):Effect;
 	public var currMVP(default, null):Mat44;
 	public var currViewProjMatrix(default, null):Mat44;
-	public var currTexture:Tex;
+	public var currTexture(default, null):Tex;
 	
 	public var drawDeferred:Void->Void;
 	
+	public var numCallsToDrawGeometry:Int;
 	public var numCulledObjects:Int;
 
 	/**
@@ -84,9 +88,9 @@ class Renderer
 	 */
 	public var noCulling = false;
 	
-	public var allowGlobalState:Bool;
-	public var allowAlphaState:Bool;
-	public var allowTextures:Bool;
+	public var allowGlobalState = true;
+	public var allowAlphaState = true;
+	public var allowTextures = true;
 	
 	public var currAlphaState:AlphaState;
 	
@@ -94,13 +98,22 @@ class Renderer
 	var _viewMatrix:Mat44;
 	var _projMatrix:Mat44;
 	var _backgroundColor:ColorRGBA;
-	var _deferredObjects:DA<Spatial>;
-	var _textureLookup:IntHash<Tex>;
 	
-	public function new(width:Int, height:Int)
+	var _deferredDrawingActive:Bool;
+	var _deferredObjectsList:Spatial;
+	var _deferredObjectsNode:Spatial;
+	
+	var _textureLookup:IntMap<Tex>;
+	
+	var _scratchStack:ArrayedStack<TreeNode<Spatial>>;
+	
+	public function new(width = 0, height = 0)
 	{
 		if (RenderSurface.isReady() == false) throw 'Surface not initialized.';
 		if (RenderSurface.isResizable()) RenderSurface.onResize = function(w, h) resize(w, h);
+		
+		if (width == 0) width = RenderSurface.width;
+		if (height == 0) height = RenderSurface.height;
 		
 		this.width = width;
 		this.height = height;
@@ -113,18 +126,18 @@ class Renderer
 		currGlobalEffect = null;
 		currViewProjMatrix = new Mat44();
 		drawDeferred = null;
-		allowGlobalState = true;
-		allowAlphaState = true;
-		allowTextures = true;
-		_deferredObjects = new DA();
 		
-		currAlphaState = new AlphaState(AlphaState.SrcBlendFactor.Zero, AlphaState.DstBlendFactor.Zero);
-		currAlphaState.key = -1;
+		_deferredObjectsList = new Node('deferredList');
+		_deferredObjectsNode = null;
+		
+		currAlphaState = AlphaState.NONE;
 		
 		_viewMatrix = new Mat44();
 		_projMatrix = new Mat44();
 		_backgroundColor = new ColorRGBA(1, 1, 1, 1);
-		_textureLookup = new IntHash();
+		_textureLookup = new IntMap();
+		
+		_scratchStack = new ArrayedStack<TreeNode<Spatial>>();
 		
 		setCamera(new Camera());
 		onViewPortChange();
@@ -144,8 +157,16 @@ class Renderer
 		_viewMatrix = null;
 		_projMatrix = null;
 		_backgroundColor = null;
-		_deferredObjects.free();
-		_deferredObjects = null;
+		
+		var node = _deferredObjectsList;
+		while (node != null)
+		{
+			var next = node.__next;
+			node.__next = null;
+			node = next;
+		}
+		_deferredObjectsList = null;
+		_deferredObjectsNode = null;
 		
 		if (_camera != null)
 		{
@@ -190,7 +211,7 @@ class Renderer
 			if (state != null)
 			{
 				var alphaState = state.__alphaState;
-				if (alphaState.key != currAlphaState.key)
+				if (alphaState.flag != currAlphaState.flag)
 				{
 					setAlphaState(state.__alphaState);
 					currAlphaState = alphaState;
@@ -199,8 +220,9 @@ class Renderer
 		}
 	}
 	
-	public function setAlphaState(state:AlphaState):Void
+	function setAlphaState(state:AlphaState):Void
 	{
+		throw 'override for implementation';
 	}
 	
 	public function drawScene(scene:Node):Void
@@ -212,25 +234,52 @@ class Renderer
 		
 		currScene = scene;
 		
+		numCallsToDrawGeometry = 0;
+		
 		onBeginScene();
+		
+		_deferredObjectsList.__next = null;
+		_deferredObjectsNode = _deferredObjectsList;
 		
 		numCulledObjects = 0;
 		scene.cull(this, noCulling);
 		
+		//terminate list
+		_deferredObjectsNode.__next = null;
+		
 		if (drawDeferred != null)
 		{
+			_deferredDrawingActive = true;
 			drawDeferred();
-			_deferredObjects.clear();
+			_deferredDrawingActive = false;
 		}
 		
 		onEndScene();
 		
-		//clear Spatial.BIT_WORLD_CHANGED, BIT_MODEL_CHANGED flag
-		scene.treeNode.preorder();
+		_deferredObjectsList.__next = null;
+		_deferredObjectsNode = null;
+		
+		//clear flags
+		var s = _scratchStack;
+		s.clear();
+		s.push(scene.treeNode.children);
+		while (s.size() > 0)
+		{
+			var node = s.pop();
+			var spatial = node.val;
+			spatial.clrf(Spatial.BIT_WORLD_CHANGED | Spatial.BIT_MODEL_CHANGED);
+			var n = node.children;
+			while (n != null)
+			{
+				s.push(n);
+				n = n.next;
+			}
+		}
 	}
 	
 	public function drawNode(node:Node):Void
 	{
+		//draw instantly
 		if (drawDeferred == null)
 		{
 			currNode = node;
@@ -244,13 +293,26 @@ class Renderer
 			
 			currNode = null;
 			currGlobalEffect = null;
+			return;
 		}
-		else
-			_deferredObjects.pushBack(node);
+		
+		//accumulate for deferred drawing
+		_deferredObjectsNode = _deferredObjectsNode.__next = node;
 	}
 	
 	public function drawGeometry(geometry:Geometry):Void
 	{
+		//if deferred drawing is active, insert geometry into list of deferred objects
+		if (_deferredDrawingActive)
+		{
+			var next = _deferredObjectsNode.__next;
+			
+			_deferredObjectsNode.__next = geometry;
+			geometry.__next = next;
+			return;
+		}
+		
+		//draw instantly
 		if (drawDeferred == null)
 		{
 			currGeometry = geometry;
@@ -263,9 +325,11 @@ class Renderer
 			
 			currEffect = null;
 			currGeometry = null;
+			return;
 		}
-		else
-			_deferredObjects.pushBack(geometry);
+		
+		//accumulate for deferred drawing
+		_deferredObjectsNode = _deferredObjectsNode.__next = geometry;
 	}
 	
 	public function drawPrimitive():Void
@@ -288,11 +352,12 @@ class Renderer
 		var save = drawDeferred;
 		drawDeferred = null;
 		
-		for (o in _deferredObjects)
+		throw 'todo';
+		/*for (o in _deferredObjects)
 		{
 			if (o.isGeometry()) drawGeometry(o.__geometry);
 			if (o.isNode()) drawNode(o.__node);
-		}
+		}*/
 		
 		//restore deferred drawing
 		drawDeferred = save;
@@ -348,9 +413,11 @@ class Renderer
 	{
 		var xform = spatial.world;
 		
-		#if debug
-		D.assert(!xform.isIdentity(), '!xform.isIdentity()');
-		#end
+		if (xform.isIdentity())
+		{
+			output.setIdentity();
+			return output;
+		}
 		
 		if (spatial.hasf(Spatial.BIT_USE_2D_XFORM))
 		{
@@ -443,21 +510,44 @@ class Renderer
 	
 	public function onViewPortChange():Void
 	{
-		_projMatrix.setOrtho(-width / 2, width / 2, -height / 2, height / 2, 0, 1);
+		//_projMatrix.setOrtho(-width / 2, width / 2, -height / 2, height / 2, 0, 1);
+		
+		_projMatrix.ofMatrix3D(makeOrtographicMatrix(0, width, 0, height));
+		trace( "_projMatrix : " + _projMatrix );
 		
 		//screen coordinates where the origin is at the upper-left corner of the screen
-		_projMatrix.catScale(1, -1, 1);
-		_projMatrix.catTranslate(-1, 1, 0);
+		//_projMatrix.catScale(1, -1, 1);
+		//_projMatrix.catTranslate(-1, 1, 0);
+	}
+	
+	function makeOrtographicMatrix(left:Float, right:Float, top:Float, bottom:Float, zNear:Float = 0, zFar:Float = 1):Matrix3D
+	{
+		var a:Array<Float> = [
+				2. / (right - left), 0, 0,  0,
+				0,  2 / (top - bottom), 0, 0,
+				0,  0, 1 / (zFar - zNear), 0,
+				0, 0, zNear / (zNear - zFar), 1
+			];
+		
+		return new Matrix3D(Vector.ofArray(a));
 	}
 	
 	public function onFrameChange():Void
 	{
-		var t = _camera.local.getTranslate();
+		_camera.updateGeometricState(false, false);
 		
 		_viewMatrix.setIdentity();
-		_viewMatrix.catScale(_camera.zoom, _camera.zoom, 1.);
-		_viewMatrix.catTranslate(-t.x, -t.y, 0.);
-		_viewMatrix.catRotateZ(_camera.rotation);
+		_viewMatrix.catScale(_camera.scaleX, _camera.scaleY, 1);
+		_viewMatrix.catTranslate(-width / 2 - _camera.x, - height / 2 - _camera.y, 0.);
+		
+		//_viewMatrix.precatScale(_camera.local., _camera.zoom, 1.0);
+		
+		//_viewMatrix.catRotateZ(_camera.rotation);
+		
+		
+		//_viewMatrix.catScale(_camera.zoom, _camera.zoom, 1.);
+		//_viewMatrix.catTranslate(width - t.x, height - t.y, 0.);
+		//_viewMatrix.catRotateZ(_camera.rotation);
 	}
 	
 	/**

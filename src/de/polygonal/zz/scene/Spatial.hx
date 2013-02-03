@@ -44,17 +44,16 @@ using de.polygonal.ds.BitFlags;
 
 @:build(de.polygonal.core.util.IntEnum.build(
 [
-	BIT_LOCAL_CHANGED,
 	BIT_WORLD_CHANGED,
 	BIT_WORLD_CURRENT,
 	BIT_FORCE_CULL,
 	BIT_USE_2D_XFORM,
 	BIT_HAS_ROTATION,
-	BIT_MODEL_CHANGED,		//used in Geometry
-	BIT_WORLD_BOUND_CURRENT //used in Node
+	BIT_MODEL_CHANGED,
+	BIT_WORLD_BOUND_CURRENT
 	
 ], true))
-class Spatial implements Visitable
+class Spatial
 {
 	/**
 	 * The id of this object.<br/>
@@ -198,7 +197,7 @@ class Spatial implements Visitable
 		centerX = 0;
 		centerY = 0;
 		
-		setf(BIT_LOCAL_CHANGED | BIT_USE_2D_XFORM);
+		setf(BIT_USE_2D_XFORM);
 	}
 	
 	/**
@@ -289,13 +288,6 @@ class Spatial implements Visitable
 	{
 		setfif(BIT_FORCE_CULL, value);
 		return value;
-	}
-	
-	public function visit(preflight:Bool, userData:Dynamic):Bool
-	{
-		clrf(BIT_WORLD_CHANGED);
-		if (effect != null) effect.makeCurrent();
-		return true;
 	}
 	
 	public function cull(renderer:Renderer, noCull:Bool):Void
@@ -461,7 +453,6 @@ class Spatial implements Visitable
 		if (hasf(BIT_WORLD_CURRENT)) return;
 		
 		hasf(Spatial.BIT_USE_2D_XFORM) ? syncLocalXForm2d() : syncLocalXForm3d();
-		clrf(BIT_LOCAL_CHANGED);
 		setf(BIT_WORLD_CHANGED);
 		
 		var parent = treeNode.parent;

@@ -87,13 +87,6 @@ class Geometry extends Spatial
 		states = null;
 	}
 	
-	override public function visit(preflight:Bool, userData:Dynamic):Bool
-	{
-		super.visit(preflight, userData);
-		clrf(Spatial.BIT_MODEL_CHANGED);
-		return true;
-	}
-	
 	inline public function hasModelChanged():Bool
 	{
 		return hasf(Spatial.BIT_MODEL_CHANGED);
