@@ -686,32 +686,28 @@ class XForm
 			return this;
 		}
 		
-		//TODO check
-		throw 'check';
+		var ma = a._matrix;
+		var mb = b._matrix;
 		
-		var ma = 
 		if (a.isRSMatrix())
 		{
-			var x = a._scale.x;
-			var y = a._scale.y;
-			_scratchMatrix1.m11 = a._matrix.m11 * x; _scratchMatrix1.m12 = a._matrix.m12 * y;
-			_scratchMatrix1.m21 = a._matrix.m21 * x; _scratchMatrix1.m22 = a._matrix.m22 * y;
-			_scratchMatrix1;
+			var sx = a._scale.x;
+			var sy = a._scale.y;
+			var m = _scratchMatrix1;
+			m.m11 = ma.m11 * sx; m.m12 = ma.m12 * sy;
+			m.m21 = ma.m21 * sx; m.m22 = ma.m22 * sy;
+			ma = m;
 		}
-		else
-			a._matrix;
 		
-		var mb = 
 		if (b.isRSMatrix())
 		{
-			var x = b._scale.x;
-			var y = b._scale.y;
-			_scratchMatrix2.m11 = b._matrix.m11 * x; _scratchMatrix2.m12 = b._matrix.m12 * y;
-			_scratchMatrix2.m21 = b._matrix.m21 * x; _scratchMatrix2.m22 = b._matrix.m22 * y;
-			_scratchMatrix2;
+			var sx = b._scale.x;
+			var sy = b._scale.y;
+			var m = _scratchMatrix2;
+			m.m11 = mb.m11 * sx; m.m12 = mb.m12 * sy;
+			m.m21 = mb.m21 * sx; m.m22 = mb.m22 * sy;
+			mb = m;
 		}
-		else
-			b._matrix;
 		
 		var b11 = mb.m11; var b12 = mb.m12;
 		var b21 = mb.m21; var b22 = mb.m22;
@@ -725,10 +721,6 @@ class XForm
 		t2 = ma.m22;
 		mc.m21 = t1 * b11 + t2 * b21;
 		mc.m22 = t1 * b12 + t2 * b22;
-		t1 = ma.m31;
-		t2 = ma.m32;
-		mc.m31 = t1 * b11 + t2 * b21;
-		mc.m32 = t1 * b12 + t2 * b22;
 		
 		var t = _translate;
 		var ta = a._translate;
