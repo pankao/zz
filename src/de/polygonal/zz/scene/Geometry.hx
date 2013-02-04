@@ -100,7 +100,7 @@ class Geometry extends Spatial
 	
 	public function updateModelState():Void
 	{
-		hasf(Spatial.BIT_USE_2D_XFORM) ? syncLocalXForm2d() : syncLocalXForm3d();
+		useZ ? syncLocalXForm3d() : syncLocalXForm2d();
 		updateModelBound();
 		setf(Spatial.BIT_MODEL_CHANGED);
 	}

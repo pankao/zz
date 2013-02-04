@@ -260,7 +260,7 @@ class Renderer
 		_deferredObjectsNode = null;
 		
 		//clear flags
-		var s = _scratchStack;
+		/*var s = _scratchStack;
 		s.clear();
 		s.push(scene.treeNode.children);
 		while (s.size() > 0)
@@ -268,13 +268,14 @@ class Renderer
 			var node = s.pop();
 			var spatial = node.val;
 			spatial.clrf(Spatial.BIT_WORLD_CHANGED | Spatial.BIT_MODEL_CHANGED);
+			k++;
 			var n = node.children;
 			while (n != null)
 			{
 				s.push(n);
 				n = n.next;
 			}
-		}
+		}*/
 	}
 	
 	public function drawNode(node:Node):Void
@@ -419,49 +420,7 @@ class Renderer
 			return output;
 		}
 		
-		if (spatial.hasf(Spatial.BIT_USE_2D_XFORM))
-		{
-			if (xform.isRSMatrix())
-			{
-				var r = xform.getRotate();
-				var s = xform.getScale();
-				var t = s.x;
-				output.m11 = t * r.m11;
-				output.m21 = t * r.m21;
-				output.m31 = 0;
-				t = s.y;
-				output.m12 = t * r.m12;
-				output.m22 = t * r.m22;
-				output.m32 = 0;
-				output.m13 = 0;
-				output.m23 = 0;
-				output.m33 = 0;
-			}
-			else
-			{
-				var r = xform.getMatrix();
-				output.m11 = r.m11;
-				output.m21 = r.m21;
-				output.m31 = 0;
-				output.m12 = r.m12;
-				output.m22 = r.m22;
-				output.m32 = 0;
-				output.m13 = r.m13;
-				output.m23 = r.m23;
-				output.m33 = 0;
-			}
-			
-			output.m41 = 0;
-			output.m42 = 0;
-			output.m43 = 0;
-			
-			var t = xform.getTranslate();
-			output.m14 = t.x;
-			output.m24 = t.y;
-			output.m34 = 0;
-			output.m44 = 1;
-		}
-		else
+		if (spatial.useZ)
 		{
 			if (xform.isRSMatrix())
 			{
@@ -502,6 +461,48 @@ class Renderer
 			output.m14 = t.x;
 			output.m24 = t.y;
 			output.m34 = t.z;
+			output.m44 = 1;
+		}
+		else
+		{
+			if (xform.isRSMatrix())
+			{
+				var r = xform.getRotate();
+				var s = xform.getScale();
+				var t = s.x;
+				output.m11 = t * r.m11;
+				output.m21 = t * r.m21;
+				output.m31 = 0;
+				t = s.y;
+				output.m12 = t * r.m12;
+				output.m22 = t * r.m22;
+				output.m32 = 0;
+				output.m13 = 0;
+				output.m23 = 0;
+				output.m33 = 0;
+			}
+			else
+			{
+				var r = xform.getMatrix();
+				output.m11 = r.m11;
+				output.m21 = r.m21;
+				output.m31 = 0;
+				output.m12 = r.m12;
+				output.m22 = r.m22;
+				output.m32 = 0;
+				output.m13 = r.m13;
+				output.m23 = r.m23;
+				output.m33 = 0;
+			}
+			
+			output.m41 = 0;
+			output.m42 = 0;
+			output.m43 = 0;
+			
+			var t = xform.getTranslate();
+			output.m14 = t.x;
+			output.m24 = t.y;
+			output.m34 = 0;
 			output.m44 = 1;
 		}
 		

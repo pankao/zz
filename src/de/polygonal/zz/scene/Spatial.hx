@@ -44,14 +44,12 @@ using de.polygonal.ds.BitFlags;
 
 @:build(de.polygonal.core.util.IntEnum.build(
 [
-	BIT_WORLD_CHANGED,
 	BIT_WORLD_CURRENT,
 	BIT_FORCE_CULL,
 	BIT_USE_2D_XFORM,
 	BIT_HAS_ROTATION,
 	BIT_MODEL_CHANGED,
 	BIT_WORLD_BOUND_CURRENT
-	
 ], true))
 class Spatial
 {
@@ -269,11 +267,11 @@ class Spatial
 	 * If false, ignores the z-component to speed up computations.
 	 */
 	public var useZ(get_useZ, set_useZ):Bool;
-	function get_useZ():Bool
+	inline function get_useZ():Bool
 	{
 		return hasf(BIT_USE_2D_XFORM);
 	}
-	function set_useZ(value:Bool):Bool
+	inline function set_useZ(value:Bool):Bool
 	{
 		setfif(BIT_USE_2D_XFORM, value);
 		return value;
@@ -306,11 +304,6 @@ class Spatial
 	public function pick(origin:Vec3, results:Array<Geometry>):Int
 	{
 		return 0;
-	}
-	
-	inline public function hasWorldChanged():Bool
-	{
-		return hasf(BIT_WORLD_CHANGED);
 	}
 	
 	/**
@@ -452,19 +445,15 @@ class Spatial
 	{
 		if (hasf(BIT_WORLD_CURRENT)) return;
 		
-		hasf(Spatial.BIT_USE_2D_XFORM) ? syncLocalXForm2d() : syncLocalXForm3d();
-		setf(BIT_WORLD_CHANGED);
+		useZ ? syncLocalXForm3d() : syncLocalXForm2d();
 		
 		var parent = treeNode.parent;
 		if (parent != null)
 		{
 			var node:Spatial = parent.val;
-			if (node.hasf(BIT_WORLD_CHANGED))
-			{
-				//W' = Wp * L
-				hasf(Spatial.BIT_USE_2D_XFORM) ? world.product2(node.world, local) : world.product(node.world, local);
-				setf(BIT_WORLD_CHANGED);
-			}
+			
+			//W' = Wp * L
+			useZ ? world.product(node.world, local) : world.product2(node.world, local);
 		}
 		else
 			world.set(local); //root node
