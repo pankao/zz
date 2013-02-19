@@ -36,6 +36,7 @@ import de.polygonal.ds.ArrayUtil;
 import de.polygonal.ds.Bits;
 import de.polygonal.zz.render.texture.Rect;
 import de.polygonal.zz.render.texture.SpriteAtlasFormat;
+import haxe.ds.IntMap;
 
 using Std;
 
@@ -98,7 +99,7 @@ class BMFontFormat extends SpriteAtlasFormat
 				names[code] = String.fromCharCode(code);
 			}
 			
-			charSet.kerning = new IntHash();
+			charSet.kerning = new IntMap();
 			
 			for (e in fast.node.kernings.nodes.kerning)
 			{
@@ -139,7 +140,7 @@ class BitmapCharSet
 {
 	public var renderedSize:Int;
 	public var characters:Array<BitmapChar>;
-	public var kerning:IntHash<Int>;
+	public var kerning:IntMap<Int>;
 	public var textureW:Int;
 	public var textureH:Int;
 	
@@ -150,7 +151,7 @@ class BitmapCharSet
 	{
 		characters = ArrayUtil.alloc(256);
 		ArrayUtil.assign(characters, BitmapChar, [], 256);
-		kerning = new IntHash<Int>();
+		kerning = new IntMap<Int>();
 	}
 	
 	public function free():Void
