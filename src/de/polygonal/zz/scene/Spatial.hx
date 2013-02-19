@@ -46,7 +46,7 @@ using de.polygonal.ds.BitFlags;
 [
 	BIT_WORLD_CURRENT,
 	BIT_FORCE_CULL,
-	BIT_USE_2D_XFORM,
+	BIT_USE_3D_XFORM,
 	BIT_HAS_ROTATION,
 	BIT_MODEL_CHANGED,
 	BIT_WORLD_BOUND_CURRENT
@@ -194,8 +194,6 @@ class Spatial
 		scaleY = 1;
 		centerX = 0;
 		centerY = 0;
-		
-		setf(BIT_USE_2D_XFORM);
 	}
 	
 	/**
@@ -269,11 +267,11 @@ class Spatial
 	public var useZ(get_useZ, set_useZ):Bool;
 	inline function get_useZ():Bool
 	{
-		return hasf(BIT_USE_2D_XFORM);
+		return hasf(BIT_USE_3D_XFORM);
 	}
 	inline function set_useZ(value:Bool):Bool
 	{
-		setfif(BIT_USE_2D_XFORM, value);
+		setfif(BIT_USE_3D_XFORM, value);
 		return value;
 	}
 	
@@ -327,10 +325,10 @@ class Spatial
 	 * Updates the world bounding volumes on an upward pass without recomputing transformations.<br/>
 	 * Useful if just the model data changes.
 	 */
-	public function updateBoundState():Void
+	public function updateBoundState(propagateToRoot = true):Void
 	{
 		updateWorldBound();
-		propagateBoundToRoot();
+		if (propagateToRoot) propagateBoundToRoot();
 	}
 	
 	/**
@@ -429,7 +427,7 @@ class Spatial
 		{
 			next = node.next;
 			node.next = null;
-			next = node;
+			node = next;
 		}
 		_globalStates = null;
 	}
