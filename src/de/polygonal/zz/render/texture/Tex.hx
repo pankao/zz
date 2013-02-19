@@ -36,12 +36,17 @@ class Tex extends HashableItem
 {
 	public var image(default, null):Image;
 	
-	public var isPowerOfTwo(default, null):Bool = true;
+	public var isPowerOfTwo(default, null):Bool;
 	
 	/**
 	 * If true, UV coordinates are normalized to [0,1].
 	 */
-	public var isNormalize(default, null):Bool = true;
+	public var isNormalize(default, null):Bool;
+	
+	/**
+	 * If true, true RGB data is stored with premultiplied alpha. Default is true.
+	 */
+	public var preMultipliedAlpha:Bool;
 	
 	/**
 	 * The width of the texture in pixels.<br/>
@@ -76,11 +81,9 @@ class Tex extends HashableItem
 	
 	public function free():Void
 	{
-		if (image != null)
-		{
-			trace('FREE TEXTURE ' + image.key);
-			image.free();
-			image = null;
-		}
+		image = null;
+		w = -1;
+		h = -1;
+		key = -1;
 	}
 }

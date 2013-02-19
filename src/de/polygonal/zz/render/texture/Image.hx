@@ -36,31 +36,35 @@ class Image extends HashableItem
 	#if (flash || nme)
 	public static function ofData(data:flash.display.BitmapData)
 	{
-		return new Image(data, data.width, data.height);
+		return new Image(data, data.width, data.height, true);
 	}
 	#elseif js
 	public static function ofData(data:js.w3c.html5.Core.HTMLImageElement)
 	{
-		return new Image(data, data.width, data.height);
+		return new Image(data, data.width, data.height, true);
 	}
 	#end
 	
+	public var id:String;
 	public var data(default, null):ImageData;
 	public var w(default, null):Int;
 	public var h(default, null):Int;
+	public var premultipliedAlpha:Bool;
 	
-	public function new(data:ImageData, w:Int, h:Int)
+	public function new(data:ImageData, w:Int, h:Int, premultipliedAlpha:Bool)
 	{
 		super();
 		this.data = data;
 		this.w = w;
 		this.h = h;
+		this.id = null;
+		this.premultipliedAlpha = premultipliedAlpha;
 	}
 	
 	public function clone():Image
 	{
 		#if (flash || nme)
-		return new Image(data.clone(), w, h);
+		return new Image(data.clone(), w, h, premultipliedAlpha);
 		#end
 		
 		return throw 'unsupported operation';
@@ -74,5 +78,7 @@ class Image extends HashableItem
 		data = null;
 		w = -1;
 		h = -1;
+		key = -1;
+		id = null;
 	}
 }
