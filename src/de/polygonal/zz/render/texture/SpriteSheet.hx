@@ -31,6 +31,8 @@ package de.polygonal.zz.render.texture;
 
 import de.polygonal.ds.DA;
 import de.polygonal.core.util.Assert;
+import haxe.ds.IntMap;
+import haxe.ds.StringMap;
 
 class SpriteSheet
 {
@@ -38,8 +40,8 @@ class SpriteSheet
 	
 	public var frameCount(default, null):Int;
 	
-	var _cropMap:Hash<Rect>;
-	var _sizeMap:Hash<Size>;
+	var _cropMap:StringMap<Rect>;
+	var _sizeMap:StringMap<Size>;
 	
 	var _cropList:DA<Rect>;
 	var _sizeList:DA<Size>;
@@ -47,8 +49,8 @@ class SpriteSheet
 	var _sheetW:Int;
 	var _sheetH:Int;
 	
-	var _indexMap:Hash<Int>;
-	var _nameMap:IntHash<String>;
+	var _indexMap:StringMap<Int>;
+	var _nameMap:IntMap<String>;
 	
 	public var __spriteStrip:SpriteStrip;
 	public var __spriteAtlas:SpriteAtlas;
@@ -57,14 +59,14 @@ class SpriteSheet
 	{
 		this.tex = tex;
 		
-		_cropMap = new Hash();
-		_sizeMap = new Hash();
+		_cropMap = new StringMap();
+		_sizeMap = new StringMap();
 		
 		_cropList = new DA();
 		_sizeList = new DA();
 		
-		_indexMap = new Hash();
-		_nameMap = new IntHash();
+		_indexMap = new StringMap();
+		_nameMap = new IntMap();
 		
 		_sheetW = tex.image.w;
 		_sheetH = tex.image.h;
@@ -131,7 +133,7 @@ class SpriteSheet
 		return _nameMap.get(index);
 	}
 	
-	function addCropRectAt(index:Int, id:String, crop:Rect, normalize:Bool)
+	function addCropRectAt(index:Int, id:String, crop:Rect, normalize:Bool):Void
 	{
 		_indexMap.set(id, index);
 		_nameMap.set(index, id);
@@ -148,13 +150,13 @@ class SpriteSheet
 		_cropList.set(index, crop);
 		_sizeList.set(index, size);
 		
-		crop.x += .5;
-		crop.y += .5;
-		crop.w -= 1.;
-		crop.h -= 1.;
-		
 		if (normalize)
 		{
+			crop.x += .5;
+			crop.y += .5;
+			crop.w -= 1.;
+			crop.h -= 1.;
+			
 			crop.x /= tex.w;
 			crop.y /= tex.h;
 			crop.w /= tex.w;
