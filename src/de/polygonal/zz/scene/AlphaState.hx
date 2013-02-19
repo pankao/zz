@@ -58,12 +58,16 @@ enum DstBlendFactor
 class AlphaState extends GlobalState
 {
 	public static var NONE                   = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.Zero);
+	
 	public static var BLEND                  = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.OneMinusSourceAlpha);
-	public static var FILTER                 = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.Zero);
-	public static var MODULATE               = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.Zero);
-	public static var PREMULTIPLIED_ALPHA    = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.OneMinusSourceAlpha);
-	public static var NO_PREMULTIPLIED_ALPHA = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.OneMinusSourceAlpha);
-	public static var ADD                    = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.One);
+	public static var ADD                    = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.DestinationAlpha);
+	public static var MULTIPLY               = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.Zero);
+	public static var SCREEN                 = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.One);
+	
+	public static var BLEND_PREMULTIPLIED    = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.OneMinusSourceAlpha);
+	public static var ADD_PREMULTIPLIED      = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.One);
+	public static var MULTIPLY_PREMULTIPLIED = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.OneMinusSourceAlpha);
+	public static var SCREEN_PREMULTIPLIED   = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.OneMinusSourceColor);
 	
 	public var src:SrcBlendFactor;
 	public var dst:DstBlendFactor;

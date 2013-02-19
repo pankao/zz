@@ -30,26 +30,19 @@
 package de.polygonal.zz.scene;
 
 import de.polygonal.core.math.Mat44;
-import de.polygonal.core.math.Mathematics;
 import de.polygonal.ds.ArrayedStack;
-import de.polygonal.ds.Bits;
 import de.polygonal.ds.DA;
 import de.polygonal.ds.TreeNode;
 import de.polygonal.gl.color.ColorRGBA;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
+import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.zz.scene.Geometry;
 import de.polygonal.zz.scene.Node;
 import de.polygonal.zz.scene.Spatial;
-import de.polygonal.zz.render.RenderSurface;
-import de.polygonal.core.util.Assert;
-import flash.geom.Matrix3D;
-import flash.geom.Vector3D;
-import flash.Vector;
-import flash.Vector;
 import haxe.ds.IntMap;
 
 using de.polygonal.ds.BitFlags;
@@ -130,7 +123,7 @@ class Renderer
 		_deferredObjectsList = new Node('deferredList');
 		_deferredObjectsNode = null;
 		
-		currAlphaState = AlphaState.NONE;
+		currAlphaState = null;
 		
 		_viewMatrix = new Mat44();
 		_projMatrix = new Mat44();
@@ -201,17 +194,35 @@ class Renderer
 		onViewPortChange();
 	}
 	
-	public function setGlobalState(state:DA<GlobalState>):Void
+	public function setGlobalState(states:DA<GlobalState>):Void
 	{
-		if (state == null) return;
-		
 		if (allowAlphaState)
 		{
-			var state = state.get(Type.enumIndex(GlobalStateType.Alpha));
-			if (state != null)
+			if (states == null)
 			{
+				if (currAlphaState != null)
+				{
+					setAlphaState(AlphaState.NONE);
+					currAlphaState = null;
+				}
+			}
+			else
+			{
+				var state = states.get(Type.enumIndex(GlobalStateType.Alpha));
+				
+				if (state == null)
+				{
+					if (currAlphaState != null)
+					{
+						setAlphaState(AlphaState.NONE);
+						currAlphaState = null;
+					}
+					return;
+				}
+				
 				var alphaState = state.__alphaState;
-				if (alphaState.flag != currAlphaState.flag)
+				
+				if (currAlphaState == null || alphaState.flag != currAlphaState.flag)
 				{
 					setAlphaState(state.__alphaState);
 					currAlphaState = alphaState;
@@ -297,7 +308,7 @@ class Renderer
 			return;
 		}
 		
-		//accumulate for deferred drawing
+		//accumulate for deferred drawing (append to list)
 		_deferredObjectsNode = _deferredObjectsNode.__next = node;
 	}
 	
@@ -307,9 +318,9 @@ class Renderer
 		if (_deferredDrawingActive)
 		{
 			var next = _deferredObjectsNode.__next;
-			
 			_deferredObjectsNode.__next = geometry;
 			geometry.__next = next;
+			_deferredObjectsNode = geometry;
 			return;
 		}
 		
@@ -382,6 +393,8 @@ class Renderer
 	{
 		if (allowGlobalState) setGlobalState(currGeometry.states);
 	}
+	
+	//TODO only recompute if changed
 	
 	/**
 	 * Computes the MVP (model-view-projection) matrix for <code>spatial</code> and stores the result in <em>currMVP</em>.
@@ -511,56 +524,30 @@ class Renderer
 	
 	public function onViewPortChange():Void
 	{
-		//_projMatrix.setOrtho(-width / 2, width / 2, -height / 2, height / 2, 0, 1);
-		
-		_projMatrix.ofMatrix3D(makeOrtographicMatrix(0, width, 0, height));
-		trace( "_projMatrix : " + _projMatrix );
-		
-		//screen coordinates where the origin is at the upper-left corner of the screen
-		//_projMatrix.catScale(1, -1, 1);
-		//_projMatrix.catTranslate(-1, 1, 0);
-	}
-	
-	function makeOrtographicMatrix(left:Float, right:Float, top:Float, bottom:Float, zNear:Float = 0, zFar:Float = 1):Matrix3D
-	{
-		var a:Array<Float> = [
-				2. / (right - left), 0, 0,  0,
-				0,  2 / (top - bottom), 0, 0,
-				0,  0, 1 / (zFar - zNear), 0,
-				0, 0, zNear / (zNear - zFar), 1
-			];
-		
-		return new Matrix3D(Vector.ofArray(a));
+		_projMatrix.setOrthoSimple(width, height, -1, 1);
+		_projMatrix.catScale(1, -1, 1);
+		//_projMatrix.catTranslate(-1, 1, 1);
 	}
 	
 	public function onFrameChange():Void
 	{
-		_camera.updateGeometricState(false, false);
-		
 		_viewMatrix.setIdentity();
 		_viewMatrix.catScale(_camera.scaleX, _camera.scaleY, 1);
-		_viewMatrix.catTranslate(-width / 2 - _camera.x, - height / 2 - _camera.y, 0.);
-		
-		//_viewMatrix.precatScale(_camera.local., _camera.zoom, 1.0);
-		
-		//_viewMatrix.catRotateZ(_camera.rotation);
-		
-		
-		//_viewMatrix.catScale(_camera.zoom, _camera.zoom, 1.);
-		//_viewMatrix.catTranslate(width - t.x, height - t.y, 0.);
-		//_viewMatrix.catRotateZ(_camera.rotation);
+		_viewMatrix.catRotateZ(_camera.rotation);
+		_viewMatrix.catTranslate(_camera.x, _camera.y, 0);
 	}
 	
 	/**
 	 * Resolves a texture for a given <code>image</code>.<br/>
 	 * If a texture doesn't exist yet, a new one is created and cached for repeated use.
 	 */
-	public function getTex(image:Image):Tex
+	public function initTex(image:Image):Tex
 	{
 		var tex = _textureLookup.get(image.key);
 		if (tex == null)
 		{
 			tex = createTex(image);
+			trace('create texture #%d of image "%s" (#%d)', tex.key, image.id, image.key);
 			_textureLookup.set(image.key, tex);
 		}
 		return tex;
@@ -571,20 +558,21 @@ class Renderer
 		var tex = _textureLookup.get(image.key);
 		if (tex != null)
 		{
+			trace('free texture #%d (image "%s", #%d)', tex.key, image.id, image.key);
 			tex.free();
 			_textureLookup.remove(image.key);
 		}
 	}
 	
-	function onBeginScene()
+	function onBeginScene():Void
 	{
 	}
 	
-	function onEndScene()
+	function onEndScene():Void
 	{
 	}
 	
-	function drawElements()
+	function drawElements():Void
 	{
 	}
 	

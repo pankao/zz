@@ -46,7 +46,7 @@ class Tex extends HashableItem
 	/**
 	 * If true, true RGB data is stored with premultiplied alpha. Default is true.
 	 */
-	public var preMultipliedAlpha:Bool;
+	public var isAlphaPreMultiplied:Bool;
 	
 	/**
 	 * The width of the texture in pixels.<br/>
@@ -67,6 +67,7 @@ class Tex extends HashableItem
 		this.image = image;
 		isPowerOfTwo = powerOfTwo;
 		isNormalize = normalize;
+		isAlphaPreMultiplied = image.premultipliedAlpha;
 		if (powerOfTwo)
 		{
 			w = M.nextPow2(image.w);

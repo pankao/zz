@@ -30,6 +30,9 @@
 package de.polygonal.zz.scene;
 
 import de.polygonal.core.fmt.Sprintf;
+import de.polygonal.core.math.Mat33;
+import de.polygonal.core.math.TrigApprox;
+import de.polygonal.core.math.Vec2;
 import de.polygonal.core.math.Vec3;
 import de.polygonal.ds.Bits;
 import de.polygonal.zz.render.RenderSurface;
@@ -72,10 +75,26 @@ class Camera extends Spatial
 	public function setRenderer(renderer:Renderer):Void
 	{
 		_renderer = renderer;
+		
+		//x = -renderer.width / 2;
+		//y = -renderer.height / 2;
+		
 		_renderer.onFrameChange();
 	}
 	
-	public function setEye(location:Vec3):Void
+	public function invalidate():Void
+	{
+		
+	}
+	
+	public function setFrame(location:Vec3, direction:Vec3, up:Vec3, right:Vec3):Void
+	{
+		local.setTranslate(location.x, location.y, location.y);
+		local.setRotate(new Mat33().setCols(direction, up, right));
+		//onFrameChange();
+	}
+	
+	public function setLocation(location:Vec3):Void
 	{
 		local.setTranslate(location.x, location.y, location.z);
 		if (_renderer != null)
@@ -85,6 +104,12 @@ class Camera extends Spatial
 	public function setZoom(value:Float):Void
 	{
 		zoom = value;
+		
+		scaleX = zoom;
+		scaleY = zoom;
+		
+		local.setUniformScale2(zoom);
+		
 		if (_renderer != null)
 			_renderer.onFrameChange();
 	}
@@ -150,8 +175,27 @@ class Camera extends Spatial
 		worldBound.setRadius(0);
 	}
 	
+	override function updateWorldData(updateBV:Bool):Void
+	{
+		super.updateWorldData(false);
+		_renderer.onFrameChange();
+	}
+	
 	override function syncLocalXForm2d():Void
 	{
+		if (scaleX == scaleY)
+			local.setUniformScale2(scaleX);
+		else
+			local.setScale2(scaleX, scaleY);
+		
+		var r = local.getRotate();
+		var sineCosine = TrigApprox.sinCos(rotation, r.sineCosine);
+		var s = sineCosine.x;
+		var c = sineCosine.y;
+		r.m11 = c; r.m12 =-s;
+		r.m21 = s; r.m22 = c;
+		
+		local.setTranslate2(x, y);
 	}
 	
 	override function syncLocalXForm3d():Void
