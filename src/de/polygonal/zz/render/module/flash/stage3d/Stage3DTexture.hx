@@ -61,6 +61,8 @@ class Stage3DTexture
 		handle = null;
 		atf = null;
 		
+		if (tex == null) return;
+		
 		//requires size to be a power of two
 		//+========+     +========+====+
 		//|        |     |        |    |
@@ -75,20 +77,20 @@ class Stage3DTexture
 		var newW = M.nextPow2(srcW);
 		var newH = M.nextPow2(srcH);
 		
-		///TODO check if power of two
-		
-		var data = new BitmapData(newW, newH, true, 0);
-		data.copyPixels(srcImage.data, srcImage.data.rect, new Point());
-		image = new Image(data, newW, newH);
+		image = srcImage;
+		if (srcW != newW || srcH != newH)
+		{
+			var data = new BitmapData(newW, newH, true, 0);
+			data.copyPixels(srcImage.data, srcImage.data.rect, new Point());
+			image = new Image(data, newW, newH, srcImage.premultipliedAlpha);
+		}
 	}
 	
 	public function free():Void
 	{
-		trace('free Stage3DTexture [' + sourceTexture.key + ']');
-		
 		if (handle != null)
 		{
-			try { handle.dispose(); } catch (error:Dynamic) {}
+			try { handle.dispose(); } catch (error:Dynamic) { trace('ERROR ' + error); }
 			handle = null;
 		}
 		
