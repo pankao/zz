@@ -46,8 +46,6 @@ class Stage3DTextureFlag
 	inline public static var PRESET_QUALITY_HIGH   = MM_NEAREST | FM_LINEAR  | REPEAT_NORMAL;
 	inline public static var PRESET_QUALITY_ULTRA  = MM_LINEAR  | FM_LINEAR  | REPEAT_NORMAL;
 	
-	inline public static var SHIFT = 9;
-	
 	public static function print(flags:Int):String
 	{
 		if (flags <= 0) return '-';
