@@ -903,4 +903,14 @@ class XForm
 			return maxColSum;
 		}
 	}
+	
+	public function copy():XForm
+	{
+		var c = new XForm();
+		c._scale.set(_scale);
+		c._translate.set(_translate);
+		c._matrix.set(_matrix);
+		c._bits = _bits;
+		return c;
+	}
 }
