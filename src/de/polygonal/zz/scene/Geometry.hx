@@ -83,8 +83,12 @@ class Geometry extends Spatial
 		super.free();
 		modelBound.free();
 		modelBound = null;
-		states.free();
-		states = null;
+		
+		if (states != null)
+		{
+			states.free();
+			states = null;
+		}
 	}
 	
 	inline public function hasModelChanged():Bool
