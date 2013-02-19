@@ -31,17 +31,12 @@ package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
 import de.polygonal.core.math.Vec3;
 import de.polygonal.core.util.ClassUtil;
-import de.polygonal.ds.ArrayUtil;
-import de.polygonal.ds.BitVector;
 import de.polygonal.ds.DA;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.module.flash.stage3d.shader.AGALShader;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DTexture;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DTextureFlag;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3DTextureFlag;
 import de.polygonal.zz.scene.Geometry;
-import de.polygonal.zz.scene.GeometryType;
-import de.polygonal.zz.scene.TriMesh;
 import flash.display3D.Context3D;
 import flash.Vector;
 
@@ -79,12 +74,13 @@ class Stage3DBrush
 		_batch.clear(true);
 		_batch = null;
 		
-		_shader.free();
+		if (_shader != null) _shader.free();
+		_shader = null;
 	}
 	
 	public function draw(renderer:Stage3DRenderer):Void
 	{
-		//bind vertex buffer & program
+		//bind vertex buffer & program if changed
 		var t = renderer.currBrush;
 		if (t != this)
 		{
@@ -94,7 +90,7 @@ class Stage3DBrush
 		}
 		renderer.currBrush = this;
 		
-		//bind texture
+		//bind texture if changed
 		var t0 = renderer.prevStage3DTexture;
 		var t1 = renderer.currStage3DTexture;
 		if (t0 != t1) _shader.bindTexture(0, t1 == null ? null : t1.handle);
@@ -114,115 +110,5 @@ class Stage3DBrush
 	inline public function isEmpty():Bool
 	{
 		return _batch.isEmpty();
-	}
-	
-	//TODO add UVs and indices
-	function fillBuffer(geometry:Geometry)
-	{
-		_vb = new Stage3DVertexBuffer(_context);
-		
-		throw 'untested';
-		
-		//TODO allow customization customize
-		_vb.allocate([2], 1000);
-		
-		_ib = new Stage3DIndexBuffer(_context);
-		
-		var indices = geometry.indices;
-		var vertices = geometry.vertices;
-		
-		if (geometry.type == GeometryType.QUAD)
-		{
-			for (i in 0...4) _vb.addFloat2(vertices[i]);
-			for (i in 0...6) _ib.add(indices[i]);
-		}
-		else
-		if (geometry.type == GeometryType.TRIMESH)
-		{
-			var mesh:TriMesh = cast geometry;
-			
-			var numTriangles = mesh.getNumTriangles();
-			
-			var added = new BitVector(numTriangles * 3);
-			
-			var indexLUT = ArrayUtil.alloc(1024);
-			
-			var nextIndex = 0;
-			
-			for (i in 0...numTriangles)
-			{
-				var triOffset = i * 3;
-				for (j in 0...3)
-				{
-					var index = indices[triOffset + j];
-					
-					if (added.has(index))
-						_ib.add(indexLUT[index]);
-					else
-					{
-						added.set(index);
-						indexLUT[index] = nextIndex;
-						nextIndex++;
-						
-						if (geometry.vertexFormat == VertexFormat.FLOAT2)
-							_vb.addFloat2(vertices[index]);
-						else
-							_vb.addFloat3(vertices[index]);
-						
-						_ib.add(nextIndex);
-					}
-				}
-			}
-			
-			added.free();
-			
-			//general version using getTriangle(i);
-			/*var tri = geometry.getTriangle(i);
-			 * 
-			for (j in 0...3)
-			{
-				var index = tri.indices[j];
-				
-				if (added.has(index))
-					_ib.add(indexLUT[index]);
-				else
-				{
-					_vb.add(VertexAttribute.POSITION2, tri.vertices[index]);
-					_ib.add(nextIndex);
-					added.set(index);
-					indexLUT[index] = nextIndex++;
-				}
-			}*/
-			
-			/*if (added.has(tri.i0))
-				_ib.add(indexLUT[tri.i0]);
-			else
-			{
-				_vb.add(VertexAttribute.POSITION2, tri.v0);
-				_ib.add(nextIndex);
-				added.set(tri.i0);
-				indexLUT[tri.i0] = nextIndex++;
-			}
-			
-			if (added.has(tri.i1))
-				_ib.add(indexLUT[tri.i1]);
-			else
-			{
-				_vb.add(VertexAttribute.POSITION2, tri.v1);
-				_ib.add(nextIndex);
-				added.set(tri.i1);
-				indexLUT[tri.i1] = nextIndex++;
-			}
-			
-			if (added.has(tri.i2))
-				_ib.add(indexLUT[tri.i2]);
-			else
-			{
-				_vb.add(VertexAttribute.POSITION2, tri.v2);
-				_ib.add(nextIndex);
-				added.set(tri.i2);
-				indexLUT[tri.i2] = nextIndex++;
-			}*/
-		}
 	}
 }

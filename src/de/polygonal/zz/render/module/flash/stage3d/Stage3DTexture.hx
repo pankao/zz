@@ -61,8 +61,6 @@ class Stage3DTexture
 		handle = null;
 		atf = null;
 		
-		if (tex == null) return;
-		
 		//requires size to be a power of two
 		//+========+     +========+====+
 		//|        |     |        |    |

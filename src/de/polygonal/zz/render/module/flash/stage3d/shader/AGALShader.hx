@@ -105,6 +105,11 @@ class AGALShader
 		return _effectMask & EFF_COLOR_XFORM > 0;
 	}
 	
+	inline public function hasPMA():Bool
+	{
+		return _effectMask & EFF_TEXTURE_PMA > 0;
+	}
+	
 	function initShaders(texFlags:String)
 	{
 		var vertexShaderAssembler = new AGALMiniAssembler();

@@ -43,7 +43,7 @@ class Stage3DBrushRectSolidColor extends Stage3DBrushRect
 	{
 		super(context, effectMask, -1);
 		
-		initVertexBuffer([2]);
+		initVertexBuffer(1, [2]);
 		initIndexBuffer(1);
 		
 		_shader = new AGALSolidColor(_context, effectMask);

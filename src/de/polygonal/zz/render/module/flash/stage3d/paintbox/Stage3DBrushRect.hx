@@ -29,7 +29,6 @@
  */
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
-import de.polygonal.core.math.Vec3;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DIndexBuffer;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DVertexBuffer;
 import flash.display3D.Context3D;
@@ -41,23 +40,28 @@ class Stage3DBrushRect extends Stage3DBrush
 		super(context, effectMask, textureFlags);
 	}
 	
-	function initVertexBuffer(numFloatsPerAttribute:Array<Int>)
+	function initVertexBuffer(numQuads:Int, numFloatsPerAttribute:Array<Int>):Void
 	{
 		_vb = new Stage3DVertexBuffer(_context);
-		_vb.allocate(numFloatsPerAttribute, 4);
-		_vb.addFloat2(new Vec3(0, 0));
-		_vb.addFloat2(new Vec3(1, 0));
-		_vb.addFloat2(new Vec3(1, 1));
-		_vb.addFloat2(new Vec3(0, 1));
+		_vb.allocate(numFloatsPerAttribute, numQuads * 4);
+		for (i in 0...numQuads)
+		{
+			_vb.addFloat2f(0, 0);
+			_vb.addFloat2f(1, 0);
+			_vb.addFloat2f(1, 1);
+			_vb.addFloat2f(0, 1);
+		}
+		
 		_vb.upload();
 	}
 	
-	function initIndexBuffer(numQuads:Int)
+	function initIndexBuffer(numQuads:Int):Void
 	{
 		_ib = new Stage3DIndexBuffer(_context);
 		for (i in 0...numQuads)
 		{
 			var offset = i << 2;
+			
 			_ib.add(offset + 0);
 			_ib.add(offset + 1);
 			_ib.add(offset + 2);
@@ -66,6 +70,7 @@ class Stage3DBrushRect extends Stage3DBrush
 			_ib.add(offset + 2);
 			_ib.add(offset + 3);
 		}
+		
 		_ib.upload();
 	}
 }

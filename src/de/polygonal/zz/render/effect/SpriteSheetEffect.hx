@@ -72,7 +72,7 @@ class SpriteSheetEffect extends TextureEffect
 		renderer.drawSpriteSheetEffect(this);
 	}
 	
-	override function setCrop()
+	override function setCrop():Void
 	{
 		setf(Effect.UV_CHANGED);
 		crop = sheet.getCropRectAt(_frame);

@@ -198,8 +198,9 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			var size = batch.size();
 			
 			var supportsColorXForm = _shader.supportsColorXForm();
+			var pma = _shader.hasPMA();
 			
-			var effect, mvp, crop;
+			var effect, mvp, crop, alpha;
 			var offset;
 			var capacity = _batchCapacity;
 			var fullPasses:Int = cast size / capacity;
@@ -214,6 +215,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 					
 					mvp = renderer.setModelViewProjMatrix(geometry);
 					crop = effect.crop;
+					alpha = effect.alpha;
 					
 					//use 3 constant registers (each 4 floats) for mvp matrix, alpha and uv crop (+2 constant registers for color transform)
 					offset = (_numSharedRegisters * NUM_FLOATS_PER_REGISTER) + i * (_numRegistersPerQuad * NUM_FLOATS_PER_REGISTER);
@@ -225,7 +227,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 					
 					constantRegisters[offset +  4] = mvp.m21;
 					constantRegisters[offset +  5] = mvp.m22;
-					constantRegisters[offset +  6] = effect.alpha;
+					constantRegisters[offset +  6] = alpha;
 					constantRegisters[offset +  7] = mvp.m24;
 					
 					constantRegisters[offset +  8] = crop.w * effect.uvScaleX;
@@ -236,10 +238,21 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 					if (supportsColorXForm)
 					{
 						var t = effect.colorXForm.multiplier;
-						constantRegisters[offset + 12] = t.r;
-						constantRegisters[offset + 13] = t.g;
-						constantRegisters[offset + 14] = t.b;
-						constantRegisters[offset + 15] = t.a;
+						if (pma)
+						{
+							var am = t.a;
+							constantRegisters[offset + 12] = t.r * am * alpha;
+							constantRegisters[offset + 13] = t.g * am * alpha;
+							constantRegisters[offset + 14] = t.b * am * alpha;
+							constantRegisters[offset + 15] = t.a * alpha;
+						}
+						else
+						{
+							constantRegisters[offset + 12] = t.r;
+							constantRegisters[offset + 13] = t.g;
+							constantRegisters[offset + 14] = t.b;
+							constantRegisters[offset + 15] = t.a * alpha;
+						}
 						
 						t = effect.colorXForm.offset;
 						constantRegisters[offset + 16] = t.r * INV_FF;
@@ -319,10 +332,11 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		var batch = _batch;
 		
 		var offset, address, i, size;
-		var geometry, effect, vertices, world, crop, x, y, w, h;
+		var geometry, effect, vertices, world, crop, x, y, w, h, alpha;
 		
 		var supportsAlpha = _shader.supportsAlpha();
 		var supportColorXForm = _shader.supportsColorXForm();
+		var pma = _shader.hasPMA();
 		
 		size = batch.size();
 		
@@ -334,6 +348,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			
 			geometry = batch.get(i);
 			effect = geometry.effect.__textureEffect;
+			alpha = effect.alpha;
 			
 			//update vertices
 			vertices = geometry.vertices;
@@ -373,7 +388,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			if (supportsAlpha)
 			{
 				//update alpha
-				t.x = effect.alpha;
+				t.x = alpha;
 				address = offset;
 				vb.setFloat1(address, t); address += stride;
 				vb.setFloat1(address, t); address += stride;
@@ -386,7 +401,18 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			if (supportColorXForm)
 			{
 				//update color transformation
-				t = effect.colorXForm.multiplier;
+				t.set(effect.colorXForm.multiplier);
+				if (pma)
+				{
+					var am = t.w;
+					t.x *= am * alpha;
+					t.y *= am * alpha;
+					t.z *= am * alpha;
+					t.w *= alpha;
+				}
+				else
+					t.w *= alpha;
+				
 				var address = offset;
 				vb.setFloat4(address, t); address += stride;
 				vb.setFloat4(address, t); address += stride;

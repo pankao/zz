@@ -41,7 +41,7 @@ class Stage3DBrushRectTexture extends Stage3DBrushRect
 	{
 		super(context, effectMask, textureFlags);
 		
-		initVertexBuffer([2]);
+		initVertexBuffer(1, [2]);
 		initIndexBuffer(1);
 		
 		_shader = new AGALTextureShader(_context, effectMask, textureFlags);
@@ -54,6 +54,9 @@ class Stage3DBrushRectTexture extends Stage3DBrushRect
 		var constantRegisters = _scratchVector;
 		var indexBuffer = _ib.handle;
 		
+		var pma = _shader.hasPMA();
+		var supportsColorXForm = _shader.supportsColorXForm();
+		
 		for (i in 0..._batch.size())
 		{
 			var geometry = _batch.get(i);
@@ -61,8 +64,9 @@ class Stage3DBrushRectTexture extends Stage3DBrushRect
 			var mvp = renderer.setModelViewProjMatrix(renderer.currGeometry);
 			var e = renderer.currEffect.__textureEffect;
 			var crop = e.crop;
+			var alpha = e.alpha;
 			
-			mvp.m13 = e.alpha;
+			mvp.m13 = alpha;
 			mvp.m23 = 1; //op.zw
 			mvp.m31 = crop.w * e.uvScaleX;
 			mvp.m32 = crop.h * e.uvScaleY;
@@ -72,13 +76,24 @@ class Stage3DBrushRectTexture extends Stage3DBrushRect
 			
 			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 3);
 			
-			if (_shader.supportsColorXForm())
+			if (supportsColorXForm)
 			{
 				var t = e.colorXForm.multiplier;
-				constantRegisters[0] = t.r;
-				constantRegisters[1] = t.g;
-				constantRegisters[2] = t.b;
-				constantRegisters[3] = t.a;
+				if (pma)
+				{
+					var am = t.a;
+					constantRegisters[0] = t.r * am * alpha;
+					constantRegisters[1] = t.g * am * alpha;
+					constantRegisters[2] = t.b * am * alpha;
+					constantRegisters[3] = t.a * alpha;
+				}
+				else
+				{
+					constantRegisters[0] = t.r;
+					constantRegisters[1] = t.g;
+					constantRegisters[2] = t.b;
+					constantRegisters[3] = t.a * alpha;
+				}
 				
 				t = e.colorXForm.offset;
 				constantRegisters[4] = t.r * INV_FF;

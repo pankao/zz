@@ -41,13 +41,14 @@ class Effect
 {
 	inline public static var EFF_COLOR       = Bits.BIT_01;
 	inline public static var EFF_TEXTURE     = Bits.BIT_02;
-	inline public static var EFF_ALPHA       = Bits.BIT_03;
-	inline public static var EFF_COLOR_XFORM = Bits.BIT_04;
-	inline public static var EFF_MASK        = Bits.mask(4);
+	inline public static var EFF_TEXTURE_PMA = Bits.BIT_03;
+	inline public static var EFF_ALPHA       = Bits.BIT_04;
+	inline public static var EFF_COLOR_XFORM = Bits.BIT_05;
+	inline public static var EFF_MASK        = Bits.mask(5);
 	
-	inline static var UV_CHANGED         = Bits.BIT_05;
-	inline static var ALPHA_CHANGED      = Bits.BIT_06;
-	inline static var COLORXFORM_CHANGED = Bits.BIT_07;
+	inline static var UV_CHANGED             = Bits.BIT_06;
+	inline static var ALPHA_CHANGED          = Bits.BIT_07;
+	inline static var COLORXFORM_CHANGED     = Bits.BIT_08;
 	
 	public static function print(flags:Int):String
 	{
@@ -60,11 +61,12 @@ class Effect
 				a.push(
 				switch (i) 
 				{
-					case 0:  'color';
-					case 1:  'texture';
-					case 2:  'alpha';
-					case 3:  'colorxform';
-					default: 'unknown';
+					case 0: 'color';
+					case 1: 'texture (straight alpha)';
+					case 2: 'texture (premultiplied alpha)';
+					case 3: 'alpha';
+					case 4: 'colorxform';
+					case _: '?';
 				});
 			}
 			flags >>= 1;
@@ -105,13 +107,24 @@ class Effect
 	public var colorXForm(get_colorXForm, set_colorXForm):ColorXForm;
 	inline function get_colorXForm():ColorXForm
 	{
+		setf(EFF_COLOR_XFORM);
 		return _colorXForm;
 	}
-	inline function set_colorXForm(value:ColorXForm):ColorXForm
+	function set_colorXForm(value:ColorXForm):ColorXForm
 	{
-		setfif(EFF_COLOR_XFORM, value != null);
+		if (value != null)
+		{
+			setf(EFF_COLOR_XFORM);
+			_colorXForm = value;
+		}
+		else
+		{
+			clrf(EFF_COLOR_XFORM);
+			_colorXForm = null;
+		}
+		
 		setf(COLORXFORM_CHANGED);
-		return _colorXForm = value;
+		return value;
 	}
 	
 	public var tex(get_tex, set_tex):Tex;
@@ -119,10 +132,22 @@ class Effect
 	{
 		return _tex;
 	}
-	inline function set_tex(value:Tex):Tex
+	function set_tex(value:Tex):Tex
 	{
-		setfif(EFF_TEXTURE, value != null);
-		setfif(EFF_COLOR, value == null);
+		if (value != null)
+		{
+			if (value.isAlphaPreMultiplied)
+				setf(EFF_TEXTURE_PMA);
+			else
+				setf(EFF_TEXTURE);
+			clrf(EFF_COLOR);
+		}
+		else
+		{
+			clrf(EFF_TEXTURE | EFF_TEXTURE_PMA);
+			setf(EFF_COLOR);
+		}
+		
 		return _tex = value;
 	}
 	
@@ -148,6 +173,7 @@ class Effect
 	{
 		_alpha = 1;
 		_color = 0xff00ff;
+		_colorXForm = new ColorXForm();
 		_bits = EFF_COLOR;
 	}
 	
@@ -169,23 +195,28 @@ class Effect
 		renderer.drawEffect(this);
 	}
 	
-	inline public function hasUVChanged():Bool
+	inline public function hasTexture():Bool
+	{
+		return hasf(EFF_TEXTURE | EFF_TEXTURE_PMA);
+	}
+	
+	/*inline public function hasUVChanged():Bool
 	{
 		return hasf(UV_CHANGED);
-	}
+	}*/
 	
-	inline public function hasAlphaChanged():Bool
+	/*inline public function hasAlphaChanged():Bool
 	{
 		return hasf(ALPHA_CHANGED);
-	}
+	}*/
 	
-	inline public function hasColorXFormChanged():Bool
+	/*inline public function hasColorXFormChanged():Bool
 	{
 		return hasf(COLORXFORM_CHANGED);
-	}
+	}*/
 	
-	inline public function makeCurrent():Void
+	/*inline public function makeCurrent():Void
 	{
 		clrf(UV_CHANGED | ALPHA_CHANGED | COLORXFORM_CHANGED);
-	}
+	}*/
 }

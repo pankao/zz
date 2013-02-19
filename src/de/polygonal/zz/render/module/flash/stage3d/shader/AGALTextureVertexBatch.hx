@@ -71,7 +71,12 @@ class AGALTextureVertexBatch extends AGALTextureShader
 		s += 'tex ft0, v0, fs0 <TEX_FLAGS> \n';	//sample texture from uv
 		
 		if (supportsAlpha())
-			s += 'mul ft0.w, v1.x, ft0 \n';		//* alpha
+		{
+			if (hasPMA())
+				s += 'mul ft0, v1.x, ft0 \n';		//* alpha
+			else
+				s += 'mul ft0.w, v1.x, ft0 \n';
+		}
 		
 		if (supportsColorXForm())
 		{

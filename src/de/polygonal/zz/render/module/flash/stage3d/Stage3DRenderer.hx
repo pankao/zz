@@ -32,12 +32,11 @@ package de.polygonal.zz.render.module.flash.stage3d;
 import de.polygonal.core.fmt.NumberFormat;
 import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.Root;
-import de.polygonal.core.util.Assert;
 import de.polygonal.ds.Bits;
 import de.polygonal.ds.DA;
 import de.polygonal.ds.IntHashTable;
-import de.polygonal.zz.render.effect.Effect.*;
 import de.polygonal.zz.render.effect.Effect;
+import de.polygonal.zz.render.effect.Effect.*;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
 import de.polygonal.zz.render.module.flash.stage3d.paintbox.Stage3DBrush;
@@ -53,18 +52,16 @@ import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.zz.scene.AlphaState;
-import de.polygonal.zz.scene.Camera;
+import de.polygonal.zz.scene.Geometry;
 import de.polygonal.zz.scene.GeometryType;
 import de.polygonal.zz.scene.GlobalState;
 import de.polygonal.zz.scene.Renderer;
-import de.polygonal.zz.scene.Spatial;
-import de.polygonal.zz.scene.TriMesh;
-import flash.display.Stage3D;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DBlendFactor;
-import flash.display3D.Context3DClearMask;
 import flash.display3D.Context3DCompareMode;
 import flash.display3D.Context3DTriangleFace;
+import de.polygonal.core.util.Assert;
+import haxe.ds.IntMap;
 
 class Stage3DRenderer extends Renderer
 {
@@ -84,7 +81,6 @@ class Stage3DRenderer extends Renderer
 	
 	var _antiAliasMode:Int;
 	var _batchActive:Bool;
-	var _batch:DA<Spatial>;
 	var _currBrush:Stage3DBrush;
 	var _paintBox:IntHashTable<Stage3DBrush>;
 	var _textureHandles:IntHashTable<Stage3DTexture>;
@@ -129,8 +125,10 @@ class Stage3DRenderer extends Renderer
 		];
 		
 		_textureHandles = new IntHashTable(32, 32, false, 32);
-		_batch = new DA();
+		
 		super(width, height);
+		
+		drawDeferred = drawDeferredBatch;
 	}
 	
 	override public function free():Void
@@ -147,6 +145,13 @@ class Stage3DRenderer extends Renderer
 		context = null;
 		
 		super.free();
+	}
+	
+	override public function freeTex(image:Image):Void
+	{
+		var tex = _textureLookup.get(image.key);
+		freeStage3DTexture(tex);
+		super.freeTex(image);
 	}
 	
 	override public function createTex(image:Image):Tex
@@ -186,7 +191,7 @@ class Stage3DRenderer extends Renderer
 		var t = _textureHandles.get(tex.key);
 		if (t == null)
 		{
-			trace('create & upload texture (%d)', tex.key);
+			trace('upload texture #%d from image #%d', tex.key, tex.image.key);
 			t = new Stage3DTexture(tex);
 			t.upload(context);
 			_textureHandles.set(tex.key, t);
@@ -194,12 +199,15 @@ class Stage3DRenderer extends Renderer
 		return t;
 	}
 	
+	/**
+	 * Frees all gpu resources associated with the given <code>tex</code> object.
+	 */
 	public function freeStage3DTexture(tex:Tex):Void
 	{
 		var t = _textureHandles.get(tex.key);
 		if (t != null)
 		{
-			trace('dispose texture (%d)', tex.key);
+			trace('free stage3d texture #%d (image #%d)', tex.key, tex.image.key);
 			t.free();
 			_textureHandles.clr(tex.key);
 		}
@@ -229,31 +237,11 @@ class Stage3DRenderer extends Renderer
 	{
 		if (_batchActive)
 		{
-			var effectFlags = effect.flags;
-			
-			//accumulate for batch rendering
-			if (_currBrush == null)
-			{
-				_currBrush = findBrush(effectFlags, currStage3DTexture.flags, true);
-			}
-			
-			//currEffectFlags = effectFlags;
-			
-			//_getBrush(effect.getState(), true).
-			
-			//_brushRectVertexBatch.batch(currGeometry);
-			//_currBrush.batch(currGeometry);
-			
-			throw 'todo drawSpriteSheetEffect _rectConstantBatch';
-			
-			//_rectConstantBatch.batch(currGeometry);
+			trace('draw sprite sheet effect batched');
 		}
 		else
 		{
 			super.drawSpriteSheetEffect(effect);
-			
-			//var alphaState = currGeometry.states.get(Type.enumIndex(GlobalStateType.Alpha));
-			//if (alphaState != null)
 			
 			//single drawTriangles() call per object
 			currTexture = effect.tex;
@@ -265,26 +253,6 @@ class Stage3DRenderer extends Renderer
 		}
 	}
 	
-	//TODO should support different brushes
-	/*override public function drawSpriteSheetBatchEffect(effect:SpriteSheetBatchEffect)
-	{
-		//disable effect, accumulate children, restore effect
-		_batchActive = true;
-		
-		var tmp = currGlobalEffect;
-		
-		currNode.effect = null;
-		currNode.draw(this, noCulling);
-		
-		//same texture for all nodes
-		currTexture = effect.tex;
-		
-		//_paint(_currBrush);
-		
-		_batchActive = false;
-		currNode.effect = tmp;
-	}*/
-	
 	/*override public function drawBitmapFont(effect:BitmapFontEffect)
 	{
 		//should be a mesh...
@@ -294,8 +262,10 @@ class Stage3DRenderer extends Renderer
 	
 	override public function drawDeferredBatch():Void
 	{
-		//nothing to draw
-		if (_deferredObjects.isEmpty()) return;
+		//nothing to draw?
+		if (_deferredObjectsList.__next == null) return;
+		
+		_batchActive = true;
 		
 		//temporarily disable deferred drawing
 		var save = drawDeferred;
@@ -310,20 +280,30 @@ class Stage3DRenderer extends Renderer
 		
 		currTexture = null;
 		
-		for (i in 0..._deferredObjects.size())
+		var o = _deferredObjectsList.__next;
+		while (o != null)
 		{
-			var o = _deferredObjects.get(i);
+			if (o.isNode())
+			{
+				//when deferred drawing is active, a call to drawNode() simply adds the node to the list of deferred objects;
+				//since deferred drawing is temporarly disabled, drawNode(o) will draw the effect attached to the node.
+				_deferredObjectsNode = o;
+				drawNode(o.__node);
+				o = o.__next;
+				continue;
+			}
+			
 			var g = o.__geometry;
 			
-			if (o.isNode()) continue;
-			
-			#if debug
-			D.assert(o.effect != null, 'no effect assigned');
-			#end
+			//othing to draw; skip
+			if (o.effect == null)
+			{
+				o = o.__next;
+				continue;
+			}
 			
 			var effect = o.effect;
 			var effectFlags = effect.flags;
-			
 			if (currEffectFlags < 0)
 			{
 				//insert first first geometry node into batch
@@ -331,6 +311,9 @@ class Stage3DRenderer extends Renderer
 				currTexture = effect.tex;
 				currStateFlags = g.stateFlags;
 				states = g.states;
+				
+				if (allowGlobalState)
+					setGlobalState(states);
 				
 				currStage3DTexture =
 				if (currTexture != null)
@@ -341,18 +324,19 @@ class Stage3DRenderer extends Renderer
 				prevBrush = null;
 				currBrush = findBrush(effectFlags, currStage3DTexture != null ? currStage3DTexture.flags : 0, true);
 				currBrush.add(g);
+				
+				o = o.__next;
 				continue;
 			}
 			
+			//render state changed?
 			var effectsChanged = effectFlags != currEffectFlags;
 			var textureChanged = effect.tex != currTexture;
 			var stateChanged   = g.stateFlags != currStateFlags;
 			var batchExhausted = currBrush.isFull();
+			
 			if (effectsChanged || textureChanged || stateChanged || batchExhausted)
 			{
-				if (allowGlobalState)
-					setGlobalState(states);
-				
 				//current batch needs to be drawn
 				currBrush.draw(this);
 				numBatchCalls++;
@@ -362,6 +346,9 @@ class Stage3DRenderer extends Renderer
 				currTexture = effect.tex;
 				currStateFlags = g.stateFlags;
 				states = g.states;
+				
+				if (stateChanged && allowGlobalState)
+					setGlobalState(states);
 				
 				currStage3DTexture =
 				if (currTexture != null)
@@ -375,10 +362,12 @@ class Stage3DRenderer extends Renderer
 			}
 			
 			currBrush.add(g);
+			
+			o = o.__next;
 		}
 		
 		//draw remainder
-		if (!currBrush.isEmpty())
+		if (currBrush != null && !currBrush.isEmpty())
 		{
 			if (allowGlobalState)
 				setGlobalState(states);
@@ -392,6 +381,8 @@ class Stage3DRenderer extends Renderer
 		
 		//restore deferred drawing
 		drawDeferred = save;
+		
+		_batchActive = false;
 	}
 	
 	override public function setAlphaState(state:AlphaState):Void
@@ -424,7 +415,7 @@ class Stage3DRenderer extends Renderer
 				}
 			}
 			else
-				e &= ~EFF_TEXTURE;
+				e &= ~(EFF_TEXTURE | EFF_TEXTURE_PMA);
 			
 			var brush = findBrush(e, textureFlags, false);
 			brush.add(currGeometry);
@@ -500,21 +491,29 @@ class Stage3DRenderer extends Renderer
 		
 		registerBrush(Stage3DBrushRectNull, 0, 0);
 		
-		registerSharedBrush(Stage3DBrushRectSolidColor          , EFF_COLOR | EFF_ALPHA | EFF_COLOR_XFORM, 0, false);
+		registerSharedBrush(Stage3DBrushRectSolidColor     , EFF_COLOR | EFF_ALPHA | EFF_COLOR_XFORM, 0, false);
 		registerSharedBrush(Stage3DBrushRectSolidColorBatch, EFF_COLOR | EFF_ALPHA | EFF_COLOR_XFORM, 0, true);
 		
 		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE                              , DEFAULT_TEXTURE_FLAGS, false);
 		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE | EFF_ALPHA                  , DEFAULT_TEXTURE_FLAGS, false);
 		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE | EFF_COLOR_XFORM            , DEFAULT_TEXTURE_FLAGS, false);
 		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE | EFF_ALPHA | EFF_COLOR_XFORM, DEFAULT_TEXTURE_FLAGS, false);
+		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE_PMA                              , DEFAULT_TEXTURE_FLAGS, false);
+		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE_PMA | EFF_ALPHA                  , DEFAULT_TEXTURE_FLAGS, false);
+		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE_PMA | EFF_COLOR_XFORM            , DEFAULT_TEXTURE_FLAGS, false);
+		registerBrush(Stage3DBrushRectTexture, EFF_TEXTURE_PMA | EFF_ALPHA | EFF_COLOR_XFORM, DEFAULT_TEXTURE_FLAGS, false);
 		
 		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE                              , DEFAULT_TEXTURE_FLAGS, true);
 		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE | EFF_ALPHA                  , DEFAULT_TEXTURE_FLAGS, true);
 		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE | EFF_COLOR_XFORM            , DEFAULT_TEXTURE_FLAGS, true);
 		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE | EFF_ALPHA | EFF_COLOR_XFORM, DEFAULT_TEXTURE_FLAGS, true);
+		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE_PMA                              , DEFAULT_TEXTURE_FLAGS, true);
+		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE_PMA | EFF_ALPHA                  , DEFAULT_TEXTURE_FLAGS, true);
+		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE_PMA | EFF_COLOR_XFORM            , DEFAULT_TEXTURE_FLAGS, true);
+		registerBrush(Stage3DBrushRectTextureBatch, EFF_TEXTURE_PMA | EFF_ALPHA | EFF_COLOR_XFORM, DEFAULT_TEXTURE_FLAGS, true);
 	}
 	
-	function configureBackBuffer()
+	function configureBackBuffer():Void
 	{
 		try
 		{
@@ -526,20 +525,18 @@ class Stage3DRenderer extends Renderer
 		}
 	}
 	
-	function registerBrush(brush:Class<Stage3DBrush>, supportedEffects:Int, textureFlags = 0, supportsBatching = false)
+	function registerBrush(brush:Class<Stage3DBrush>, supportedEffects:Int, textureFlags = 0, supportsBatching = false):Void
 	{
 		var args:Array<Dynamic> = [context, supportedEffects, textureFlags];
-		
-		if (supportedEffects & EFF_TEXTURE == 0) args.pop();
-		
+		if (supportedEffects & (EFF_TEXTURE | EFF_TEXTURE_PMA) == 0) args.pop();
 		var brush = Type.createInstance(brush, args);
-		
-		_paintBox.set(getBrushKey(supportedEffects, textureFlags, supportsBatching), brush);
+		var key = getBrushKey(supportedEffects, textureFlags, supportsBatching);
+		_paintBox.set(key, brush);
 	}
 	
-	function registerSharedBrush(brush:Class<Stage3DBrush>, supportedEffects:Int, textureFlags:Int, supportsBatching = false)
+	function registerSharedBrush(brush:Class<Stage3DBrush>, supportedEffects:Int, textureFlags:Int, supportsBatching = false):Void
 	{
-		var map = new IntHash<Int>();
+		var map = new IntMap<Int>();
 		var k = 32 - Bits.nlz(supportedEffects);
 		for (i in 0...k)
 		{
@@ -554,7 +551,7 @@ class Stage3DRenderer extends Renderer
 		}
 		
 		var args:Array<Dynamic> = [context, supportedEffects, textureFlags];
-		if (supportedEffects & EFF_TEXTURE == 0) args.pop();
+		if (supportedEffects & (EFF_TEXTURE | EFF_TEXTURE_PMA) == 0) args.pop();
 		var brush = Type.createInstance(brush, args);
 		
 		var exclude = 0;
@@ -581,7 +578,8 @@ class Stage3DRenderer extends Renderer
 			return _paintBox.get(key);
 		else
 		{
-			var brushClass = Type.getClass(_paintBox.get(getBrushKey(supportedEffects, DEFAULT_TEXTURE_FLAGS, preferBatching)));
+			var key = getBrushKey(supportedEffects, DEFAULT_TEXTURE_FLAGS, preferBatching);
+			var brushClass = Type.getClass(_paintBox.get(key));
 			registerBrush(brushClass, supportedEffects, textureFlags, preferBatching);
 			
 			var brush = _paintBox.get(key);
