@@ -299,7 +299,7 @@ class Spatial
 	
 	public function draw(renderer:Renderer, noCull:Bool):Void {}
 	
-	public function pick(origin:Vec3, results:Array<Geometry>):Int
+	public function pick(origin:Vec3, result:PickResult):Int
 	{
 		return 0;
 	}

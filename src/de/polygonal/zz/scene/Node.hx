@@ -160,7 +160,7 @@ class Node extends Spatial
 			renderer.drawNode(this);
 	}
 	
-	override public function pick(origin:Vec3, results:Array<Geometry>):Int
+	override public function pick(origin:Vec3, result:PickResult):Int
 	{
 		var c = 0;
 		if (worldBound.contains(origin))
@@ -168,7 +168,7 @@ class Node extends Spatial
 			var n = treeNode.children;
 			while (n != null)
 			{
-				c += n.val.pick(origin, results);
+				c += n.val.pick(origin, result);
 				n = n.next;
 			}
 		}

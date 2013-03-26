@@ -29,73 +29,34 @@
  */
 package de.polygonal.zz.scene;
 
-import de.polygonal.core.fmt.Sprintf;
-import de.polygonal.core.math.Vec3;
-import de.polygonal.motor.geom.inside.PointInsideAABB;
-import de.polygonal.zz.scene.Geometry.VertexFormat;
-
-/**
- * A quad face.
- */
-class Quad extends TriMesh
+class PickResult
 {
-	var _scratchVec3:Vec3;
+	public var count:Int;
+	public var data:Array<Geometry>;
 	
-	public function new(w = 1., h = 1., offset = 0.)
+	public function new() 
 	{
-		// 0      1
-		// +------+
-		// |013  /|
-		// |    / |
-		// |   /  |
-		// |  /   |
-		// | /    |
-		// |/  123|
-		// +------+
-		// 3      2
-		
-		//TODO shared vertices and indices
-		//var key = Sprintf.format('%s.%s.%s', [offset, w, h]);
-		var vertices =
-		[
-			new Vec3(0 + offset, 0 + offset),
-			new Vec3(w + offset, 0 + offset),
-			new Vec3(w + offset, h + offset),
-			new Vec3(0 + offset, h + offset)
-		];
-		
-		var indices = [0, 1, 3, 1, 2, 3];
-		
-		super(vertices, indices, false);
-		
-		type = GeometryType.QUAD;
-		vertexFormat = VertexFormat.FLOAT2;
-		
-		_scratchVec3 = new Vec3();
-		
-		updateModelBound();
+		count = 0;
+		data = [];
 	}
 	
-	override public function pick(origin:Vec3, result:PickResult):Int
+	inline public function add(x:Geometry):Void
 	{
-		if (worldBound.contains(origin))
+		data[count++] = x;
+	}
+	
+	inline public function clear():Void
+	{
+		count = 0;
+	}
+	
+	public function exists(id:String):Bool
+	{
+		for (i in 0...count)
 		{
-			var model = _scratchVec3;
-			world.applyInverse2(origin, model);
-			if (PointInsideAABB.test6(model.x, model.y, 0, 0, 1, 1)) //TODO take w and h into account
-			{
-				result.add(this);
-				return 1;
-			}
+			if (data[i].id == id)
+				return true;
 		}
-		
-		return 0;
+		return false;
 	}
-	
-	//TODO optimize?
-	//override function updateModelBound():Void
-	//{
-		//compute model bounding volume from vertices
-		//modelBound.computeFromData(vertices);
-	//}
 }
