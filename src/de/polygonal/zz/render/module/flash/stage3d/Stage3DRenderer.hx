@@ -31,7 +31,6 @@ package de.polygonal.zz.render.module.flash.stage3d;
 
 import de.polygonal.core.fmt.NumberFormat;
 import de.polygonal.core.fmt.Sprintf;
-import de.polygonal.core.Root;
 import de.polygonal.ds.Bits;
 import de.polygonal.ds.DA;
 import de.polygonal.ds.IntHashTable;
@@ -191,7 +190,7 @@ class Stage3DRenderer extends Renderer
 		var t = _textureHandles.get(tex.key);
 		if (t == null)
 		{
-			trace('upload texture #%d from image #%d', tex.key, tex.image.key);
+			L.d(Sprintf.format('upload texture #%d from image #%d', [tex.key, tex.image.key]), 's3d');
 			t = new Stage3DTexture(tex);
 			t.upload(context);
 			_textureHandles.set(tex.key, t);
@@ -207,7 +206,7 @@ class Stage3DRenderer extends Renderer
 		var t = _textureHandles.get(tex.key);
 		if (t != null)
 		{
-			trace('free stage3d texture #%d (image #%d)', tex.key, tex.image.key);
+			L.d(Sprintf.format('free stage3d texture #%d (image #%d)', [tex.key, tex.image.key]), 's3d');
 			t.free();
 			_textureHandles.clr(tex.key);
 		}
@@ -237,7 +236,7 @@ class Stage3DRenderer extends Renderer
 	{
 		if (_batchActive)
 		{
-			trace('draw sprite sheet effect batched');
+			L.d('draw sprite sheet effect batched', 's3d');
 		}
 		else
 		{
@@ -295,7 +294,7 @@ class Stage3DRenderer extends Renderer
 			
 			var g = o.__geometry;
 			
-			//othing to draw; skip
+			//nothing to draw; skip
 			if (o.effect == null)
 			{
 				o = o.__next;
@@ -432,7 +431,7 @@ class Stage3DRenderer extends Renderer
 	{
 		if (RenderSurface.numDeviceLost != _numDeviceLost)
 		{
-			trace('device lost!');
+			L.w('device lost', 's3d');
 			_numDeviceLost = RenderSurface.numDeviceLost;
 			handleDeviceLost();
 		}
@@ -473,7 +472,7 @@ class Stage3DRenderer extends Renderer
 		context.setDepthTest(false, Context3DCompareMode.ALWAYS);
 		
 		#if debug
-		trace('driverInfo: ' + context.driverInfo);
+		L.i('driverInfo: ' + context.driverInfo, 's3d');
 		context.enableErrorChecking = true;
 		#end
 	}
@@ -521,7 +520,7 @@ class Stage3DRenderer extends Renderer
 		}
 		catch (unknown:Dynamic)
 		{
-			Root.error(Std.string(unknown));
+			L.e('configureBackBuffer failed: ' + unknown);
 		}
 	}
 	

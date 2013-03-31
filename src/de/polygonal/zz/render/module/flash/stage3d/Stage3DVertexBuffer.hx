@@ -169,7 +169,8 @@ class Stage3DVertexBuffer
 		if (handle != null) handle.dispose();
 		
 		#if verbose
-		trace('allocate vertex buffer, numVertices: %d, numFloatsPerVertex: %d (%d)', numVertices, numFloatsPerVertex, numVertices * numFloatsPerVertex);
+		var k = numVertices * numFloatsPerVertex;
+		L.d('allocate vertex buffer, numVertices: $numVertices, numFloatsPerVertex: $numFloatsPerVertex ($k)', 's3d');
 		#end
 		
 		handle = _context.createVertexBuffer(numVertices, numFloatsPerVertex);
@@ -182,7 +183,7 @@ class Stage3DVertexBuffer
 		handle.uploadFromVector(buffer, 0, numVertices);
 		
 		#if verbose
-		trace('upload %d vertices', numVertices);
+		L.d('upload $numVertices vertices', 's3d');
 		#end
 	}
 	

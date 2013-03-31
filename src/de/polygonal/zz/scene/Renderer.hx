@@ -29,6 +29,7 @@
  */
 package de.polygonal.zz.scene;
 
+import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Mat44;
 import de.polygonal.ds.ArrayedStack;
 import de.polygonal.ds.DA;
@@ -324,9 +325,9 @@ class Renderer
 			return;
 		}
 		
-		//draw instantly
 		if (drawDeferred == null)
 		{
+			//draw instantly
 			currGeometry = geometry;
 			currEffect = geometry.effect;
 			
@@ -339,9 +340,11 @@ class Renderer
 			currGeometry = null;
 			return;
 		}
-		
-		//accumulate for deferred drawing
-		_deferredObjectsNode = _deferredObjectsNode.__next = geometry;
+		else
+		{
+			//accumulate
+			_deferredObjectsNode = _deferredObjectsNode.__next = geometry;
+		}
 	}
 	
 	public function drawPrimitive():Void
@@ -547,7 +550,7 @@ class Renderer
 		if (tex == null)
 		{
 			tex = createTex(image);
-			trace('create texture #%d of image "%s" (#%d)', tex.key, image.id, image.key);
+			L.d(Sprintf.format('create texture #%d from image "%s" (#%d)', [tex.key, image.id, image.key]));
 			_textureLookup.set(image.key, tex);
 		}
 		return tex;
@@ -558,7 +561,7 @@ class Renderer
 		var tex = _textureLookup.get(image.key);
 		if (tex != null)
 		{
-			trace('free texture #%d (image "%s", #%d)', tex.key, image.id, image.key);
+			L.d(Sprintf.format('free texture #%d (image "%s", #%d)', [tex.key, image.id, image.key]));
 			tex.free();
 			_textureLookup.remove(image.key);
 		}

@@ -31,7 +31,6 @@ package de.polygonal.zz.render.module.flash.stage3d.shader;
 
 import de.polygonal.ds.Bits;
 import de.polygonal.zz.render.effect.Effect;
-import de.polygonal.zz.render.effect.Effect.*;
 import de.polygonal.zz.render.module.flash.stage3d.shader.util.AGALMiniAssembler;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3DTextureFlag;
 import flash.display3D.Context3D;
@@ -97,17 +96,17 @@ class AGALShader
 	
 	inline public function supportsAlpha():Bool
 	{
-		return _effectMask & EFF_ALPHA > 0;
+		return _effectMask & Effect.EFF_ALPHA > 0;
 	}
 	
 	inline public function supportsColorXForm():Bool
 	{
-		return _effectMask & EFF_COLOR_XFORM > 0;
+		return _effectMask & Effect.EFF_COLOR_XFORM > 0;
 	}
 	
 	inline public function hasPMA():Bool
 	{
-		return _effectMask & EFF_TEXTURE_PMA > 0;
+		return _effectMask & Effect.EFF_TEXTURE_PMA > 0;
 	}
 	
 	function initShaders(texFlags:String)

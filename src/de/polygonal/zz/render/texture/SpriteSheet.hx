@@ -31,8 +31,8 @@ package de.polygonal.zz.render.texture;
 
 import de.polygonal.ds.DA;
 import de.polygonal.core.util.Assert;
-import haxe.ds.IntMap;
 import haxe.ds.StringMap;
+import haxe.ds.IntMap;
 
 class SpriteSheet
 {

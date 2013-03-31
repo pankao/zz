@@ -494,8 +494,14 @@ class AGALMiniAssembler
 		return agalcode;
 	}
 	
-	inline static function match(s:String, pattern:String, ?flags = ''):Array<String> return untyped s.match(new flash.utils.RegExp(pattern, flags))
-	inline static function slice(s:String, start:Int, end = 0x7fffffff):String return untyped s.slice(start, end == 0x7fffffff ? s.length : end)
+	inline static function match(s:String, pattern:String, ?flags = ''):Array<String>
+	{
+		return untyped s.match(new flash.utils.RegExp(pattern, flags));
+	}
+	inline static function slice(s:String, start:Int, end = 0x7fffffff):String
+	{
+		return untyped s.slice(start, end == 0x7fffffff ? s.length : end);
+	}
 	
 	static function init()
 	{

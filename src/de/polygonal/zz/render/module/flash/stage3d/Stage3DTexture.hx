@@ -88,7 +88,14 @@ class Stage3DTexture
 	{
 		if (handle != null)
 		{
-			try { handle.dispose(); } catch (error:Dynamic) { trace('ERROR ' + error); }
+			try
+			{
+				handle.dispose();
+			}
+			catch (error:Dynamic)
+			{
+				L.e('failed to dispose texture: ' + error, 's3d');
+			}
 			handle = null;
 		}
 		

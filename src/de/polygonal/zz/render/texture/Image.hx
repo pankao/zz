@@ -33,7 +33,7 @@ import de.polygonal.ds.HashableItem;
 
 class Image extends HashableItem
 {
-	#if (flash || nme)
+	#if (flash || cpp)
 	public static function ofData(data:flash.display.BitmapData)
 	{
 		return new Image(data, data.width, data.height, true);
@@ -63,7 +63,7 @@ class Image extends HashableItem
 	
 	public function clone():Image
 	{
-		#if (flash || nme)
+		#if (flash || cpp)
 		return new Image(data.clone(), w, h, premultipliedAlpha);
 		#end
 		
@@ -72,7 +72,7 @@ class Image extends HashableItem
 	
 	public function free():Void
 	{
-		#if (flash || nme)
+		#if (flash || cpp)
 		data.dispose();
 		#end
 		data = null;
