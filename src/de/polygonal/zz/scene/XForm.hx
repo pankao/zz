@@ -67,8 +67,8 @@ using de.polygonal.ds.BitFlags;
 ], true))
 class XForm
 {
-	static var _sharedScratchMatrix1:Mat33;
-	static var _sharedScratchMatrix2:Mat33;
+	static var _sharedScratchMatrix1:Mat33 = null;
+	static var _sharedScratchMatrix2:Mat33 = null;
 	
 	var _scale:Vec3;
 	var _translate:Vec3;
@@ -394,11 +394,87 @@ class XForm
 		return output;
 	}
 	
+	public function applyForwardArr(input:Array<Vec3>, output:Array<Vec3>, count:Int):Array<Vec3>
+	{
+		if (isIdentity())
+		{
+			//Y = X
+			for (i in 0...count)
+				output[i].set(input[i]);
+		}
+		else
+		if (isRSMatrix())
+		{
+			var inp:Vec3, out:Vec3, t:Vec3, tx:Float, ty:Float, tz:Float;
+			if (isUnitScale())
+			{
+				//Y = R*X + T
+				for (i in 0...count)
+				{
+					out = output[i];
+					inp = input[i];
+					out.x = inp.x;
+					out.y = inp.y;
+					out.z = inp.z;
+				}
+			}
+			else
+			{
+				//Y = R*S*X + T
+				t = _scale;
+				tx = t.x;
+				ty = t.y;
+				tz = t.z;
+				for (i in 0...count)
+				{
+					out = output[i];
+					inp = input[i];
+					out.x = inp.x * tx;
+					out.y = inp.y * ty;
+					out.z = inp.z * tz;
+				}
+			}
+			
+			t = _translate;
+			tx = t.x;
+			ty = t.y;
+			tz = t.z;
+			for (i in 0...count)
+			{
+				out = output[i];
+				_matrix.timesVector(out);
+				out.x += tx;
+				out.y += ty;
+				out.z += tz;
+			}
+		}
+		else
+		{
+			//Y = M*X + T
+			var out:Vec3, tmp:Vec3, tx:Float, ty:Float, tz:Float;
+			var t = _translate;
+			tx = t.x;
+			ty = t.y;
+			tz = t.z;
+			for (i in 0...count)
+			{
+				out = output[i];
+				out.set(input[i]);
+				_matrix.timesVector(out);
+				out.x += tx;
+				out.y += ty;
+				out.z += tz;
+			}
+		}
+		
+		return output;
+	}
+	
 	/**
 	 * Computes Y = M*X+T where X is = <code>input</code> and Y = <code>output</code>.<br/>
 	 * <warn>In constrast to <em>applyForward()</em>, this method operates in 2d space and ignores <code>input</code>.z.</warn>
 	 */
-	inline public function applyForward2(input:Vec3, output:Vec3):Vec3
+	public function applyForward2(input:Vec3, output:Vec3):Vec3
 	{
 		if (isIdentity())
 		{
@@ -436,6 +512,70 @@ class XForm
 			var m = _matrix;
 			output.x = (m.m11 * x + m.m12 * y) + _translate.x;
 			output.y = (m.m21 * x + m.m22 * y) + _translate.y;
+		}
+		
+		return output;
+	}
+	
+	public function applyForwardArr2(input:Array<Vec3>, output:Array<Vec3>, count:Int):Array<Vec3>
+	{
+		if (isIdentity())
+		{
+			//Y = X
+			for (i in 0...count)
+			{
+				output[i].x = input[i].x;
+				output[i].y = input[i].y;
+			}
+		}
+		else
+		if (isRSMatrix())
+		{
+			var m = _matrix;
+			var m11 = m.m11; var m12 = m.m12;
+			var m21 = m.m21; var m22 = m.m22;
+			var tx = _translate.x;
+			var ty = _translate.y;
+			if (isUnitScale())
+			{
+				//Y = R*X + T
+				for (i in 0...count)
+				{
+					var x = input[i].x;
+					var y = input[i].y;
+					output[i].x = (m11 * x + m12 * y) + tx;
+					output[i].y = (m21 * x + m22 * y) + ty;
+				}
+			}
+			else
+			{
+				var sx = _scale.x;
+				var sy = _scale.y;
+				for (i in 0...count)
+				{
+					//Y = R*S*X + T
+					var x = input[i].x * sx;
+					var y = input[i].y * sy;
+					output[i].x = (m11 * x + m12 * y) + tx;
+					output[i].y = (m21 * x + m22 * y) + ty;
+				}
+			}
+		}
+		else
+		{
+			//Y = M*X + T
+			var m = _matrix;
+			var m11 = m.m11; var m12 = m.m12;
+			var m21 = m.m21; var m22 = m.m22;
+			var tx = _translate.x;
+			var ty = _translate.y;
+			for (i in 0...count)
+			{
+				var x = input[i].x;
+				var y = input[i].y;
+				output[i].x = (m11 * x + m12 * y) + tx;
+				output[i].y = (m21 * x + m22 * y) + ty;
+			}
 		}
 		
 		return output;
