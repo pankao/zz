@@ -201,15 +201,25 @@ class Spatial
 	 */
 	public function free():Void
 	{
+		if (treeNode == null) return;
+		
+		treeNode.unlink();
+		treeNode.free();
+		treeNode = null;
+		
 		removeAllGlobalStates();
 		local.free();
-		world.free();
-		worldBound.free();
 		local = null;
+		
+		world.free();
 		world = null;
+		
+		worldBound.free();
 		worldBound = null;
+		
 		effect = null;
 		userData = null;
+		
 		__geometry = null;
 		__node = null;
 		__next = null;
