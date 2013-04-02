@@ -44,12 +44,12 @@ using de.polygonal.ds.BitFlags;
 
 @:build(de.polygonal.core.util.IntEnum.build(
 [
-	BIT_WORLD_CURRENT,
+	BIT_UPDATE_WORLD_XFORM,
 	BIT_FORCE_CULL,
 	BIT_USE_3D_XFORM,
 	BIT_HAS_ROTATION,
 	BIT_MODEL_CHANGED,
-	BIT_WORLD_BOUND_CURRENT
+	BIT_UPDATE_WORLD_BOUND
 ], true))
 class Spatial
 {
@@ -156,9 +156,7 @@ class Spatial
 	public var scale(get_scale, set_scale):Float;
 	inline function get_scale():Float
 	{
-		#if debug
 		D.assert(scaleX == scaleY, 'non-uniform scale');
-		#end
 		return scaleX;
 	}
 	inline function set_scale(value:Float):Float
@@ -185,7 +183,7 @@ class Spatial
 		__geometry = null;
 		__node = null;
 		
-		_bits = 0;
+		_bits = BIT_UPDATE_WORLD_XFORM | BIT_UPDATE_WORLD_BOUND;
 		
 		x = 0;
 		y = 0;
@@ -377,10 +375,8 @@ class Spatial
 	
 	public function setGlobalState(state:GlobalState):Void
 	{
-		#if debug
 		D.assert(state != null, 'state != null');
 		D.assert(state.next == null, 'state.next == null');
-		#end
 		
 		//set initial state
 		if (_globalStates == null)
@@ -451,17 +447,15 @@ class Spatial
 	
 	function updateWorldData(updateBV:Bool):Void
 	{
-		if (hasf(BIT_WORLD_CURRENT)) return;
+		if (!hasf(BIT_UPDATE_WORLD_XFORM)) return;
 		
 		useZ ? syncLocalXForm3d() : syncLocalXForm2d();
 		
 		var parent = treeNode.parent;
 		if (parent != null)
 		{
-			var node:Spatial = parent.val;
-			
 			//W' = Wp * L
-			useZ ? world.product(node.world, local) : world.product2(node.world, local);
+			useZ ? world.product(parent.val.world, local) : world.product2(parent.val.world, local);
 		}
 		else
 			world.set(local); //root node

@@ -33,7 +33,6 @@ import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Vec3;
 import de.polygonal.motor.geom.primitive.Sphere2;
 import de.polygonal.core.util.Assert;
-
 import de.polygonal.zz.scene.GlobalState.GlobalStateStacks;
 
 using de.polygonal.ds.BitFlags;
@@ -51,28 +50,19 @@ class Node extends Spatial
 	
 	public function addChild(child:Spatial):Void
 	{
-		#if debug
 		D.assert(child != null, 'child != null');
-		#end
-		
 		treeNode.appendNode(child.treeNode);
 	}
 	
 	public function removeChild(child:Spatial):Void
 	{
-		#if debug
 		D.assert(child != null, 'child != null');
-		#end
-		
 		child.treeNode.unlink();
 	}
 	
 	public function addChildAt(child:Spatial, index:Int):Void
 	{
-		#if debug
 		D.assert(child != null, 'child != null');
-		#end
-		
 		treeNode.insertChildAt(child.treeNode, index);
 	}
 	
@@ -93,19 +83,13 @@ class Node extends Spatial
 	
 	public function getChildIndex(child:Spatial):Int
 	{
-		#if debug
 		D.assert(child != null, 'child != null');
-		#end
-		
 		return child.treeNode.getChildIndex();
 	}
 	
 	public function setChildIndex(child:Spatial, index:Int):Void
 	{
-		#if debug
 		D.assert(child != null, 'child != null');
-		#end
-		
 		treeNode.setChildIndex(child.treeNode, index);
 	}
 	
@@ -123,11 +107,8 @@ class Node extends Spatial
 	
 	public function swapChildren(child1:Spatial, child2:Spatial):Void
 	{
-		#if debug
 		D.assert(child1 != null, 'child1 != null');
 		D.assert(child2 != null, 'child2 != null');
-		#end
-		
 		treeNode.swapChildren(child1.treeNode, child2.treeNode);
 	}
 	
@@ -136,19 +117,23 @@ class Node extends Spatial
 		treeNode.swapChildrenAt(index1, index2);
 	}
 	
-	public function enableUpdateBV(value:Bool):Void
+	/**
+	 * If <code>x</code> is false, world bound computations are ignored, that is <em>updateWorldBound()</em> has no effect.
+	 */
+	public function enableUpdateBV(x:Bool):Void
 	{
-		setfif(Spatial.BIT_WORLD_BOUND_CURRENT, !value);
+		setfif(Spatial.BIT_UPDATE_WORLD_BOUND, x);
 	}
 	
 	/**
-	 * Draws this scene using the given <code>renderer</code>.
+	 * Draws this scene using the given <code>renderer</code> object.
 	 * @param noCull if true, skips culling.
 	 */
 	override public function draw(renderer:Renderer, noCull:Bool):Void
 	{
 		if (effect == null)
 		{
+			//no effect assign, so just draw children.
 			var n = treeNode.children;
 			while (n != null)
 			{
@@ -163,7 +148,7 @@ class Node extends Spatial
 	override public function pick(origin:Vec3, result:PickResult):Int
 	{
 		var c = 0;
-		if (worldBound.contains(origin))
+		if (!hasf(Spatial.BIT_UPDATE_WORLD_BOUND) || worldBound.contains(origin))
 		{
 			var n = treeNode.children;
 			while (n != null)
@@ -201,7 +186,7 @@ class Node extends Spatial
 	
 	override function updateWorldBound():Void
 	{
-		if (hasf(Spatial.BIT_WORLD_BOUND_CURRENT)) return;
+		if (!hasf(Spatial.BIT_UPDATE_WORLD_BOUND)) return;
 		
 		//compute world bounding volume containing world bounding volume of all its children
 		//set to first non-null child
