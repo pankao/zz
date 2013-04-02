@@ -49,6 +49,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 	var _numSharedRegisters:Int;
 	var _numRegistersPerQuad:Int;
 	var _strategy:Int;
+	var _scratchVertices:Array<Vec3>;
 	
 	var _uv0:Vec3;
 	var _uv1:Vec3;
@@ -63,6 +64,8 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		_strategy = Stage3DRenderer.BATCH_STRATEGY;
 		
 		_batchCapacity = MAX_BATCH_SIZE_QUADS;
+		
+		_scratchVertices = [new Vec3(0, 0), new Vec3(1, 0), new Vec3(1, 1), new Vec3(0, 1)];
 		
 		_uv0 = new Vec3();
 		_uv1 = new Vec3();
@@ -103,7 +106,6 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			_vb = new Stage3DVertexBuffer(_context);
 			_vb.allocate(_shader.supportsColorXForm() ? [2, 3, 2] : [2, 3], maxBatchSize * 4);
 			
-			var vertices = [new Vec3(0, 0), new Vec3(1, 0), new Vec3(1, 1), new Vec3(0, 1)];
 			var address3 = new Vec3();
 			var address2 = new Vec3();
 			for (i in 0...maxBatchSize)
@@ -120,7 +122,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 					
 					for (i in 0...4)
 					{
-						_vb.addFloat2(vertices[i]);
+						_vb.addFloat2(_scratchVertices[i]);
 						_vb.addFloat3(address3);
 						_vb.addFloat2(address2);
 					}
@@ -129,7 +131,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 				{
 					for (i in 0...4)
 					{
-						_vb.addFloat2(vertices[i]);
+						_vb.addFloat2(_scratchVertices[i]);
 						_vb.addFloat3(address3);
 					}
 				}
@@ -328,11 +330,12 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		var uv3 = _uv3;
 		var uvs = _uvs;
 		var t = _scratchVec3;
+		var tv = _scratchVertices;
 		var vb = _vb;
 		var batch = _batch;
 		
 		var offset, address, i, size;
-		var geometry, effect, vertices, world, crop, x, y, w, h, alpha;
+		var geometry, effect, world, crop, x, y, w, h, alpha;
 		
 		var supportsAlpha = _shader.supportsAlpha();
 		var supportColorXForm = _shader.supportsColorXForm();
@@ -351,13 +354,14 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			alpha = effect.alpha;
 			
 			//update vertices
-			vertices = geometry.vertices;
 			world = geometry.world;
 			address = offset;
-			vb.setFloat2(address, world.applyForward2(vertices[0], t)); address += stride;
-			vb.setFloat2(address, world.applyForward2(vertices[1], t)); address += stride;
-			vb.setFloat2(address, world.applyForward2(vertices[2], t)); address += stride;
-			vb.setFloat2(address, world.applyForward2(vertices[3], t));
+			
+			world.applyForwardArr2(geometry.vertices, tv, 4);
+			vb.setFloat2(address, tv[0]); address += stride;
+			vb.setFloat2(address, tv[1]); address += stride;
+			vb.setFloat2(address, tv[2]); address += stride;
+			vb.setFloat2(address, tv[3]);
 			
 			offset += 2;
 			

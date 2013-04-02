@@ -52,6 +52,7 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 	var _numSharedRegisters:Int;
 	var _numRegistersPerQuad:Int;
 	var _strategy:Int;
+	var _scratchVertices:Array<Vec3>;
 	
 	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
 	{
@@ -60,6 +61,8 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 		_strategy = Stage3DRenderer.BATCH_STRATEGY;
 		
 		_batchCapacity = MAX_BATCH_SIZE_QUADS;
+		
+		_scratchVertices = [new Vec3(0, 0), new Vec3(1, 0), new Vec3(1, 1), new Vec3(0, 1)];
 		
 		if (_strategy == Stage3DRenderer.VERTEX_BATCH)
 		{
@@ -86,7 +89,6 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 			_vb = new Stage3DVertexBuffer(_context);
 			_vb.allocate([2, 3], maxBatchSize * 4); //uv, index
 			
-			var vertices = [new Vec3(0, 0), new Vec3(1, 0), new Vec3(1, 1), new Vec3(0, 1)];
 			var address3 = new Vec3();
 			for (i in 0...maxBatchSize)
 			{
@@ -97,7 +99,7 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 				
 				for (i in 0...4)
 				{
-					_vb.addFloat2(vertices[i]);
+					_vb.addFloat2(_scratchVertices[i]);
 					_vb.addFloat3(address3);
 				}
 			}
@@ -265,11 +267,12 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 		var stride = _vb.numFloatsPerVertex;
 		
 		var t = _scratchVec3;
+		var tv = _scratchVertices;
 		var vb = _vb;
 		var batch = _batch;
 		
 		var offset, address, i, size;
-		var geometry, effect, vertices, world;
+		var geometry, effect, world;
 		
 		size = batch.size();
 		
@@ -283,13 +286,14 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 			effect = geometry.effect;
 			
 			//update vertices
-			vertices = geometry.vertices;
 			world = geometry.world;
 			address = offset;
-			vb.setFloat2(address, world.applyForward2(vertices[0], t)); address += stride;
-			vb.setFloat2(address, world.applyForward2(vertices[1], t)); address += stride;
-			vb.setFloat2(address, world.applyForward2(vertices[2], t)); address += stride;
-			vb.setFloat2(address, world.applyForward2(vertices[3], t));
+			
+			world.applyForwardArr2(geometry.vertices, tv, 4);
+			vb.setFloat2(address, tv[0]); address += stride;
+			vb.setFloat2(address, tv[1]); address += stride;
+			vb.setFloat2(address, tv[2]); address += stride;
+			vb.setFloat2(address, tv[3]);
 			
 			offset += 2;
 			
