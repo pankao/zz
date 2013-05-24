@@ -40,6 +40,8 @@ class Stage3DTextureFlag
 	inline public static var FM_LINEAR     = Bits.BIT_14;
 	inline public static var REPEAT_NORMAL = Bits.BIT_15;
 	inline public static var REPEAT_CLAMP  = Bits.BIT_16;
+	inline public static var DXT1          = Bits.BIT_17;
+	inline public static var DXT5          = Bits.BIT_18;
 	
 	inline public static var PRESET_QUALITY_LOW    = MM_NONE    | FM_NEAREST | REPEAT_NORMAL;
 	inline public static var PRESET_QUALITY_MEDIUM = MM_NONE    | FM_LINEAR  | REPEAT_NORMAL;
@@ -51,7 +53,7 @@ class Stage3DTextureFlag
 		if (flags <= 0) return '-';
 		
 		var a = [];
-		for (i in 0...7)
+		for (i in 0...9)
 		{
 			if ((flags >> 9) & (1 << i) > 0)
 			{
@@ -65,7 +67,9 @@ class Stage3DTextureFlag
 					case 4: 'linear';
 					case 5: 'repeat';
 					case 6: 'clamp';
-					default: 'unknown';
+					case 7: 'dxt1';
+					case 8: 'dxt5';
+					default: throw 'unknown texture flag';
 				});
 			}
 		}
