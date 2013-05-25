@@ -62,8 +62,8 @@ class SpriteSheet
 		_cropMap = new StringMap();
 		_sizeMap = new StringMap();
 		
-		_cropList = new DA();
-		_sizeList = new DA();
+		_cropList = new DA<Rect>();
+		_sizeList = new DA<Size>();
 		
 		_indexMap = new StringMap();
 		_nameMap = new IntMap();
@@ -104,7 +104,7 @@ class SpriteSheet
 	inline public function getCropRect(id:String):Rect
 	{
 		#if debug
-		D.assert(_cropMap.exists(id), '_cropMap.exists(id)');
+		D.assert(_cropMap.exists(id), '_cropMap.exists($id)');
 		#end
 		
 		return _cropMap.get(id);
@@ -118,7 +118,7 @@ class SpriteSheet
 	inline public function getFrameIndex(id:String):Int
 	{
 		#if debug
-		D.assert(_indexMap.exists(id), '_indexMap.exists(id)');
+		D.assert(_indexMap.exists(id), '_indexMap.exists($id)');
 		#end
 		
 		return _indexMap.get(id);
@@ -127,7 +127,7 @@ class SpriteSheet
 	inline public function getFrameName(index:Int):String
 	{
 		#if debug
-		D.assert(_nameMap.exists(index), '_nameMap.exists(index)');
+		D.assert(_nameMap.exists(index), '_nameMap.exists($index)');
 		#end
 		
 		return _nameMap.get(index);
@@ -157,10 +157,10 @@ class SpriteSheet
 			crop.w -= 1.;
 			crop.h -= 1.;
 			
-			crop.x /= tex.w;
-			crop.y /= tex.h;
-			crop.w /= tex.w;
-			crop.h /= tex.h;
+			crop.x /= tex.width;
+			crop.y /= tex.height;
+			crop.w /= tex.width;
+			crop.h /= tex.height;
 		}
 		
 		crop.r = crop.x + crop.w;

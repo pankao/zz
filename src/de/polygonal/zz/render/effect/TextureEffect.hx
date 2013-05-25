@@ -76,10 +76,10 @@ class TextureEffect extends Effect
 		
 		if (tex.isNormalize)
 		{
-			x /= tex.w;
-			y /= tex.h;
-			w /= tex.w;
-			h /= tex.h;
+			x /= tex.width;
+			y /= tex.height;
+			w /= tex.width;
+			h /= tex.height;
 		}
 		
 		crop = new Rect(x, y, w, h);

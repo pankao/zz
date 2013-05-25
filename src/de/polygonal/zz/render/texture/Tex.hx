@@ -52,39 +52,39 @@ class Tex extends HashableItem
 	 * The width of the texture in pixels.<br/>
 	 * If <em>powerOfTwo</em> is true, <code>w</code> is a power of two.
 	 */
-	public var w:Int;
+	public var width(default, null):Int;
 	
 	/**
 	 * The height of the texture in pixels.<br/>
 	 * If <em>powerOfTwo</em> is true, <code>h</code> is a power of two.
 	 */
-	public var h:Int;
+	public var height(default, null):Int;
 	
-	public function new(image:Image, powerOfTwo:Bool, normalize:Bool)
+	public function new(image:Image, isPowerOfTwo:Bool, isNormalize:Bool)
 	{
 		super();
 		
 		this.image = image;
-		isPowerOfTwo = powerOfTwo;
-		isNormalize = normalize;
+		this.isPowerOfTwo = isPowerOfTwo;
+		this.isNormalize = isNormalize;
 		isAlphaPreMultiplied = image.premultipliedAlpha;
-		if (powerOfTwo)
+		if (isPowerOfTwo)
 		{
-			w = M.nextPow2(image.w);
-			h = M.nextPow2(image.h);
+			width = M.nextPow2(image.w);
+			height = M.nextPow2(image.h);
 		}
 		else
 		{
-			w = image.w;
-			h = image.h;
+			width = image.w;
+			height = image.h;
 		}
 	}
 	
 	public function free():Void
 	{
 		image = null;
-		w = -1;
-		h = -1;
+		width = -1;
+		height = -1;
 		key = -1;
 	}
 }
