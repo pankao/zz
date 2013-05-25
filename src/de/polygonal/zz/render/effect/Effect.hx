@@ -44,11 +44,12 @@ class Effect
 	inline public static var EFF_TEXTURE_PMA = Bits.BIT_03;
 	inline public static var EFF_ALPHA       = Bits.BIT_04;
 	inline public static var EFF_COLOR_XFORM = Bits.BIT_05;
-	inline public static var EFF_MASK        = Bits.mask(5);
+	inline public static var EFF_SMOOTH      = Bits.BIT_06;
+	inline public static var EFF_MASK        = Bits.mask(6);
 	
-	inline static var UV_CHANGED             = Bits.BIT_06;
-	inline static var ALPHA_CHANGED          = Bits.BIT_07;
-	inline static var COLORXFORM_CHANGED     = Bits.BIT_08;
+	inline static var UV_CHANGED             = Bits.BIT_07;
+	inline static var ALPHA_CHANGED          = Bits.BIT_08;
+	inline static var COLORXFORM_CHANGED     = Bits.BIT_09;
 	
 	public static function print(flags:Int):String
 	{
@@ -66,7 +67,8 @@ class Effect
 					case 2: 'texture (premultiplied alpha)';
 					case 3: 'alpha';
 					case 4: 'colorxform';
-					case _: '?';
+					case 5: 'smooth';
+					default: '?';
 				});
 			}
 			flags >>= 1;
@@ -151,8 +153,17 @@ class Effect
 		return _tex = value;
 	}
 	
-	#if (flash || nme)
-	public var smooth:Bool = true;
+	#if nme
+	public var smooth(get_smooth, set_smooth):Bool;
+	inline function get_smooth():Bool
+	{
+		return hasf(EFF_SMOOTH);
+	}
+	inline function set_smooth(value:Bool):Bool
+	{
+		setfif(EFF_SMOOTH, value);
+		return value;
+	}
 	#end
 	
 	public var colors:Array<Vec3>;
@@ -175,12 +186,16 @@ class Effect
 		_color = 0xff00ff;
 		_colorXForm = new ColorXForm();
 		_bits = EFF_COLOR;
+		
+		#if nme
+		_bits |= EFF_SMOOTH;
+		#end
 	}
 	
 	public function free():Void
 	{
 		colors = null;
-		colorXForm = null;
+		_colorXForm = null;
 		uv = null;
 		
 		_tex = null;
