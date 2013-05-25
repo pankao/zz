@@ -30,42 +30,42 @@
 package de.polygonal.zz.render.module.nme;
 
 import de.polygonal.core.math.Vec3;
+import de.polygonal.ds.ArrayUtil;
 import de.polygonal.ds.IntHashTable;
 import de.polygonal.zz.render.effect.Effect;
-import de.polygonal.zz.render.effect.Effect.*;
-import de.polygonal.zz.render.effect.TextEffect;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
+import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Rect;
 import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.zz.scene.AlphaState;
+import de.polygonal.zz.scene.Geometry;
 import de.polygonal.zz.scene.GeometryType;
 import de.polygonal.zz.scene.Renderer;
 import de.polygonal.zz.scene.Spatial;
-import de.polygonal.zz.render.RenderSurface;
-import flash.geom.Rectangle;
 import nme.display.Graphics;
 import nme.display.Tilesheet;
 import nme.geom.Rectangle;
-import de.polygonal.core.util.Assert;
+
+//private typedef E = de.polygonal.zz.render.effect.Effect;
 
 class TileRenderer extends Renderer
 {
-	//TODO flush if buffer is full
-	inline static var MAX_BUFFER_SIZE = 4096;
+	public static var MAX_BATCH_SIZE = 4096;
 	
 	public var numCallsToDrawTiles:Int;
 	
 	var _canvas:Graphics;
-	var _data:Array<Float>;
+	var _buffer:Array<Float>;
+	var _bufferSize:Int;
 	var _tilesheetLUT:IntHashTable<Tilesheet>;
 	
-	var _batchActive:Bool;
 	var _batchSize:Int;
 	
 	var _currTilesheetFlags:Int;
 	var _currTilesheet:Tilesheet;
+	var _smooth:Bool;
 	
 	public function new()
 	{
@@ -73,8 +73,10 @@ class TileRenderer extends Renderer
 		
 		_canvas = RenderSurface.root.graphics;
 		_tilesheetLUT = new IntHashTable(64, 64, false, 64);
-		_data = new Array<Float>();
-		_batchActive = false;
+		
+		//max. 11 valus/tile: x, y, id, a, b, c, d, red, green, blue, alpha
+		_buffer = ArrayUtil.alloc(MAX_BATCH_SIZE * 11);
+		_bufferSize = 0;
 		
 		//batch rendering is on by default
 		drawDeferred = drawDeferredBatch;
@@ -82,120 +84,176 @@ class TileRenderer extends Renderer
 	
 	override public function drawTextureEffect(effect:TextureEffect):Void
 	{
-		_currTilesheetFlags = draw(effect.__textureEffect.crop, 0, effect);
+		super.drawTextureEffect(effect);
+		
+		currTexture = effect.tex;
+		
+		_currTilesheetFlags = push(effect.crop, 0, currGeometry, effect);
 		_currTilesheet = getTilesheet(effect);
 		
-		if (!_batchActive) flush();
+		_smooth = effect.smooth;
+		flush();
 	}
 	
 	override public function drawSpriteSheetEffect(effect:SpriteSheetEffect):Void
 	{
+		super.drawSpriteSheetEffect(effect);
+		
 		var frame = effect.frame;
-		_currTilesheetFlags = draw(effect.sheet.getCropRectAt(frame), frame, effect);
+		
+		_currTilesheetFlags = push(effect.sheet.getCropRectAt(frame), frame, currGeometry, effect);
 		_currTilesheet = getTilesheet(effect);
 		
-		if (!_batchActive) flush();
+		_smooth = effect.smooth;
+		flush();
 	}
 	
 	override public function drawDeferredBatch():Void
 	{
-		if (_deferredObjects.isEmpty()) return;
+		//nothing to draw?
+		if (_deferredObjectsList.__next == null) return;
 		
-		//disable deferred drawing
+		//temporarily disable deferred drawing
 		var save = drawDeferred;
 		drawDeferred = null;
 		
-		var prevEffectFlags = -1;
-		var prevTexture = null;
+		//var numBatchCalls = 0;
+		var currEffectFlags = -1;
+		var currStateFlags = -1;
+		//var states:DA<GlobalState> = null;
 		
-		var i = 0;
-		var k = _deferredObjects.size();
+		currTexture = null;
 		
-		while (i < k)
+		var frame:Int;
+		var crop:Rect;
+		
+		var o = _deferredObjectsList.__next;
+		while (o != null)
 		{
-			var o = _deferredObjects.get(i++);
-			
 			if (o.isNode())
 			{
-				currNode = o.__node;
-				
-				if (Std.is(o.effect, TextEffect))
-				{
-					if (_batchActive)
-					{
-						flush();
-						_batchActive = false;
-					}
-					_batchActive = true;
-					o.effect.draw(this);
-					flush();
-					_batchActive = false;
-				}
+				//when deferred drawing is active, a call to drawNode() simply adds the node to the list of deferred objects;
+				//since deferred drawing is temporarly disabled, drawNode(o) will draw the effect attached to the node.
+				_deferredObjectsNode = o;
+				drawNode(o.__node);
+				o = o.__next;
 				continue;
 			}
 			
-			var e = o.effect;
+			var g = o.__geometry;
 			
-			if (e == null) continue;
-			
-			currGeometry = o.__geometry;
-			
-			if (prevEffectFlags == -1)
+			//nothing to draw; skip
+			if (o.effect == null)
 			{
-				//start new batch
-				prevEffectFlags = e.flags;
-				prevTexture = e.tex;
-				
-				_batchActive = true;
-				
-				if (e.__spriteSheetEffect != null)
-					drawSpriteSheetEffect(e.__spriteSheetEffect);
-				else
-					drawTextureEffect(e.__textureEffect);
+				o = o.__next;
+				continue;
 			}
+			
+			var effect:Effect = o.effect;
+			
+			var effectFlags = effect.flags;
+			if (currEffectFlags < 0)
+			{
+				//insert first first geometry node into batch
+				currEffectFlags = effectFlags;
+				currTexture = effect.tex;
+				currStateFlags = g.stateFlags;
+				//states = g.states;
+				//if (allowGlobalState)
+					//setGlobalState(states);
+					
+				_smooth = effect.smooth;
+				
+				//draw batched
+				frame =
+				if (effect.__spriteSheetEffect != null)
+					effect.__spriteSheetEffect.frame;
+				else
+					0;
+				crop = effect.__textureEffect.crop;
+				
+				_currTilesheetFlags = push(crop, frame, g, effect);
+				_currTilesheet = getTilesheet(effect);
+				
+				o = o.__next;
+				continue;
+			}
+			
+			//render state changed?
+			var effectsChanged = effectFlags != currEffectFlags;
+			var textureChanged = effect.tex != currTexture;
+			var stateChanged   = g.stateFlags != currStateFlags;
+			var batchExhausted = _batchSize == 100;
+			var batchExhausted = false;
+			
+			if (effectsChanged || textureChanged || stateChanged || batchExhausted)
+			{
+				//current batch needs to be drawn
+				
+				#if verbose
+				//trace('flags');
+				//trace(NumberFormat.toBin(currEffectFlags, '.', true));
+				//trace(NumberFormat.toBin(effectFlags, '.', true));
+				
+				
+				var reason =
+				if (effectsChanged) 'effects';
+				else if (textureChanged) 'texture';
+				else if (stateChanged) 'state';
+				else if (batchExhausted) 'exhausted';
+				L.d('state changed, reason: $reason, current batch size: $_batchSize', 'tile');
+				#end
+				
+				flush();
+				
+				//initialize new batch for current geometry
+				currEffectFlags = effectFlags;
+				currTexture = effect.tex;
+				currStateFlags = g.stateFlags;
+				
+				_smooth = effect.smooth;
+				
+				//states = g.states;
+				
+				//if (stateChanged && allowGlobalState)
+					//setGlobalState(states);
+			}
+			
+			//draw batched
+			frame =
+			if (effect.__spriteSheetEffect != null)
+				effect.__spriteSheetEffect.frame;
 			else
-			{
-				//TODO store texture id in flag?
-				
-				//effect state change or batch exhausted?
-				if (e.flags != prevEffectFlags || e.tex != prevTexture) //currBrush.isFull()
-				{
-					flush();
-					
-					//start new batch
-					prevEffectFlags = e.flags;
-					prevTexture = e.tex;
-					
-					_batchActive = true;
-					
-					if (e.__spriteSheetEffect != null)
-						drawSpriteSheetEffect(e.__spriteSheetEffect);
-					else
-						drawTextureEffect(e.__textureEffect);
-				}
-				else
-				{
-					//keep accumulating
-					if (e.__spriteSheetEffect != null)
-						drawSpriteSheetEffect(e.__spriteSheetEffect);
-					else
-						drawTextureEffect(e.__textureEffect);
-				}
-			}
+				0;
+			crop = effect.__textureEffect.crop;
+			
+			_currTilesheetFlags = push(crop, frame, g, effect);
+			_currTilesheet = getTilesheet(effect);
+			
+			o = o.__next;
 		}
 		
-		if (_batchActive)
+		//draw remainder
+		if (_batchSize > 0)
 		{
+			//if (allowGlobalState)
+				//setGlobalState(states);
+			
 			flush();
-			_batchActive = false;
+			
+			//currBrush.draw(this);
+			//numBatchCalls++;
 		}
+		
+		currTexture = null;
 		
 		//restore deferred drawing
 		drawDeferred = save;
 	}
 	
-	override function drawElements()
+	override function drawElements():Void
 	{
+		trace('draw elements');
 		if (currGeometry.type == GeometryType.QUAD)
 		{
 			if (currEffect == null)
@@ -216,8 +274,7 @@ class TileRenderer extends Renderer
 				}
 			}
 			else
-				e &= ~EFF_TEXTURE;*/
-				
+				e &= ~E.E.EFF_TEXTURE;*/
 			
 			var geometry = currGeometry;
 			var mvp = setModelViewProjMatrix(geometry);
@@ -241,11 +298,26 @@ class TileRenderer extends Renderer
 		}
 	}
 	
-	override function onBeginScene()
+	override function onBeginScene():Void
 	{
-		_data = [];
 		_canvas.clear();
 		numCallsToDrawTiles = 0;
+	}
+	
+	override public function freeTex(image:Image):Void
+	{
+		var tex = _textureLookup.get(image.key);
+		
+		var tilesheet = _tilesheetLUT.get(tex.key);
+		_tilesheetLUT.clr(tex.key);
+		
+		tilesheet.nmeBitmap = null;
+		tilesheet.nmeHandle = null;
+		
+		var imageId = image.id;
+		L.d('dispose Tilesheet (image id: $imageId)', 'tile');
+		
+		super.freeTex(image);
 	}
 	
 	override public function createTex(image:Image):Tex
@@ -253,13 +325,9 @@ class TileRenderer extends Renderer
 		return new Tex(image, false, false);
 	}
 	
-	override function getType():Int
+	function drawTriangle(a:Vec3, b:Vec3, c:Vec3, color:Int):Void
 	{
-		return Renderer.TYPE_NME_TILES;
-	}
-	
-	function drawTriangle(a:Vec3, b:Vec3, c:Vec3, color:Int)
-	{
+		throw 1;
 		var g:flash.display.Graphics = _canvas;
 		g.beginFill(currEffect.color, currEffect.alpha);
 		g.moveTo(a.x, a.y);
@@ -271,6 +339,7 @@ class TileRenderer extends Renderer
 	
 	function toScreen(spatial:Spatial, x:Vec3):Vec3
 	{
+		throw 1;
 		//local space -> world space
 		var w = spatial.world.applyForward(x, new Vec3());
 		
@@ -285,10 +354,10 @@ class TileRenderer extends Renderer
 		return new Vec3(x, y);
 	}
 	
-	function draw(rect:Rect, frame:Int, effect:Effect):Int
+	function push(rect:Rect, frame:Int, g:Geometry, effect:Effect):Int
 	{
 		var flags = Tilesheet.TILE_TRANS_2x2;
-		var xform = currGeometry.world;
+		var xform = g.world;
 		var t = xform.getTranslate();
 		var s = xform.getScale();
 		var sx = s.x / rect.w;
@@ -303,62 +372,87 @@ class TileRenderer extends Renderer
 		add(m.m21 * sx);
 		add(m.m22 * sy);
 		
-		if (effect.flags & EFF_COLOR_XFORM > 0)
+		if (effect.flags & Effect.EFF_COLOR_XFORM > 0)
 		{
 			flags |= Tilesheet.TILE_RGB;
-			var offset = effect.colorXForm.offset;
-			add(offset.r);
-			add(offset.g);
-			add(offset.b);
+			var mult = effect.colorXForm.multiplier;
+			add(mult.x);
+			add(mult.y);
+			add(mult.z);
 		}
 		
-		if (effect.flags & EFF_ALPHA > 0)
+		if (effect.flags & Effect.EFF_ALPHA > 0)
 		{
 			flags |= Tilesheet.TILE_ALPHA;
 			add(effect.alpha);
 		}
 		
+		_batchSize++;
+		
 		return flags;
 	}
 	
-	inline function flush()
+	function flush():Void
 	{
-		var smooth = false;
-		_canvas.drawTiles(_currTilesheet, _data, smooth, _currTilesheetFlags);
-		_data = [];
+		#if verbose
+		L.d('drawing #$_batchSize effect(s) (smooth: $_smooth)', 'tile');
+		#end
+		
+		var src = _buffer;
+		var dst = new Array<Float>();
+		dst[_bufferSize - 1] = cast null;
+		
+		for (i in 0..._bufferSize) untyped dst.__unsafe_set(i, src.__unsafe_get(i));
+		
+		_canvas.drawTiles(_currTilesheet, dst, _smooth, _currTilesheetFlags);
+		dst = null;
+		
+		_bufferSize = 0;
+		_batchSize = 0;
 		numCallsToDrawTiles++;
 	}
 	
 	inline function getTilesheet(effect:Effect):Tilesheet
 	{
+		var tilesheet = _tilesheetLUT.get(effect.tex.key);
+		if (tilesheet == null) tilesheet = createTilesheet(effect);
+		return tilesheet;
+	}
+	
+	function createTilesheet(effect:Effect):Tilesheet
+	{
 		var tex = effect.tex;
-		var tilesheet = _tilesheetLUT.get(tex.key);
-		if (tilesheet == null)
+		
+		var key = tex.key;
+		var imageId = tex.image.id;
+		L.d('create Tilesheet (texture key: $key, image id: $imageId', 'tile');
+		
+		var tilesheet = new Tilesheet(tex.image.data);
+		
+		_tilesheetLUT.set(key, tilesheet);
+		
+		if (effect.__spriteSheetEffect != null)
 		{
-			tilesheet = new Tilesheet(tex.image.data);
-			_tilesheetLUT.set(tex.key, tilesheet);
-			
-			if (effect.__spriteSheetEffect != null)
+			var sheet = effect.__spriteSheetEffect.sheet;
+			for (i in 0...sheet.frameCount)
 			{
-				var sheet = effect.__spriteSheetEffect.sheet;
-				for (i in 0...sheet.frameCount)
-				{
-					var rect = sheet.getCropRectAt(i);
-					tilesheet.addTileRect(new Rectangle(rect.x, rect.y, rect.w, rect.h));
-				}
-			}
-			else
-			if (effect.__textureEffect != null)
-			{
-				var rect = effect.__textureEffect.crop;
+				var rect = sheet.getCropRectAt(i);
 				tilesheet.addTileRect(new Rectangle(rect.x, rect.y, rect.w, rect.h));
 			}
+		}
+		else
+		if (effect.__textureEffect != null)
+		{
+			var rect = effect.__textureEffect.crop;
+			tilesheet.addTileRect(new Rectangle(rect.x, rect.y, rect.w, rect.h));
 		}
 		return tilesheet;
 	}
 	
-	inline function add(x:Float)
+	inline function add(x:Float):Void
 	{
-		_data.push(x);
+		untyped _buffer.__unsafe_set(_bufferSize++, x);
 	}
+	
+	override function setAlphaState(state:AlphaState):Void {}
 }
