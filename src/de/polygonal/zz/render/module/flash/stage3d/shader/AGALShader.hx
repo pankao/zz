@@ -111,18 +111,22 @@ class AGALShader
 	
 	function initShaders(texFlags:String)
 	{
-		var vertexShaderAssembler = new AGALMiniAssembler();
-		vertexShaderAssembler.assemble(Context3DProgramType.VERTEX, getVertexShader());
+		var assembler = AGALMiniAssembler.get();
 		
-		var fragmentShaderAssembler:AGALMiniAssembler = new AGALMiniAssembler();
+		assembler.assemble(cast Context3DProgramType.VERTEX, getVertexShader());
+
+		var vertexShader = assembler.agalcode;
 		
 		var fragmentSource = getFragmentShader();
 		if (texFlags != null)
 			fragmentSource = StringTools.replace(fragmentSource, 'TEX_FLAGS', texFlags);
-		fragmentShaderAssembler.assemble(Context3DProgramType.FRAGMENT, fragmentSource);
+
+		assembler.assemble(cast Context3DProgramType.FRAGMENT, fragmentSource);
+
+		var fragmentShader = assembler.agalcode;
 		
 		_program = _context.createProgram();
-		_program.upload(vertexShaderAssembler.agalcode, fragmentShaderAssembler.agalcode);
+		_program.upload(vertexShader, fragmentShader);
 	}
 	
 	function getVertexShader():String
