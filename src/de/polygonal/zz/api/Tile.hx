@@ -41,12 +41,9 @@ import de.polygonal.zz.scene.GlobalStateType;
 import de.polygonal.zz.scene.Node;
 import de.polygonal.zz.scene.Quad;
 import de.polygonal.zz.scene.Spatial;
+import haxe.ds.IntMap;
 
-#if flash11
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
-#end
-
-//TODO width can be negative!
+using de.polygonal.core.math.Mathematics;
 
 enum BlendMode
 {
@@ -63,88 +60,91 @@ enum BlendMode
  */
 class Tile
 {
-	//TODO clone
-	public var geometry(default, null):Geometry;
+	/*static var _tileLookup:IntMap<Tile> = new IntMap<Tile>();
 	
-	//initial width and height defined by setColor, setTexture, setSpriteSheet
-	var _w0 = 0.; var _h0 = 0.;
+	inline public static function findTile(x:Spatial):Tile
+	{
+		return _tileLookup.get(x.key);
+	}*/
 	
-	//
-	var _w1 = 0.;
-	var _h1 = 0.;
+	public var spatial(default, null):Geometry;
 	
-	var _scaleX = 1.;
-	var _scaleY = 1.;
+	//initial width and height defined by applyColor, appyTexture, applySpriteSheet
+	var _srcW = 0.;
+	var _srcH = 0.;
+	
+	//TODO _curW required?
+	
+	//actual width and height
+	var _curW = 0.;
+	var _curH = 0.;
+	
+	var _centerX:Float;
+	var _centerY:Float;
+	var _scaleX:Float;
+	var _scaleY:Float;
 	
 	var _sgn:Spatial;
 	var _blendMode:BlendMode;
+	var _smooth:Bool;
 	
 	public function new(id:String = null)
 	{
-		geometry = new Quad();
-		geometry.id = id;
+		_centerX = 0;
+		_centerY = 0;
+		_scaleX = 1;
+		_scaleY = 1;
+		
+		spatial = new Quad();
+		spatial.id = id;
 		_blendMode = BlendMode.Inherit;
+		_smooth = true;
+		
+		//_tileLookup.set(spatial.key, this);
 	}
 	
 	public function free():Void
 	{
-		var e = geometry.effect;
-		if (e != null && e.hasTexture())
-			RenderSystem.freeTexture(geometry.effect.tex);
+		if (spatial == null) return;
 		
-		geometry.remove();
-		geometry.free();
-		geometry = null;
+		var e = spatial.effect;
+		if (e != null && e.hasTexture())
+			RenderSystem.freeTexture(spatial.effect.tex);
+		
+		//_tileLookup.remove(spatial.key);
+		
+		spatial.remove();
+		spatial.free();
+		spatial = null;
 	}
 	
 	public var id(get_id, set_id):String;
-	inline function get_id():String
-	{
-		return geometry.id;
-	}
-	inline function set_id(value:String):String
-	{
-		return geometry.id = value;
-	}
+	inline function get_id():String return spatial.id;
+	inline function set_id(value:String):String return spatial.id = value;
 	
 	/**
 	 * The x coordinate relative to the local coordinates of the parent object.
 	 */
 	public var x(get_x, set_x):Float;
-	inline function get_x():Float
-	{
-		return geometry.x;
-	}
-	inline function set_x(value:Float):Float
-	{
-		return geometry.x = value;
-	}
+	inline function get_x():Float return spatial.x;
+	inline function set_x(value:Float):Float return spatial.x = value;
 	
 	/**
 	 * The y coordinate relative to the local coordinates of the parent object.
 	 */
 	public var y(get_y, set_y):Float;
-	inline function get_y():Float
-	{
-		return geometry.y;
-	}
-	inline function set_y(value:Float):Float
-	{
-		return geometry.y = value;
-	}
+	inline function get_y():Float return spatial.y;
+	inline function set_y(value:Float):Float return spatial.y = value;
 	
 	/**
 	 * The rotation in degrees relative to the local coordinates of the parent object.<br/>
 	 * Positive rotation is CW.
 	 */
 	public var rotation(get_rotation, set_rotation):Float;
-	inline function get_rotation():Float
-	{
-		return M.RAD_DEG * geometry.rotation;
-	}
+	inline function get_rotation():Float return M.RAD_DEG * spatial.rotation;
 	inline function set_rotation(angle:Float):Float
 	{
-		geometry.rotation = M.DEG_RAD * angle;
+		spatial.rotation = M.DEG_RAD * angle;
 		return angle;
 	}
 	
@@ -152,13 +152,13 @@ class Tile
 	 * The width in pixels.
 	 */
 	public var width(get_width, set_width):Float;
-	inline function get_width():Float
-	{
-		return M.fabs(_w1);
-	}
+	inline function get_width():Float return M.fabs(_srcW * _scaleX);
 	inline function set_width(value:Float):Float
 	{
-		_scaleX = (geometry.scaleX = _w1 = value) / _w0;
+		_curW = value;
+		_scaleX = value / _srcW;
+		spatial.scaleX = value;
+		spatial.centerX = _centerX * _scaleX;
 		return value;
 	}
 	
@@ -166,120 +166,138 @@ class Tile
 	 * The height in pixels.
 	 */
 	public var height(get_height, set_height):Float;
-	inline function get_height():Float
-	{
-		return M.fabs(_h1);
-	}
+	inline function get_height():Float return M.fabs(_srcH * _scaleY);
 	inline function set_height(value:Float):Float
 	{
-		_scaleY = (geometry.scaleY = _h1 = value) / _h0;
+		_curH = value;
+		_scaleY = value / _srcH;
+		spatial.scaleY = value;
+		spatial.centerY = _centerY * _scaleY;
+		return value;
+	}
+	
+	public var size(get_size, set_size):Float;
+	function get_size():Float
+	{
+		if (_srcW != _srcH) throw 'width != height';
+		return _srcW;
+	}
+	function set_size(value:Float):Float
+	{
+		if (_srcW != _srcH) throw 'width != height';
+		width = value;
+		height = value;
 		return value;
 	}
 	
 	/**
-	 * The horizontal scale of the object relative to the pivot point.
+	 * The horizontal scale of the object relative to the center point.
 	 */
 	public var scaleX(get_scaleX, set_scaleX):Float;
-	inline function get_scaleX():Float
-	{
-		return _scaleX;
-	}
+	inline function get_scaleX():Float return _scaleX;
 	inline function set_scaleX(value:Float):Float
 	{
 		_scaleX = value;
-		geometry.scaleX = (_w1 = _w0 * value);
+		_curW = _srcW * value;
+		spatial.scaleX = _curW; //TODO apply in update()
+		spatial.centerX = _centerX * value.fabs(); //TODO apply in update()
 		return value;
 	}
 	
 	/**
-	 * The vertical scale of the object relative to the pivot point.
+	 * The vertical scale of the object relative to the center point.
 	 */
 	public var scaleY(get_scaleY, set_scaleY):Float;
-	inline function get_scaleY():Float
-	{
-		return _scaleY;
-	}
+	inline function get_scaleY():Float return _scaleY;
 	inline function set_scaleY(value:Float):Float
 	{
 		_scaleY = value;
-		geometry.scaleY = (_h1 = _h0 * value);
+		_curH = _srcH * value;
+		spatial.scaleY = _curH; //TODO apply in update()
+		spatial.centerY = _centerY * value.fabs(); //TODO apply in update()
 		return value;
 	}
 	
+	public var scale(get_scale, set_scale):Float;
+	inline function get_scale():Float
+	{
+		if (_scaleX != _scaleY) throw 'scaleX != scaleY';
+		return _scaleX;
+	}
+	inline function set_scale(value:Float):Float
+	{
+		scaleX = value;
+		scaleY = value;
+		return value;
+	}
+	
+	//TODO scaleAbs, scaleSgn
+	//TODO affect scale?
 	/**
-	 * An horizontal offset relative to the origin (top-left corner) of this object.<br/>
+	 * An horizontal offset relative to the origin (top-left corner) of this <b>unscaled</b> tile.<br/>
 	 * The Tile is rotated around and scaled relative to this point.
 	 */
 	public var centerX(get_centerX, set_centerX):Float;
 	inline function get_centerX():Float
 	{
-		return geometry.centerX;
+		return _centerX;
 	}
 	inline function set_centerX(value:Float):Float
 	{
-		return geometry.centerX = value;
+		_centerX = value;
+		spatial.centerX = value; //TODO apply in update();
+		return value;
 	}
 	
 	/**
-	 * An vertical offset relative to the origin (top-left corner) of this object.<br/>
+	 * An vertical offset relative to the origin (top-left corner) of this <b>unscaled</b> tile.<br/>
 	 * The Tile is rotated around and scaled relative to this point.
 	 */
 	public var centerY(get_centerY, set_centerY):Float;
 	inline function get_centerY():Float
 	{
-		return geometry.centerY;
+		return _centerY;
 	}
 	inline function set_centerY(value:Float):Float
 	{
-		return geometry.centerY = value;
+		_centerY = value;
+		spatial.centerY = value;  //TODO apply in update();
+		return value;
 	}
 	
 	/**
 	 * The alpha transparency value in the range [0,1].
 	 */
 	public var alpha(get_alpha, set_alpha):Float;
-	inline function get_alpha():Float
-	{
-		
-		return geometry.effect.alpha;
-	}
+	inline function get_alpha():Float return spatial.effect.alpha;
 	inline function set_alpha(value:Float):Float
 	{
-		geometry.effect.alpha = Mathematics.fclamp(value, 0, 1);
+		spatial.effect.alpha = Mathematics.fclamp(value, 0, 1);
 		return value;
 	}
 	
 	public var colorXForm(get_colorXForm, set_colorXForm):ColorXForm;
-	inline function get_colorXForm():ColorXForm
-	{
-		return geometry.effect.colorXForm;
-	}
+	inline function get_colorXForm():ColorXForm return spatial.effect.colorXForm;
 	inline function set_colorXForm(value:ColorXForm):ColorXForm
 	{
-		geometry.effect.colorXForm = value;
+		spatial.effect.colorXForm = value;
 		return value;
 	}
 	
 	public var visible(get_visible, set_visible):Bool;
-	inline function get_visible():Bool
-	{
-		return !geometry.forceCull;
-	}
+	inline function get_visible():Bool return !spatial.forceCull;
 	inline function set_visible(value:Bool):Bool
 	{
-		geometry.forceCull = value == false;
+		spatial.forceCull = value == false;
 		return value;
 	}
 	
 	public var blendMode(get_blendMode, set_blendMode):BlendMode;
-	inline function get_blendMode():BlendMode
-	{
-		return _blendMode;
-	}
+	inline function get_blendMode():BlendMode return _blendMode;
 	function set_blendMode(value:BlendMode):BlendMode
 	{
 		var preMultipliedAlpha = false;
-		var e = geometry.effect;
+		var e = spatial.effect;
 		if (e != null && e.hasTexture())
 			preMultipliedAlpha = e.tex.isAlphaPreMultiplied;
 		_blendMode = value;
@@ -294,70 +312,117 @@ class Tile
 			case BlendMode.Screen:   preMultipliedAlpha ? AlphaState.SCREEN_PREMULTIPLIED : AlphaState.SCREEN;
 		}
 		if (state == null)
-			geometry.removeGlobalState(GlobalStateType.Alpha)
+			spatial.removeGlobalState(GlobalStateType.Alpha)
 		else
-			geometry.setGlobalState(state);
+			spatial.setGlobalState(state);
 		return value;
 	}
 	
 	public var frameName(get_frameName, set_frameName):String;
 	function get_frameName():String
 	{
-		var e = geometry.effect.__spriteSheetEffect;
+		var e = spatial.effect.__spriteSheetEffect;
 		return e.sheet.getFrameName(e.frame);
 	}
 	function set_frameName(value:String):String
 	{
-		var e = geometry.effect.__spriteSheetEffect;
+		var e = spatial.effect.__spriteSheetEffect;
+		
+		#if debug
+		D.assert(e != null, 'no sprite sheet effect assigned, call setSpriteSheet() first.');
+		#end
+		
 		this.frame = e.sheet.getFrameIndex(value);
 		return value;
 	}
 	
-	//don't reset size
 	public var frame(get_frame, set_frame):Int;
-	inline function get_frame():Int
-	{
-		return geometry.effect.__spriteSheetEffect.frame;
-	}
+	inline function get_frame():Int return spatial.effect.__spriteSheetEffect.frame;
 	function set_frame(value:Int):Int
 	{
-		var e = geometry.effect.__spriteSheetEffect;
+		var e = spatial.effect.__spriteSheetEffect;
 		
 		#if debug
 		D.assert(e != null, 'no sprite sheet effect assigned, call setSpriteSheet() first.');
 		#end
 		
 		e.frame = value;
+		
 		var size = e.sheet.getSizeAt(value);
-		geometry.scaleX = _w0 = _w1 = size.x * _scaleX;
-		geometry.scaleY = _h0 = _h1 = size.y * _scaleY;
+		_curW = _srcW = size.x;
+		_curH = _srcH = size.y;
+		
+		spatial.scaleX = _curW * scaleX;
+		spatial.scaleY = _curH * scaleY;
+		
 		return value;
 	}
 	
-	public function setColor(color:Int, w:Int, h:Int):Tile
+	public var smooth(get_smooth, set_smooth):Bool;
+	inline function get_smooth():Bool return _smooth;
+	function set_smooth(value:Bool):Bool
 	{
-		geometry.effect = RenderSystem.createColorEffect(color);
-		geometry.scaleX = _w0 = _w1 = w;
-		geometry.scaleY = _h0 = _h1 = h;
-		_scaleX = _scaleX = 1;
+		_smooth = value;
+		if (spatial.effect != null)
+			spatial.effect.smooth = value;
+		return value;
+	}
+	
+	/**
+	 * Apply a solid color fill to this tile.<br/>
+	 * The scaling factor and the center point are left unmodified.
+	 * @param rgb the color in RRGGBB format (little endian, blue in lowest 8 bits).
+	 * @param width the width of this tile.
+	 * @param height the height of this tile.
+	 */
+	public function applyColor(rgb:Int, width:Int, height:Int):Tile
+	{
+		spatial.effect = RenderSystem.createColorEffect(rgb);
+		#if nme
+		spatial.effect.smooth = _smooth;
+		#end
+		
+		_curW = _srcW = width;
+		_curH = _srcH = height;
+		
+		spatial.scaleX = _curW * scaleX;
+		spatial.scaleY = _curH * scaleY;
+		
 		return this;
 	}
 	
-	public function setTexture(texId:String):Tile
+	/**
+	 * Apply a texture to this tile.<br/>
+	 * The scaling factor and the center point are left unmodified.
+	 */
+	public function applyTexture(texId:String, useTextureSize = true):Tile
 	{
-		geometry.effect = RenderSystem.createTextureEffect(texId);
-		geometry.scaleX = _w0 = _w1 = geometry.effect.tex.image.w;
-		geometry.scaleY = _h0 = _h1 = geometry.effect.tex.image.h;
-		_scaleX = _scaleX = 1;
+		spatial.effect = RenderSystem.createTextureEffect(texId);
+		#if nme
+		spatial.effect.smooth = _smooth;
+		#end
+		
+		if (useTextureSize)
+		{
+			_curW = _srcW = spatial.effect.tex.image.w;
+			_curH = _srcH = spatial.effect.tex.image.h;
+		}
+		
+		spatial.scaleX = _curW * scaleX;
+		spatial.scaleY = _curH * scaleY;
+		
 		return this;
 	}
 	
-	public function setSpriteSheet(sheetId:String, initialFrame:Dynamic = null):Tile
+	public function applySpriteSheet(sheetId:String, initialFrame:Dynamic = null):Tile
 	{
-		geometry.effect = RenderSystem.createSpriteSheetEffect(sheetId);
-		var s = geometry.effect.__spriteSheetEffect.sheet.getSize('0');
-		geometry.scaleX = _w0 = _w1 = s.x;
-		geometry.scaleY = _h0 = _h1 = s.y;
+		spatial.effect = RenderSystem.createSpriteSheetEffect(sheetId);
+		#if nme
+		spatial.effect.smooth = _smooth;
+		#end
+		var s = spatial.effect.__spriteSheetEffect.sheet.getSize('0');
+		spatial.scaleX = _srcW = _curW = s.x;
+		spatial.scaleY = _srcH = _curH = s.y;
 		_scaleX = _scaleX = 1;
 		if (initialFrame != null)
 		{
@@ -370,11 +435,50 @@ class Tile
 		return this;
 	}
 	
-	public function alignPivotToCenter():Tile
+	public function resetTransform():Void
 	{
-		geometry.centerX = M.fabs(geometry.scaleX / 2);
-		geometry.centerY = M.fabs(geometry.scaleY / 2);
-		return this;
+		_curW = _srcW;
+		_curH = _srcH;
+		_scaleX = 1;
+		_scaleY = 1;
+		_centerX = 0;
+		_centerY = 0;
+		
+		spatial.scaleX = _curW;
+		spatial.scaleY = _curH;
+		spatial.centerX = 0;
+		spatial.centerY = 0;
+	}
+	
+	/**
+	 *  Moves the pivot point P from the origin (=top-left corner) to to the center of this tile.
+	 *   P-----+------> x     +-----+
+	 *   |     |              |     |
+	 *   |     |              |  P-------> x
+	 *   |     |              |  |  |
+	 *   +-----+              +--|--+
+	 *   |                       |
+	 *   |                       |
+	 *   v                       v
+	 */
+	public function centerPivot(noShift = false):Void
+	{
+		_centerX = spatial.centerX = M.fabs(spatial.scaleX * .5);
+		_centerY = spatial.centerY = M.fabs(spatial.scaleY * .5);
+		
+		if (noShift)
+		{
+			x += width  * .5;
+			y += height * .5;
+		}
+	}
+	
+	public function update():Void
+	{
+		//spatial.scaleX = _curW;
+		//spatial.scaleY = _curH;
+		
+		spatial.updateGeometricState(false, false);
 	}
 	
 	public function addChild(child:Tile):Void
