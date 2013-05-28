@@ -432,6 +432,8 @@ class Tile
 			if (Std.is(initialFrame, Int))
 				frame = initialFrame;
 		}
+		else
+			frame = 0;
 		return this;
 	}
 	
