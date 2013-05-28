@@ -31,7 +31,6 @@ package de.polygonal.zz.api;
  
 import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Mathematics;
-import de.polygonal.core.sys.Entity;
 import de.polygonal.core.util.Assert;
 import de.polygonal.ds.TreeNode;
 import de.polygonal.gl.color.ColorXForm;
@@ -41,7 +40,6 @@ import de.polygonal.zz.scene.GlobalStateType;
 import de.polygonal.zz.scene.Node;
 import de.polygonal.zz.scene.Quad;
 import de.polygonal.zz.scene.Spatial;
-import haxe.ds.IntMap;
 
 using de.polygonal.core.math.Mathematics;
 
@@ -73,8 +71,8 @@ class Tile
 	public var spatial(default, null):Geometry;
 	
 	//width and height defined by applyColor, appyTexture, applySpriteSheet
-	var _w = 0.;
-	var _h = 0.;
+	var _w:Float;
+	var _h:Float;
 	
 	//current scaling factor
 	var _sX:Float;
@@ -90,8 +88,8 @@ class Tile
 	
 	public function new(id:String = null)
 	{
-		_cX = 0;
-		_cY = 0;
+		_w = _cX = 0;
+		_h = _cY = 0;
 		_sX = 1;
 		_sY = 1;
 		
@@ -155,6 +153,8 @@ class Tile
 	inline function get_width():Float return M.fabs(_w * _sX);
 	inline function set_width(value:Float):Float
 	{
+		D.assert(_w != 0, 'use applyColor(), applyTexture() or applySpriteSheet to define an initial width/height');
+		
 		_sX = value / _w;
 		spatial.scaleX = value;
 		spatial.centerX = _cX * _sX;
@@ -168,6 +168,8 @@ class Tile
 	inline function get_height():Float return M.fabs(_h * _sY);
 	inline function set_height(value:Float):Float
 	{
+		D.assert(_h != 0, 'use applyColor(), applyTexture() or applySpriteSheet to define an initial width/height');
+		
 		_sY = value / _h;
 		spatial.scaleY = value;
 		spatial.centerY = _cY * _sY;
@@ -177,12 +179,14 @@ class Tile
 	public var size(get_size, set_size):Float;
 	function get_size():Float
 	{
-		if (_w != _h) throw 'width != height';
+		D.assert(_w == _h, 'width and height mismatch');
+		
 		return _w;
 	}
 	function set_size(value:Float):Float
 	{
-		if (_w != _h) throw 'width != height';
+		D.assert(_w != 0, 'use applyColor(), applyTexture() or applySpriteSheet to define an initial width/height');
+		
 		width = value;
 		height = value;
 		return value;
@@ -195,6 +199,8 @@ class Tile
 	inline function get_scaleX():Float return _sX;
 	inline function set_scaleX(value:Float):Float
 	{
+		D.assert(_w != 0, 'use applyColor(), applyTexture() or applySpriteSheet to define an initial width/height');
+		
 		_sX = value;
 		spatial.scaleX = _w * value;
 		spatial.centerX = _cX * value.fabs();
@@ -208,16 +214,18 @@ class Tile
 	inline function get_scaleY():Float return _sY;
 	inline function set_scaleY(value:Float):Float
 	{
+		D.assert(_h != 0, 'use applyColor(), applyTexture() or applySpriteSheet to define an initial width/height');
+		
 		_sY = value;
 		spatial.scaleY = _h * value;
-		spatial.centerY = _cY * value.fabs();
+		spatial.centerY = _cY * value;
 		return value;
 	}
 	
 	public var scale(get_scale, set_scale):Float;
 	inline function get_scale():Float
 	{
-		if (_sX != _sY) throw 'scaleX != scaleY';
+		D.assert(_sX == _sY, 'scaleX and scaleY mismatch');
 		return _sX;
 	}
 	inline function set_scale(value:Float):Float
@@ -228,7 +236,7 @@ class Tile
 	}
 	
 	//TODO scaleAbs, scaleSgn
-	//TODO affect scale?
+	
 	/**
 	 * An horizontal offset relative to the origin (top-left corner) of this <b>unscaled</b> tile.<br/>
 	 * The Tile is rotated around and scaled relative to this point.
@@ -241,7 +249,7 @@ class Tile
 	inline function set_centerX(value:Float):Float
 	{
 		_cX = value;
-		spatial.centerX = value; //TODO apply in update();
+		spatial.centerX = value;
 		return value;
 	}
 	
@@ -257,7 +265,7 @@ class Tile
 	inline function set_centerY(value:Float):Float
 	{
 		_cY = value;
-		spatial.centerY = value;  //TODO apply in update();
+		spatial.centerY = value;
 		return value;
 	}
 	
@@ -324,9 +332,7 @@ class Tile
 	{
 		var e = spatial.effect.__spriteSheetEffect;
 		
-		#if debug
 		D.assert(e != null, 'no sprite sheet effect assigned, call setSpriteSheet() first.');
-		#end
 		
 		this.frame = e.sheet.getFrameIndex(value);
 		return value;
@@ -338,9 +344,7 @@ class Tile
 	{
 		var e = spatial.effect.__spriteSheetEffect;
 		
-		#if debug
 		D.assert(e != null, 'no sprite sheet effect assigned, call setSpriteSheet() first.');
-		#end
 		
 		e.frame = value;
 		
@@ -433,10 +437,13 @@ class Tile
 	
 	public function resetTransform():Void
 	{
+		D.assert(_w != 0 && _h != 0, 'use applyColor(), applyTexture() or applySpriteSheet to define an initial width/height');
+		
 		_sX = 1;
 		_sY = 1;
 		_cX = 0;
 		_cY = 0;
+		rotation = 0;
 		
 		spatial.scaleX = _w;
 		spatial.scaleY = _h;
@@ -467,6 +474,12 @@ class Tile
 		}
 	}
 	
+	public function resetPivot():Void
+	{
+		_cX = spatial.centerX = 0;
+		_cY = spatial.centerY = 0;
+	}
+	
 	public function update():Void
 	{
 		//spatial.scaleX = _curW;
@@ -477,10 +490,8 @@ class Tile
 	
 	public function addChild(child:Tile):Void
 	{
-		#if debug
 		D.assert(child != null, 'child is null');
 		D.assert(child._getTreeNode().parent == null, 'child has a parent, call child.remove() first');
-		#end
 		
 		if (_sgn.isGeometry()) _geometryToNode();
 		_getNode().addChild(child._sgn);
@@ -488,34 +499,26 @@ class Tile
 	
 	public function removeChild(child:Tile):Void
 	{
-		#if debug
 		D.assert(child != null, 'child is null');
 		D.assert(child._getTreeNode().parent != null, 'child has no parent');
-		#end
 		
 		if (!_sgn.isGeometry()) _getNode().removeChild(child._sgn);
 	}
 	
 	public function addChildAt(child:Tile, index:Int):Void
 	{
-		#if debug
 		D.assert(child != null, 'child is null');
 		D.assert(child._getTreeNode().parent == null, 'child has a parent, call child.remove() first');
-		#end
 		
 		if (_sgn.isGeometry())
 		{
-			#if debug
 			D.assert(index != 0, Sprintf.format('index %d out of range', [index]));
-			#end
 			
 			addChild(child);
 		}
 		else
 		{
-			#if debug
 			D.assert(index >= 0 || index < _getTreeNode().numChildren(), Sprintf.format('index %d out of range', [index]));
-			#end
 			
 			if (_sgn.isGeometry()) _geometryToNode();
 			_getNode().addChildAt(child._sgn, index + 1);
@@ -524,36 +527,28 @@ class Tile
 	
 	public function removeChildAt(index:Int):Void
 	{
-		#if debug
 		D.assert(index >= 0 || index < _getTreeNode().numChildren() - 1, Sprintf.format('index %d out of range', [index]));
-		#end
 		
 		if (!_sgn.isGeometry()) _getNode().removeChildAt(index + 1);
 	}
 	
 	public function removeChildren(beginIndex = 0, count = -1):Void
 	{
-		#if debug
 		D.assert(_sgn.isNode(), 'no children');
-		#end
 		
 		_getNode().removeChildren(beginIndex + 1, count);
 	}
 	
 	public function getChildAt(index:Int):Tile
 	{
-		#if debug
 		D.assert(index >= 0 && index <= _getTreeNode().numChildren() - 1, Sprintf.format('index %d out of range', [index]));
-		#end
 		
 		return _getNode().getChildAt(index).userData;
 	}
 	
 	public function getChildIndex(child:Tile):Int
 	{
-		#if debug
 		D.assert(child._getTreeNode().parent == _getTreeNode(), 'not a parent of child');
-		#end
 		
 		var i = _getNode().getChildIndex(child._sgn);
 		if (child._sgn.isGeometry()) i--;
@@ -562,18 +557,14 @@ class Tile
 	
 	public function setChildIndex(child:Tile, index:Int):Void
 	{
-		#if debug
 		D.assert(index >= 0 && index < _getTreeNode().numChildren() - 1, Sprintf.format('index %d out of range', [index]));
-		#end
 		
 		_getNode().setChildIndex(child._sgn, index + 1);
 	}
 	
 	public function getChildById(id:String):Tile
 	{
-		#if debug
 		D.assert(_sgn.isNode(), 'no children');
-		#end
 		
 		return _getNode().getChildById(id).userData;
 	}
