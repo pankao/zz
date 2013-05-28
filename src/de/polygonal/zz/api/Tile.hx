@@ -67,22 +67,22 @@ class Tile
 		return _tileLookup.get(x.key);
 	}*/
 	
+	/**
+	 * The geometry node that this Tile is controlling.
+	 */
 	public var spatial(default, null):Geometry;
 	
-	//initial width and height defined by applyColor, appyTexture, applySpriteSheet
-	var _srcW = 0.;
-	var _srcH = 0.;
+	//width and height defined by applyColor, appyTexture, applySpriteSheet
+	var _w = 0.;
+	var _h = 0.;
 	
-	//TODO _curW required?
+	//current scaling factor
+	var _sX:Float;
+	var _sY:Float;
 	
-	//actual width and height
-	var _curW = 0.;
-	var _curH = 0.;
-	
-	var _centerX:Float;
-	var _centerY:Float;
-	var _scaleX:Float;
-	var _scaleY:Float;
+	//current center point
+	var _cX:Float;
+	var _cY:Float;
 	
 	var _sgn:Spatial;
 	var _blendMode:BlendMode;
@@ -90,10 +90,10 @@ class Tile
 	
 	public function new(id:String = null)
 	{
-		_centerX = 0;
-		_centerY = 0;
-		_scaleX = 1;
-		_scaleY = 1;
+		_cX = 0;
+		_cY = 0;
+		_sX = 1;
+		_sY = 1;
 		
 		spatial = new Quad();
 		spatial.id = id;
@@ -152,13 +152,12 @@ class Tile
 	 * The width in pixels.
 	 */
 	public var width(get_width, set_width):Float;
-	inline function get_width():Float return M.fabs(_srcW * _scaleX);
+	inline function get_width():Float return M.fabs(_w * _sX);
 	inline function set_width(value:Float):Float
 	{
-		_curW = value;
-		_scaleX = value / _srcW;
+		_sX = value / _w;
 		spatial.scaleX = value;
-		spatial.centerX = _centerX * _scaleX;
+		spatial.centerX = _cX * _sX;
 		return value;
 	}
 	
@@ -166,25 +165,24 @@ class Tile
 	 * The height in pixels.
 	 */
 	public var height(get_height, set_height):Float;
-	inline function get_height():Float return M.fabs(_srcH * _scaleY);
+	inline function get_height():Float return M.fabs(_h * _sY);
 	inline function set_height(value:Float):Float
 	{
-		_curH = value;
-		_scaleY = value / _srcH;
+		_sY = value / _h;
 		spatial.scaleY = value;
-		spatial.centerY = _centerY * _scaleY;
+		spatial.centerY = _cY * _sY;
 		return value;
 	}
 	
 	public var size(get_size, set_size):Float;
 	function get_size():Float
 	{
-		if (_srcW != _srcH) throw 'width != height';
-		return _srcW;
+		if (_w != _h) throw 'width != height';
+		return _w;
 	}
 	function set_size(value:Float):Float
 	{
-		if (_srcW != _srcH) throw 'width != height';
+		if (_w != _h) throw 'width != height';
 		width = value;
 		height = value;
 		return value;
@@ -194,13 +192,12 @@ class Tile
 	 * The horizontal scale of the object relative to the center point.
 	 */
 	public var scaleX(get_scaleX, set_scaleX):Float;
-	inline function get_scaleX():Float return _scaleX;
+	inline function get_scaleX():Float return _sX;
 	inline function set_scaleX(value:Float):Float
 	{
-		_scaleX = value;
-		_curW = _srcW * value;
-		spatial.scaleX = _curW; //TODO apply in update()
-		spatial.centerX = _centerX * value.fabs(); //TODO apply in update()
+		_sX = value;
+		spatial.scaleX = _w * value;
+		spatial.centerX = _cX * value.fabs();
 		return value;
 	}
 	
@@ -208,21 +205,20 @@ class Tile
 	 * The vertical scale of the object relative to the center point.
 	 */
 	public var scaleY(get_scaleY, set_scaleY):Float;
-	inline function get_scaleY():Float return _scaleY;
+	inline function get_scaleY():Float return _sY;
 	inline function set_scaleY(value:Float):Float
 	{
-		_scaleY = value;
-		_curH = _srcH * value;
-		spatial.scaleY = _curH; //TODO apply in update()
-		spatial.centerY = _centerY * value.fabs(); //TODO apply in update()
+		_sY = value;
+		spatial.scaleY = _h * value;
+		spatial.centerY = _cY * value.fabs();
 		return value;
 	}
 	
 	public var scale(get_scale, set_scale):Float;
 	inline function get_scale():Float
 	{
-		if (_scaleX != _scaleY) throw 'scaleX != scaleY';
-		return _scaleX;
+		if (_sX != _sY) throw 'scaleX != scaleY';
+		return _sX;
 	}
 	inline function set_scale(value:Float):Float
 	{
@@ -240,11 +236,11 @@ class Tile
 	public var centerX(get_centerX, set_centerX):Float;
 	inline function get_centerX():Float
 	{
-		return _centerX;
+		return _cX;
 	}
 	inline function set_centerX(value:Float):Float
 	{
-		_centerX = value;
+		_cX = value;
 		spatial.centerX = value; //TODO apply in update();
 		return value;
 	}
@@ -256,11 +252,11 @@ class Tile
 	public var centerY(get_centerY, set_centerY):Float;
 	inline function get_centerY():Float
 	{
-		return _centerY;
+		return _cY;
 	}
 	inline function set_centerY(value:Float):Float
 	{
-		_centerY = value;
+		_cY = value;
 		spatial.centerY = value;  //TODO apply in update();
 		return value;
 	}
@@ -349,11 +345,11 @@ class Tile
 		e.frame = value;
 		
 		var size = e.sheet.getSizeAt(value);
-		_curW = _srcW = size.x;
-		_curH = _srcH = size.y;
+		_w = size.x;
+		_h = size.y;
 		
-		spatial.scaleX = _curW * scaleX;
-		spatial.scaleY = _curH * scaleY;
+		spatial.scaleX = _w * scaleX;
+		spatial.scaleY = _h * scaleY;
 		
 		return value;
 	}
@@ -382,11 +378,11 @@ class Tile
 		spatial.effect.smooth = _smooth;
 		#end
 		
-		_curW = _srcW = width;
-		_curH = _srcH = height;
+		_w = width;
+		_h = height;
 		
-		spatial.scaleX = _curW * scaleX;
-		spatial.scaleY = _curH * scaleY;
+		spatial.scaleX = _w * scaleX;
+		spatial.scaleY = _h * scaleY;
 		
 		return this;
 	}
@@ -404,12 +400,12 @@ class Tile
 		
 		if (useTextureSize)
 		{
-			_curW = _srcW = spatial.effect.tex.image.w;
-			_curH = _srcH = spatial.effect.tex.image.h;
+			_w = spatial.effect.tex.image.w;
+			_h = spatial.effect.tex.image.h;
 		}
 		
-		spatial.scaleX = _curW * scaleX;
-		spatial.scaleY = _curH * scaleY;
+		spatial.scaleX = _w * scaleX;
+		spatial.scaleY = _h * scaleY;
 		
 		return this;
 	}
@@ -421,9 +417,9 @@ class Tile
 		spatial.effect.smooth = _smooth;
 		#end
 		var s = spatial.effect.__spriteSheetEffect.sheet.getSize('0');
-		spatial.scaleX = _srcW = _curW = s.x;
-		spatial.scaleY = _srcH = _curH = s.y;
-		_scaleX = _scaleX = 1;
+		spatial.scaleX = _w = s.x;
+		spatial.scaleY = _h = s.y;
+		_sX = _sX = 1;
 		if (initialFrame != null)
 		{
 			if (Std.is(initialFrame, String))
@@ -437,15 +433,13 @@ class Tile
 	
 	public function resetTransform():Void
 	{
-		_curW = _srcW;
-		_curH = _srcH;
-		_scaleX = 1;
-		_scaleY = 1;
-		_centerX = 0;
-		_centerY = 0;
+		_sX = 1;
+		_sY = 1;
+		_cX = 0;
+		_cY = 0;
 		
-		spatial.scaleX = _curW;
-		spatial.scaleY = _curH;
+		spatial.scaleX = _w;
+		spatial.scaleY = _h;
 		spatial.centerX = 0;
 		spatial.centerY = 0;
 	}
@@ -463,8 +457,8 @@ class Tile
 	 */
 	public function centerPivot(noShift = false):Void
 	{
-		_centerX = spatial.centerX = M.fabs(spatial.scaleX * .5);
-		_centerY = spatial.centerY = M.fabs(spatial.scaleY * .5);
+		_cX = spatial.centerX = M.fabs(spatial.scaleX * .5);
+		_cY = spatial.centerY = M.fabs(spatial.scaleY * .5);
 		
 		if (noShift)
 		{
