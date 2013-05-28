@@ -438,13 +438,13 @@ class Tile
 	public function resetTransform():Void
 	{
 		D.assert(_w != 0 && _h != 0, 'use applyColor(), applyTexture() or applySpriteSheet to define an initial width/height');
-		
 		_sX = 1;
 		_sY = 1;
 		_cX = 0;
 		_cY = 0;
 		rotation = 0;
-		
+		spatial.x = 0;
+		spatial.y = 0;
 		spatial.scaleX = _w;
 		spatial.scaleY = _h;
 		spatial.centerX = 0;
