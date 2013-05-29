@@ -29,13 +29,19 @@
  */
 package de.polygonal.zz.api;
 
+import de.polygonal.core.util.Assert;
 import de.polygonal.ds.IntIntHashTable;
+import de.polygonal.gl.color.ColorRGBA;
+import de.polygonal.gl.color.RGBA;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
+import de.polygonal.zz.render.module.RenderModule;
+import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.ImageData;
+import de.polygonal.zz.render.texture.Rect;
 import de.polygonal.zz.render.texture.SpriteAtlas;
 import de.polygonal.zz.render.texture.SpriteAtlasFormat;
 import de.polygonal.zz.render.texture.SpriteSheet;
@@ -44,48 +50,112 @@ import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.zz.render.texture.thirdparty.BMFontFormat;
 import de.polygonal.zz.scene.Node;
 import de.polygonal.zz.scene.Renderer;
+import de.polygonal.zz.scene.Spatial;
+import haxe.ds.StringMap;
 import haxe.ds.StringMap;
 
+#if flash
 #if flash11
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dRenderer;
+#end
+import de.polygonal.zz.render.module.flash.cpu.BitmapDataRenderer;
+import de.polygonal.zz.render.module.flash.cpu.DisplayListRenderer;
+//import de.polygonal.zz.render.module.flash.cpu.GraphicsRenderer;
+#else
+
+#elseif js
+import de.polygonal.zz.render.module.js.CanvasRenderer;
+#elseif cpp
+import de.polygonal.zz.render.module.nme.TileRenderer;
 #end
  
 class RenderSystem
 {
-	public static var sceneGraph:Node;
-	
+	public static var sceneGraph(default, null):Node;
 	public static var renderer:Renderer;
 	
 	public static var images:StringMap<Image>;
+	#if flash11_4
+	public static var compressedImages:StringMap<flash.utils.ByteArray>;
+	#end
 	
 	static var _sheetMap:StringMap<SpriteSheet>;
 	static var _bmFontMap:StringMap<BMFontFormat>;
 	
 	static var _textureUsageCount:IntIntHashTable = null;
 	
-	public static function init():Void
+	public static function init(renderModule:RenderModule = null):Void
 	{
+		if (renderModule == null)
+		{
+			//infer render-module from platform
+			#if flash
+				#if flash11
+				if (RenderSurface.isHardware())
+					renderer = new Stage3dRenderer();
+				else
+					renderer = new BitmapDataRenderer();
+				#else
+					renderer = new BitmapDataRenderer();
+				#end
+			#elseif cpp
+				renderer = new CanvasRenderer();
+			#elseif js
+				renderer = new TileRenderer();
+			#end
+		}
+		else
+		{
+			switch (renderModule)
+			{
+				case FlashStage3d:
+					#if flash11
+					renderer = new Stage3dRenderer();
+					#end
+				
+				case FlashDisplayList:
+					renderer = new DisplayListRenderer();
+				
+				case FlashBitmapData:
+					renderer = new BitmapDataRenderer();
+				
+				case FlashGraphics:
+					//renderer = new GraphicsRenderer();
+				
+				case NmeTile:
+					#if cpp
+					new TileRenderer();
+					#end
+				
+				case Html5Canvas:
+					#if js
+					new CanvasRenderer();
+					#end
+			}
+			
+			D.assert(renderer != null, 'renderer != null');
+		}
+		
 		sceneGraph = new Node('sceneGraphRoot');
 		images = new StringMap();
+		compressedImages = new StringMap();
 		
 		_textureUsageCount = new IntIntHashTable(4096);
-		
-		#if flash11
-		renderer = new de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer();
-		//renderer = new de.polygonal.zz.render.module.flash.misc.BitmapDataRenderer();
-		//RenderSurface.root.addChild(cast(renderer, BitmapDataRenderer).getBitmap());
-		
-		#elseif flash10
-		null;
-		#elseif nme
-		renderer = new de.polygonal.zz.render.module.nme.TileRenderer();
-		#elseif js
-		renderer = new de.polygonal.zz.render.module.js.CanvasRenderer();
-		#end
 		
 		renderer.setBackgroundColor(0, 0, 0, 1);
 		
 		sceneGraph.enableUpdateBV(false);
+	}
+	
+	//adds x to the scene graph root node
+	public static function addChild(x:Spatial):Void
+	{
+		sceneGraph.addChild(x);
+	}
+	
+	public static function setBackgroundColor(color:ColorRGBA):Void
+	{
+		renderer.setBackgroundColor(color.r, color.g, color.b, color.a);
 	}
 	
 	public static function drawScene():Void
@@ -118,15 +188,33 @@ class RenderSystem
 	{
 		if (images.exists(imageId))
 		{
-			trace('image with id %s already registered', imageId);
+			L.w('image with id $imageId already registered');
 			return;
 		}
 		
-		var image = Image.ofData(data);
+		var image = new Image(data, data.width, data.height, true);
 		image.id = imageId;
 		images.set(imageId, image);
-		trace('register image %s -> #%d', imageId, image.key);
+		var key = image.key;
+		L.d('register image "$imageId" -> #$key');
 	}
+	
+	#if flash11_4
+	static public function registerCompressedImage(imageId:String, data:flash.utils.ByteArray):Void
+	{
+		if (images.exists(imageId))
+		{
+			L.w('image with id $imageId already registered');
+			return;
+		}
+		
+		var image = Image.ofBytes(data);
+		image.id = imageId;
+		images.set(imageId, image);
+		var key = image.key;
+		L.d('register ATF "$imageId" -> #$key');
+	}
+	#end
 	
 	static public function initTexture(imageId:String):Tex
 	{
@@ -149,7 +237,7 @@ class RenderSystem
 		{
 			if (_sheetMap.exists(imageId))
 			{
-				trace('sprite atlas with id %s already registered', imageId);
+				L.w('sprite atlas with id $imageId already registered');
 				return;
 			}
 		}
@@ -158,12 +246,14 @@ class RenderSystem
 		var atlas = new SpriteAtlas(tex, format);
 		if (_sheetMap == null) _sheetMap = new StringMap();
 		_sheetMap.set(imageId, atlas);
+		
+		L.d('register sprite atlas with imageId "$imageId"');
 	}
 	
-	static public function registerSpriteStrip(imageId:String, rows:Int, cols:Int):Void
+	static public function registerSpriteStrip(imageId:String, rows:Int, cols:Int, crop:Rect = null):Void
 	{
 		var tex = initTexture(imageId);
-		var strip = new SpriteStrip(tex, rows, cols);
+		var strip = new SpriteStrip(tex, rows, cols, crop);
 		if (_sheetMap == null) _sheetMap = new StringMap();
 		_sheetMap.set(imageId, strip);
 	}
@@ -201,7 +291,7 @@ class RenderSystem
 		var sheet = _sheetMap.get(sheetId);
 		
 		#if debug
-		D.assert(sheet != null, 'no sprite sheet defined');
+		D.assert(sheet != null, 'no sprite sheet found ($sheetId)');
 		#end
 		
 		uploadTexture(sheet.tex);
@@ -219,8 +309,8 @@ class RenderSystem
 	inline static function uploadTexture(tex:Tex):Void
 	{
 		#if flash11
-		if (Std.is(renderer, Stage3DRenderer))
-			cast(renderer, Stage3DRenderer).initStage3DTexture(tex);
+		if (Std.is(renderer, Stage3dRenderer))
+			cast(renderer, Stage3dRenderer).initStage3dTexture(tex);
 		#end
 	}
 }
