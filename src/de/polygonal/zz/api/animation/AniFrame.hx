@@ -28,15 +28,24 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package de.polygonal.zz.api.animation;
+import de.polygonal.core.fmt.Sprintf;
 
 class AniFrame
 {
 	public var duration:Float;
 	public var frame:Int;
+	public var name:String;
 	
-	public function new(duration:Float, frame:Int)
+	public function new(duration:Float, frame:Int, name:String = null)
 	{
 		this.duration = duration;
 		this.frame = frame;
+		this.name = name;
+	}
+	
+	public function toString():String
+	{
+		return Sprintf.format('%.2f #%d' + (name != null ? ' %s' : ''),
+			[duration, frame, name]);
 	}
 }
