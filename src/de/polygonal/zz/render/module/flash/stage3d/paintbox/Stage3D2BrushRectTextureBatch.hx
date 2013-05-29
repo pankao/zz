@@ -30,15 +30,15 @@
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
 import de.polygonal.core.math.Vec3;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureConstantBatch;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureVertexBatch;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AgalTextureConstantBatch;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AgalTextureVertexBatch;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dRenderer;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DProgramType;
 
 using de.polygonal.ds.BitFlags;
 
-class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
+class Stage3dBrushRectTextureBatch extends Stage3dBrushRect
 {
 	inline static var INV_FF = .00392156;
 	inline static var MAX_SUPPORTED_REGISTERS = 128;
@@ -61,7 +61,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 	{
 		super(context, effectMask, textureFlags);
 		
-		_strategy = Stage3DRenderer.BATCH_STRATEGY;
+		_strategy = Stage3dRenderer.BATCH_STRATEGY;
 		
 		_batchCapacity = MAX_BATCH_SIZE_QUADS;
 		
@@ -73,9 +73,9 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		_uv3 = new Vec3();
 		_uvs = [_uv0, _uv1, _uv2, _uv3];
 		
-		if (_strategy == Stage3DRenderer.VERTEX_BATCH)
+		if (_strategy == Stage3dRenderer.VERTEX_BATCH)
 		{
-			_shader = new AGALTextureVertexBatch(_context, effectMask, textureFlags);
+			_shader = new AgalTextureVertexBatch(_context, effectMask, textureFlags);
 			
 			var numFloatsPerAttribute = [2, 2];
 			
@@ -86,13 +86,13 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 				numFloatsPerAttribute.push(4);
 			}
 			
-			_vb = new Stage3DVertexBuffer(_context);
+			_vb = new Stage3dVertexBuffer(_context);
 			_vb.allocate(numFloatsPerAttribute, _batchCapacity * 4);
 		}
 		else
-		if (_strategy == Stage3DRenderer.CONSTANT_BATCH)
+		if (_strategy == Stage3dRenderer.CONSTANT_BATCH)
 		{
-			_shader = new AGALTextureConstantBatch(_context, effectMask, textureFlags);
+			_shader = new AgalTextureConstantBatch(_context, effectMask, textureFlags);
 			
 			_numSharedRegisters = 0;
 			_numRegistersPerQuad = _shader.supportsColorXForm() ? 5 : 3;
@@ -103,7 +103,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 			var maxBatchSize:Int = cast ((MAX_SUPPORTED_REGISTERS - _numSharedRegisters) / _numRegistersPerQuad);
 			if (_batchCapacity > maxBatchSize) _batchCapacity = maxBatchSize;
 			
-			_vb = new Stage3DVertexBuffer(_context);
+			_vb = new Stage3dVertexBuffer(_context);
 			_vb.allocate(_shader.supportsColorXForm() ? [2, 3, 2] : [2, 3], maxBatchSize * 4);
 			
 			var address3 = new Vec3();
@@ -155,7 +155,7 @@ class Stage3DBrushRectTextureBatch extends Stage3DBrushRect
 		_uvs = null;
 	}
 	
-	override public function draw(renderer:Stage3DRenderer):Void
+	override public function draw(renderer:Stage3dRenderer):Void
 	{
 		super.draw(renderer);
 		

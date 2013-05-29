@@ -34,19 +34,19 @@ import de.polygonal.core.math.Vec3;
 import de.polygonal.core.util.ClassUtil;
 import de.polygonal.ds.DA;
 import de.polygonal.zz.render.effect.Effect;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALShader;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DTextureFlag;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AgalShader;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dRenderer;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dTextureFlag;
 import de.polygonal.zz.scene.Geometry;
 import flash.display3D.Context3D;
 import flash.Vector;
 
-class Stage3DBrush
+class Stage3dBrush
 {
 	var _context:Context3D;
-	var _vb:Stage3DVertexBuffer;
-	var _ib:Stage3DIndexBuffer;
-	var _shader:AGALShader;
+	var _vb:Stage3dVertexBuffer;
+	var _ib:Stage3dIndexBuffer;
+	var _shader:AgalShader;
 	
 	var _batch:DA<Geometry>;
 	var _batchCapacity:Int;
@@ -63,7 +63,7 @@ class Stage3DBrush
 		_scratchVec3 = new Vec3();
 		
 		L.d(Sprintf.format('create brush: %-40s effects: %-30s texture flags: %s',
-			[ClassUtil.getUnqualifiedClassName(Type.getClass(this)), Effect.print(effectFlags), Stage3DTextureFlag.print(textureFlags)]), 's3d');
+			[ClassUtil.getUnqualifiedClassName(Type.getClass(this)), Effect.print(effectFlags), Stage3dTextureFlag.print(textureFlags)]), 's3d');
 	}
 	
 	public function free():Void
@@ -78,7 +78,7 @@ class Stage3DBrush
 		_shader = null;
 	}
 	
-	public function draw(renderer:Stage3DRenderer):Void
+	public function draw(renderer:Stage3dRenderer):Void
 	{
 		//bind vertex buffer & program if changed
 		var t = renderer.currBrush;
@@ -91,10 +91,10 @@ class Stage3DBrush
 		renderer.currBrush = this;
 		
 		//bind texture if changed
-		var t0 = renderer.prevStage3DTexture;
-		var t1 = renderer.currStage3DTexture;
+		var t0 = renderer.prevStage3dTexture;
+		var t1 = renderer.currStage3dTexture;
 		if (t0 != t1) _shader.bindTexture(0, t1 == null ? null : t1.handle);
-		renderer.prevStage3DTexture = t1;
+		renderer.prevStage3dTexture = t1;
 	}
 	
 	inline public function add(x:Geometry):Void

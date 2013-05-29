@@ -27,75 +27,33 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.flash.stage3d;
+package de.polygonal.zz.render.module.flash.stage3d.shader;
 
-import de.polygonal.core.fmt.Sprintf;
 import flash.display3D.Context3D;
-import flash.display3D.IndexBuffer3D;
-import flash.Vector;
 
-class Stage3DIndexBuffer
+class AgalSolidColor extends AgalShader
 {
-	public var numIndices(default, null):Int;
-	
-	public var numTriangles(get_numTriangles, never):Int;
-	function get_numTriangles():Int
+	public function new(context:Context3D, effectMask:Int)
 	{
-		return Std.int(numIndices / 3);
+		super(context, effectMask, 0);
 	}
 	
-	public var handle:IndexBuffer3D;
-	
-	var _context:Context3D;
-	var _buffer:Vector<UInt>;
-	
-	public function new(context:Context3D)
+	override function getVertexShader():String
 	{
-		_buffer = new Vector();
-		numIndices = 0;
+		//|r11 r12 1 tx| vc0
+		//|r21 r22 - ty| vc1
+		//| -   -  - - |
+		//| -   -  - - |
 		
-		_context = context;
+		var s = '';
+		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clip space row1
+		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clip space row2
+		s += 'mov op.zw, vc0.z \n';				//z = 1, w = 1
+		return s;
 	}
 	
-	public function free():Void
+	override function getFragmentShader():String
 	{
-		if (handle != null)
-		{
-			handle.dispose();
-			handle = null;
-		}
-		
-		_buffer = null;
-		_context = null;
-	}
-	
-	inline public function clear():Void
-	{
-		numIndices = 0;
-	}
-	
-	inline public function add(i:Int):Void
-	{
-		_buffer[numIndices++] = i;
-	}
-	
-	public function upload(count = -1):Void
-	{
-		if (count == -1) count = numIndices;
-		
-		if (handle == null)
-			handle = _context.createIndexBuffer(count);
-		else
-		{
-			handle.dispose();
-			handle = _context.createIndexBuffer(count);
-		}
-		
-		handle.uploadFromVector(_buffer, 0, count);
-	}
-	
-	public function toString():String
-	{
-		return Sprintf.format("{IndexBuffer: #indices=%d, #triangles=%d}", [numIndices, numTriangles]);
+		return 'mov oc, fc0 \n';
 	}
 }

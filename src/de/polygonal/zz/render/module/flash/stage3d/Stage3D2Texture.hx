@@ -29,7 +29,7 @@
  */
 package de.polygonal.zz.render.module.flash.stage3d;
 
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dRenderer;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.core.math.Mathematics;
@@ -40,7 +40,7 @@ import flash.geom.Matrix;
 import flash.geom.Point;
 import flash.utils.ByteArray;
 
-class Stage3DTexture
+class Stage3dTexture
 {
 	public var handle:flash.display3D.textures.Texture;
 	public var image:Image;
@@ -55,11 +55,26 @@ class Stage3DTexture
 	{
 		sourceTexture = tex;
 		
-		if (flags == 0) flags = Stage3DRenderer.DEFAULT_TEXTURE_FLAGS;
+		if (flags == 0) flags = Stage3dRenderer.DEFAULT_TEXTURE_FLAGS;
 		this.flags = flags;
 		
 		handle = null;
-		atf = null;
+		atf = tex.image.atf;
+		image =  sourceTexture.image;
+		
+		if (tex.image.atf != null)
+		{
+			switch (tex.image.atfFormat)
+			{
+				case Context3DTextureFormat.COMPRESSED:
+					this.flags |= Stage3dTextureFlag.DXT1;
+				case Context3DTextureFormat.COMPRESSED_ALPHA:
+					this.flags |= Stage3dTextureFlag.DXT5;
+			}
+		}
+		
+		//TODO nothing todo for compressed images
+		if (sourceTexture.image.atf != null) return;
 		
 		//requires size to be a power of two
 		//+========+     +========+====+
@@ -109,20 +124,19 @@ class Stage3DTexture
 	{
 		if (handle != null) return;
 		
-		handle = context.createTexture(image.w, image.h, Context3DTextureFormat.BGRA, false, 0);
-		
 		if (atf != null)
 		{
-			var textureFormat = (atf[6] == 2 ? Context3DTextureFormat.COMPRESSED : Context3DTextureFormat.BGRA);
-			handle = context.createTexture(cast Math.pow(2, atf[7]), cast Math.pow(2, atf[8]), textureFormat, false);
+			handle = context.createTexture(image.w, image.h, image.atfFormat, false);
 			handle.uploadCompressedTextureFromByteArray(atf, 0, false);
 			return;
 		}
 		
 		if (image == null) return;
 		
+		handle = context.createTexture(image.w, image.h, Context3DTextureFormat.BGRA, false, 0);
+		
 		//handle mip mapping
-		if (flags & (Stage3DTextureFlag.MM_LINEAR | Stage3DTextureFlag.MM_NEAREST) > 0)
+		if (flags & (Stage3dTextureFlag.MM_LINEAR | Stage3dTextureFlag.MM_NEAREST) > 0)
 		{
 			var ws = image.w;
 			var hs = image.h;

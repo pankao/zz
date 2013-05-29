@@ -39,13 +39,13 @@ using de.polygonal.ds.BitFlags;
 
 class Effect
 {
-	inline public static var EFF_COLOR       = Bits.BIT_01;
-	inline public static var EFF_TEXTURE     = Bits.BIT_02;
-	inline public static var EFF_TEXTURE_PMA = Bits.BIT_03;
-	inline public static var EFF_ALPHA       = Bits.BIT_04;
-	inline public static var EFF_COLOR_XFORM = Bits.BIT_05;
-	inline public static var EFF_SMOOTH      = Bits.BIT_06;
-	inline public static var EFF_MASK        = Bits.mask(6);
+	inline public static var EFFECT_COLOR       = Bits.BIT_01;
+	inline public static var EFFECT_TEXTURE     = Bits.BIT_02;
+	inline public static var EFFECT_TEXTURE_PMA = Bits.BIT_03;
+	inline public static var EFFECT_ALPHA       = Bits.BIT_04;
+	inline public static var EFFECT_COLOR_XFORM = Bits.BIT_05;
+	inline public static var EFFECT_SMOOTH      = Bits.BIT_06;
+	inline public static var EFFECT_MASK        = Bits.mask(6);
 	
 	inline static var UV_CHANGED             = Bits.BIT_07;
 	inline static var ALPHA_CHANGED          = Bits.BIT_08;
@@ -80,7 +80,7 @@ class Effect
 	public var flags(get_flags, never):Int;
 	inline function get_flags():Int
 	{
-		return _bits & EFF_MASK;
+		return _bits & EFFECT_MASK;
 	}
 	
 	public var color(get_color, set_color):Int;
@@ -90,7 +90,7 @@ class Effect
 	}
 	inline function set_color(value:Int):Int
 	{
-		setf(EFF_COLOR);
+		setf(EFFECT_COLOR);
 		return _color = value;
 	}
 	
@@ -101,7 +101,7 @@ class Effect
 	}
 	inline function set_alpha(value:Float):Float
 	{
-		setfif(EFF_ALPHA, value < 1);
+		setfif(EFFECT_ALPHA, value < 1);
 		setf(ALPHA_CHANGED);
 		return _alpha = value;
 	}
@@ -109,19 +109,19 @@ class Effect
 	public var colorXForm(get_colorXForm, set_colorXForm):ColorXForm;
 	inline function get_colorXForm():ColorXForm
 	{
-		setf(EFF_COLOR_XFORM);
+		setf(EFFECT_COLOR_XFORM);
 		return _colorXForm;
 	}
 	function set_colorXForm(value:ColorXForm):ColorXForm
 	{
 		if (value != null)
 		{
-			setf(EFF_COLOR_XFORM);
+			setf(EFFECT_COLOR_XFORM);
 			_colorXForm = value;
 		}
 		else
 		{
-			clrf(EFF_COLOR_XFORM);
+			clrf(EFFECT_COLOR_XFORM);
 			_colorXForm = null;
 		}
 		
@@ -139,32 +139,30 @@ class Effect
 		if (value != null)
 		{
 			if (value.isAlphaPreMultiplied)
-				setf(EFF_TEXTURE_PMA);
+				setf(EFFECT_TEXTURE_PMA);
 			else
-				setf(EFF_TEXTURE);
-			clrf(EFF_COLOR);
+				setf(EFFECT_TEXTURE);
+			clrf(EFFECT_COLOR);
 		}
 		else
 		{
-			clrf(EFF_TEXTURE | EFF_TEXTURE_PMA);
-			setf(EFF_COLOR);
+			clrf(EFFECT_TEXTURE | EFFECT_TEXTURE_PMA);
+			setf(EFFECT_COLOR);
 		}
 		
 		return _tex = value;
 	}
 	
-	#if nme
 	public var smooth(get_smooth, set_smooth):Bool;
 	inline function get_smooth():Bool
 	{
-		return hasf(EFF_SMOOTH);
+		return hasf(EFFECT_SMOOTH);
 	}
 	inline function set_smooth(value:Bool):Bool
 	{
-		setfif(EFF_SMOOTH, value);
+		setfif(EFFECT_SMOOTH, value);
 		return value;
 	}
-	#end
 	
 	public var colors:Array<Vec3>;
 	public var uv:Array<Vec3>;
@@ -185,11 +183,7 @@ class Effect
 		_alpha = 1;
 		_color = 0xff00ff;
 		_colorXForm = new ColorXForm();
-		_bits = EFF_COLOR;
-		
-		#if nme
-		_bits |= EFF_SMOOTH;
-		#end
+		_bits = EFFECT_COLOR | EFFECT_SMOOTH;
 	}
 	
 	public function free():Void
@@ -212,7 +206,7 @@ class Effect
 	
 	inline public function hasTexture():Bool
 	{
-		return hasf(EFF_TEXTURE | EFF_TEXTURE_PMA);
+		return hasf(EFFECT_TEXTURE | EFFECT_TEXTURE_PMA);
 	}
 	
 	/*inline public function hasUVChanged():Bool

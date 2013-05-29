@@ -27,12 +27,34 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.flash.stage3d;
+package de.polygonal.zz.render.module.flash.stage3d.shader;
 
-enum Stage3DAntiAliasMode
+import flash.display3D.Context3D;
+
+class AgalNull extends AgalShader
 {
-	None;
-	Low;
-	High;
-	Ultra;
+	public function new(context:Context3D, effectMask:Int)
+	{
+		super(context, effectMask, 0);
+	}
+	
+	override function getVertexShader():String
+	{
+		//|r11 r12 1 tx| vc0
+		//|r21 r22 - ty| vc1
+		//| -   -  - - | vc2
+		//| -   -  - - |
+		
+		var s = '';
+		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clip space row1
+		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clip space row2
+		s += 'mov op.zw, vc0.z \n';				//z = 1, w = 1
+		s += 'mov v0 va0 \n';					//copy vertex
+		return s;
+	}
+	
+	override function getFragmentShader():String
+	{
+		return 'mov oc, v0 \n';
+	}
 }

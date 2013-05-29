@@ -27,65 +27,75 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.flash.stage3d.shader;
+package de.polygonal.zz.render.module.flash.stage3d;
 
+import de.polygonal.core.fmt.Sprintf;
 import flash.display3D.Context3D;
+import flash.display3D.IndexBuffer3D;
+import flash.Vector;
 
-using de.polygonal.ds.Bits;
-
-class AGALTextureVertexBatch extends AGALTextureShader
+class Stage3dIndexBuffer
 {
-	public function new(context:Context3D, vertexAttributes:Int, textureFlags:Int)
+	public var numIndices(default, null):Int;
+	
+	public var numTriangles(get_numTriangles, never):Int;
+	function get_numTriangles():Int
 	{
-		super(context, vertexAttributes, textureFlags);
+		return Std.int(numIndices / 3);
 	}
 	
-	override function getVertexShader():String
+	public var handle:IndexBuffer3D;
+	
+	var _context:Context3D;
+	var _buffer:Vector<UInt>;
+	
+	public function new(context:Context3D)
 	{
-		//|r11 r12  1   tx| vc0
-		//|r21 r22  -   ty| vc1
-		//| -   -   -   - |
-		//| -   -   -   - |
+		_buffer = new Vector();
+		numIndices = 0;
 		
-		var s = '';
-		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clipspace row1
-		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clipspace row2
-		s += 'mov op.zw, vc0.z \n';				//z = 1, w = 1
-		s += 'mov v0, va1 \n';					//copy uv
-		
-		if (supportsAlpha())
-			s += 'mov v1, va2 \n';				//copy alpha
-		
-		if (supportsColorXForm())
-		{
-			s += 'mov v1, va2 \n';				//copy color multiplier
-			s += 'mov v2, va3 \n';				//copy color offset
-		}
-		
-		return s;
+		_context = context;
 	}
 	
-	override function getFragmentShader():String
+	public function free():Void
 	{
-		var s = '';
-		s += 'tex ft0, v0, fs0 <TEX_FLAGS> \n';	//sample texture from uv
-		
-		if (supportsAlpha())
+		if (handle != null)
 		{
-			if (hasPMA())
-				s += 'mul ft0, v1.x, ft0 \n';		//* alpha
-			else
-				s += 'mul ft0.w, v1.x, ft0 \n';
+			handle.dispose();
+			handle = null;
 		}
 		
-		if (supportsColorXForm())
+		_buffer = null;
+		_context = null;
+	}
+	
+	inline public function clear():Void
+	{
+		numIndices = 0;
+	}
+	
+	inline public function add(i:Int):Void
+	{
+		_buffer[numIndices++] = i;
+	}
+	
+	public function upload(count = -1):Void
+	{
+		if (count == -1) count = numIndices;
+		
+		if (handle == null)
+			handle = _context.createIndexBuffer(count);
+		else
 		{
-			s += 'mul ft0, ft0, v1 \n';			//* color multiplier
-			s += 'add ft0, ft0, v2 \n';			//+ color offset
+			handle.dispose();
+			handle = _context.createIndexBuffer(count);
 		}
 		
-		s += 'mov oc, ft0 \n';
-		
-		return s;
+		handle.uploadFromVector(_buffer, 0, count);
+	}
+	
+	public function toString():String
+	{
+		return Sprintf.format("{IndexBuffer: #indices=%d, #triangles=%d}", [numIndices, numTriangles]);
 	}
 }

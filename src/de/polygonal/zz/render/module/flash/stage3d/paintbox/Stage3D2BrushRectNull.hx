@@ -27,33 +27,42 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.flash.stage3d.shader;
+package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
+import de.polygonal.zz.render.module.flash.stage3d.shader.AgalNull;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dRenderer;
 import flash.display3D.Context3D;
 
-class AGALSolidColor extends AGALShader
+class Stage3dBrushRectNull extends Stage3dBrushRect
 {
 	public function new(context:Context3D, effectMask:Int)
 	{
-		super(context, effectMask, 0);
-	}
-	
-	override function getVertexShader():String
-	{
-		//|r11 r12 1 tx| vc0
-		//|r21 r22 - ty| vc1
-		//| -   -  - - |
-		//| -   -  - - |
+		super(context, effectMask, -1);
 		
-		var s = '';
-		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clip space row1
-		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clip space row2
-		s += 'mov op.zw, vc0.z \n';				//z = 1, w = 1
-		return s;
+		initVertexBuffer(1, [2]);
+		initIndexBuffer(1);
+		
+		_shader = new AgalNull(_context, effectMask);
 	}
 	
-	override function getFragmentShader():String
+	override public function draw(renderer:Stage3dRenderer):Void
 	{
-		return 'mov oc, fc0 \n';
+		super.draw(renderer);
+		
+		var constantRegisters = _scratchVector;
+		var indexBuffer = _ib.handle;
+		
+		for (i in 0..._batch.size())
+		{
+			var mvp = renderer.setModelViewProjMatrix(_batch.get(i));
+			mvp.m13 = 1; //op.zw
+			mvp.toVector(constantRegisters);
+			
+			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 2);
+			_context.drawTriangles(indexBuffer, 0, 2);
+			renderer.numCallsToDrawTriangle++;
+		}
+		
+		_batch.clear();
 	}
 }

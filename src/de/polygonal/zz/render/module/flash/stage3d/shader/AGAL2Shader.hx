@@ -31,8 +31,8 @@ package de.polygonal.zz.render.module.flash.stage3d.shader;
 
 import de.polygonal.ds.Bits;
 import de.polygonal.zz.render.effect.Effect;
-import de.polygonal.zz.render.module.flash.stage3d.shader.util.AGALMiniAssembler;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DTextureFlag;
+import de.polygonal.zz.render.module.flash.stage3d.shader.util.AgalMiniAssembler;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dTextureFlag;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DProgramType;
 import flash.display3D.Program3D;
@@ -41,7 +41,7 @@ import de.polygonal.core.util.Assert;
 
 using de.polygonal.ds.Bits;
 
-class AGALShader
+class AgalShader
 {
 	var _context:Context3D;
 	var _program:Program3D;
@@ -64,12 +64,12 @@ class AGALShader
 		#end
 		
 		#if debug
-		D.assert(textureFlags & (Stage3DTextureFlag.MM_NONE | Stage3DTextureFlag.MM_NEAREST | Stage3DTextureFlag.MM_LINEAR) > 0, 'mipmap flag missing');
-		D.assert(textureFlags & (Stage3DTextureFlag.FM_NEAREST | Stage3DTextureFlag.FM_LINEAR) > 0, 'filtering flag missing');
-		D.assert(textureFlags & (Stage3DTextureFlag.REPEAT_NORMAL | Stage3DTextureFlag.REPEAT_CLAMP) > 0, 'repeat flag missing');
+		D.assert(textureFlags & (Stage3dTextureFlag.MM_NONE | Stage3dTextureFlag.MM_NEAREST | Stage3dTextureFlag.MM_LINEAR) > 0, 'mipmap flag missing');
+		D.assert(textureFlags & (Stage3dTextureFlag.FM_NEAREST | Stage3dTextureFlag.FM_LINEAR) > 0, 'filtering flag missing');
+		D.assert(textureFlags & (Stage3dTextureFlag.REPEAT_NORMAL | Stage3dTextureFlag.REPEAT_CLAMP) > 0, 'repeat flag missing');
 		#end
 		
-		initShaders('2d,' + Stage3DTextureFlag.print(textureFlags));
+		initShaders('2d,' + Stage3dTextureFlag.print(textureFlags));
 	}
 	
 	public function free():Void
@@ -96,33 +96,33 @@ class AGALShader
 	
 	inline public function supportsAlpha():Bool
 	{
-		return _effectMask & Effect.EFF_ALPHA > 0;
+		return _effectMask & Effect.EFFECT_ALPHA > 0;
 	}
 	
 	inline public function supportsColorXForm():Bool
 	{
-		return _effectMask & Effect.EFF_COLOR_XFORM > 0;
+		return _effectMask & Effect.EFFECT_COLOR_XFORM > 0;
 	}
 	
 	inline public function hasPMA():Bool
 	{
-		return _effectMask & Effect.EFF_TEXTURE_PMA > 0;
+		return _effectMask & Effect.EFFECT_TEXTURE_PMA > 0;
 	}
 	
 	function initShaders(texFlags:String)
 	{
-		var assembler = AGALMiniAssembler.get();
+		var assembler = AgalMiniAssembler.get();
 		
 		assembler.assemble(cast Context3DProgramType.VERTEX, getVertexShader());
-
+		
 		var vertexShader = assembler.agalcode;
 		
 		var fragmentSource = getFragmentShader();
 		if (texFlags != null)
 			fragmentSource = StringTools.replace(fragmentSource, 'TEX_FLAGS', texFlags);
-
+		
 		assembler.assemble(cast Context3DProgramType.FRAGMENT, fragmentSource);
-
+		
 		var fragmentShader = assembler.agalcode;
 		
 		_program = _context.createProgram();

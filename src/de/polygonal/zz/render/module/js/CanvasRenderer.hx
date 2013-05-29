@@ -193,7 +193,7 @@ class CanvasRenderer extends Renderer
 	
 	inline function getFillStyle(effect:Effect):String
 	{
-		if (effect.flags & EFF_COLOR_XFORM > 0)
+		if (effect.flags & EFFECT_COLOR_XFORM > 0)
 		{
 			var color =
 			if (effect.alpha == 1)

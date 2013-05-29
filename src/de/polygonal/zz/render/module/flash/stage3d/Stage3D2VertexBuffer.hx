@@ -37,7 +37,7 @@ import flash.display3D.Context3DVertexBufferFormat;
 import flash.display3D.VertexBuffer3D;
 import flash.Vector;
 
-class Stage3DVertexBuffer
+class Stage3dVertexBuffer
 {
 	public var numFloatsPerVertex(default, null):Int;
 	public var buffer(default, null):Vector<Float>;

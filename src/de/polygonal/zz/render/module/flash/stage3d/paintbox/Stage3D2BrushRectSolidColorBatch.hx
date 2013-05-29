@@ -30,18 +30,18 @@
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
 import de.polygonal.core.math.Vec3;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColorConstantBatch;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColorVertexBatch;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColorVertexBatch;
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALTextureConstantBatch;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AgalSolidColorConstantBatch;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AgalSolidColorVertexBatch;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AgalSolidColorVertexBatch;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AgalTextureConstantBatch;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dRenderer;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DProgramType;
 
 using de.polygonal.ds.BitFlags;
 using de.polygonal.gl.color.RGBA;
 
-class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
+class Stage3dBrushRectSolidColorBatch extends Stage3dBrushRect
 {
 	inline static var INV_FF = .00392156;
 	inline static var MAX_SUPPORTED_REGISTERS = 128;
@@ -58,24 +58,24 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 	{
 		super(context, effectMask, textureFlags);
 		
-		_strategy = Stage3DRenderer.BATCH_STRATEGY;
+		_strategy = Stage3dRenderer.BATCH_STRATEGY;
 		
 		_batchCapacity = MAX_BATCH_SIZE_QUADS;
 		
 		_scratchVertices = [new Vec3(0, 0), new Vec3(1, 0), new Vec3(1, 1), new Vec3(0, 1)];
 		
-		if (_strategy == Stage3DRenderer.VERTEX_BATCH)
+		if (_strategy == Stage3dRenderer.VERTEX_BATCH)
 		{
-			_shader = new AGALSolidColorVertexBatch(_context, effectMask);
+			_shader = new AgalSolidColorVertexBatch(_context, effectMask);
 			
 			var numFloatsPerAttribute = [2, 4];
-			_vb = new Stage3DVertexBuffer(_context);
+			_vb = new Stage3dVertexBuffer(_context);
 			_vb.allocate(numFloatsPerAttribute, _batchCapacity * 4);
 		}
 		else
-		if (_strategy == Stage3DRenderer.CONSTANT_BATCH)
+		if (_strategy == Stage3dRenderer.CONSTANT_BATCH)
 		{
-			_shader = new AGALSolidColorConstantBatch(_context, effectMask);
+			_shader = new AgalSolidColorConstantBatch(_context, effectMask);
 			
 			_numSharedRegisters = 0;
 			_numRegistersPerQuad = 3;
@@ -86,7 +86,7 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 			var maxBatchSize:Int = cast ((MAX_SUPPORTED_REGISTERS - _numSharedRegisters) / _numRegistersPerQuad);
 			if (_batchCapacity > maxBatchSize) _batchCapacity = maxBatchSize;
 			
-			_vb = new Stage3DVertexBuffer(_context);
+			_vb = new Stage3dVertexBuffer(_context);
 			_vb.allocate([2, 3], maxBatchSize * 4); //uv, index
 			
 			var address3 = new Vec3();
@@ -111,7 +111,7 @@ class Stage3DBrushRectSolidColorBatch extends Stage3DBrushRect
 		_vb.upload();
 	}
 	
-	override public function draw(renderer:Stage3DRenderer):Void
+	override public function draw(renderer:Stage3dRenderer):Void
 	{
 		super.draw(renderer);
 		

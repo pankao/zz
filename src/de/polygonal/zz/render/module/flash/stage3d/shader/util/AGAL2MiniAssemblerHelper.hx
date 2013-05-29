@@ -3,7 +3,7 @@ package de.polygonal.zz.render.module.flash.stage3d.shader.util;
 import flash.utils.RegExp;
 import haxe.ds.StringMap;
 
-class AGALMiniAssemblerHelper
+class AgalMiniAssemblerHelper
 {
 	static var regExpCache:StringMap<RegExp> = new StringMap<RegExp>();
 	

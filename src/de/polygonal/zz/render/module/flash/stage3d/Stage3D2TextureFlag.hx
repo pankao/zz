@@ -27,42 +27,52 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.flash.stage3d.paintbox;
+package de.polygonal.zz.render.module.flash.stage3d;
 
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALNull;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
-import flash.display3D.Context3D;
+import de.polygonal.ds.Bits;
 
-class Stage3DBrushRectNull extends Stage3DBrushRect
+class Stage3dTextureFlag
 {
-	public function new(context:Context3D, effectMask:Int)
-	{
-		super(context, effectMask, -1);
-		
-		initVertexBuffer(1, [2]);
-		initIndexBuffer(1);
-		
-		_shader = new AGALNull(_context, effectMask);
-	}
+	inline public static var MM_NONE       = Bits.BIT_10;
+	inline public static var MM_NEAREST    = Bits.BIT_11;
+	inline public static var MM_LINEAR     = Bits.BIT_12;
+	inline public static var FM_NEAREST    = Bits.BIT_13;
+	inline public static var FM_LINEAR     = Bits.BIT_14;
+	inline public static var REPEAT_NORMAL = Bits.BIT_15;
+	inline public static var REPEAT_CLAMP  = Bits.BIT_16;
+	inline public static var DXT1          = Bits.BIT_17;
+	inline public static var DXT5          = Bits.BIT_18;
 	
-	override public function draw(renderer:Stage3DRenderer):Void
+	inline public static var PRESET_QUALITY_LOW    = MM_NONE    | FM_NEAREST | REPEAT_NORMAL;
+	inline public static var PRESET_QUALITY_MEDIUM = MM_NONE    | FM_LINEAR  | REPEAT_NORMAL;
+	inline public static var PRESET_QUALITY_HIGH   = MM_NEAREST | FM_LINEAR  | REPEAT_NORMAL;
+	inline public static var PRESET_QUALITY_ULTRA  = MM_LINEAR  | FM_LINEAR  | REPEAT_NORMAL;
+	
+	public static function print(flags:Int):String
 	{
-		super.draw(renderer);
+		if (flags <= 0) return '-';
 		
-		var constantRegisters = _scratchVector;
-		var indexBuffer = _ib.handle;
-		
-		for (i in 0..._batch.size())
+		var a = [];
+		for (i in 0...9)
 		{
-			var mvp = renderer.setModelViewProjMatrix(_batch.get(i));
-			mvp.m13 = 1; //op.zw
-			mvp.toVector(constantRegisters);
-			
-			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 2);
-			_context.drawTriangles(indexBuffer, 0, 2);
-			renderer.numCallsToDrawTriangle++;
+			if ((flags >> 9) & (1 << i) > 0)
+			{
+				a.push(
+				switch (i) 
+				{
+					case 0: 'mipnone';
+					case 1: 'mipnearest';
+					case 2: 'miplinear';
+					case 3: 'nearest';
+					case 4: 'linear';
+					case 5: 'repeat';
+					case 6: 'clamp';
+					case 7: 'dxt1';
+					case 8: 'dxt5';
+					default: throw 'unknown texture flag';
+				});
+			}
 		}
-		
-		_batch.clear();
+		return a.join(',');
 	}
 }

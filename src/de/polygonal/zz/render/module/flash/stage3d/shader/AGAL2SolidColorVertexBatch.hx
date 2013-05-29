@@ -31,7 +31,7 @@ package de.polygonal.zz.render.module.flash.stage3d.shader;
 
 import flash.display3D.Context3D;
 
-class AGALSolidColorVertexBatch extends AGALSolidColor
+class AgalSolidColorVertexBatch extends AgalSolidColor
 {
 	public function new(context:Context3D, vertexAttributes:Int)
 	{

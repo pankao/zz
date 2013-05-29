@@ -274,7 +274,7 @@ class TileRenderer extends Renderer
 				}
 			}
 			else
-				e &= ~E.E.EFF_TEXTURE;*/
+				e &= ~E.E.EFFECT_TEXTURE;*/
 			
 			var geometry = currGeometry;
 			var mvp = setModelViewProjMatrix(geometry);
@@ -372,7 +372,7 @@ class TileRenderer extends Renderer
 		add(m.m21 * sx);
 		add(m.m22 * sy);
 		
-		if (effect.flags & Effect.EFF_COLOR_XFORM > 0)
+		if (effect.flags & Effect.EFFECT_COLOR_XFORM > 0)
 		{
 			flags |= Tilesheet.TILE_RGB;
 			var mult = effect.colorXForm.multiplier;
@@ -381,7 +381,7 @@ class TileRenderer extends Renderer
 			add(mult.z);
 		}
 		
-		if (effect.flags & Effect.EFF_ALPHA > 0)
+		if (effect.flags & Effect.EFFECT_ALPHA > 0)
 		{
 			flags |= Tilesheet.TILE_ALPHA;
 			add(effect.alpha);

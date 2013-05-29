@@ -29,48 +29,70 @@
  */
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DIndexBuffer;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DVertexBuffer;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AgalSolidColor;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dRenderer;
 import flash.display3D.Context3D;
 
-class Stage3DBrushRect extends Stage3DBrush
+using de.polygonal.gl.color.RGBA;
+
+class Stage3dBrushRectSolidColor extends Stage3dBrushRect
 {
-	function new(context:Context3D, effectMask:Int, textureFlags:Int)
+	inline static var INV_FF = .00392156;
+	
+	public function new(context:Context3D, effectMask:Int)
 	{
-		super(context, effectMask, textureFlags);
+		super(context, effectMask, -1);
+		
+		initVertexBuffer(1, [2]);
+		initIndexBuffer(1);
+		
+		_shader = new AgalSolidColor(_context, effectMask);
 	}
 	
-	function initVertexBuffer(numQuads:Int, numFloatsPerAttribute:Array<Int>):Void
+	override public function draw(renderer:Stage3dRenderer):Void
 	{
-		_vb = new Stage3DVertexBuffer(_context);
-		_vb.allocate(numFloatsPerAttribute, numQuads * 4);
-		for (i in 0...numQuads)
+		super.draw(renderer);
+		
+		var constantRegisters = _scratchVector;
+		var indexBuffer = _ib.handle;
+		
+		for (i in 0..._batch.size())
 		{
-			_vb.addFloat2f(0, 0);
-			_vb.addFloat2f(1, 0);
-			_vb.addFloat2f(1, 1);
-			_vb.addFloat2f(0, 1);
+			var geometry = _batch.get(i);
+			var mvp = renderer.setModelViewProjMatrix(geometry);
+			mvp.m13 = 1; //op.zw
+			mvp.toVector(constantRegisters);
+			
+			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 2);
+			
+			var e = geometry.effect;
+			var c = e.color;
+			var r = c.getR();
+			var g = c.getG();
+			var b = c.getB();
+			var a = e.alpha;
+			if (e.colorXForm != null)
+			{
+				var m = e.colorXForm.multiplier;
+				var o = e.colorXForm.offset;
+				constantRegisters[0] = (r * m.r + o.r) * INV_FF;
+				constantRegisters[1] = (g * m.g + o.g) * INV_FF;
+				constantRegisters[2] = (b * m.b + o.b) * INV_FF;
+				constantRegisters[3] =  a * m.a + (o.a * INV_FF);
+			}
+			else
+			{
+				constantRegisters[0] = r * INV_FF;
+				constantRegisters[1] = g * INV_FF;
+				constantRegisters[2] = b * INV_FF;
+				constantRegisters[3] = e.alpha;
+			}
+			
+			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.FRAGMENT, 0, constantRegisters, 1);
+			_context.drawTriangles(indexBuffer, 0, 2);
+			renderer.numCallsToDrawTriangle++;
 		}
 		
-		_vb.upload();
-	}
-	
-	function initIndexBuffer(numQuads:Int):Void
-	{
-		_ib = new Stage3DIndexBuffer(_context);
-		for (i in 0...numQuads)
-		{
-			var offset = i << 2;
-			
-			_ib.add(offset + 0);
-			_ib.add(offset + 1);
-			_ib.add(offset + 2);
-			
-			_ib.add(offset + 0);
-			_ib.add(offset + 2);
-			_ib.add(offset + 3);
-		}
-		
-		_ib.upload();
+		_batch.clear();
 	}
 }

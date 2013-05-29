@@ -36,14 +36,14 @@ import flash.utils.ByteArray;
 import flash.utils.Endian;
 import haxe.ds.StringMap;
 
-using de.polygonal.zz.render.module.flash.stage3d.shader.util.AGALMiniAssemblerHelper;
+using de.polygonal.zz.render.module.flash.stage3d.shader.util.AgalMiniAssemblerHelper;
 
-class AGALMiniAssembler
+class AgalMiniAssembler
 {
-	static var _instance:AGALMiniAssembler = null;
-	inline public static function get():AGALMiniAssembler
+	static var _instance:AgalMiniAssembler = null;
+	inline public static function get():AgalMiniAssembler
 	{
-		return _instance == null ? (_instance = new AGALMiniAssembler()):_instance;
+		return _instance == null ? (_instance = new AgalMiniAssembler()):_instance;
 	}
 	
 	public static var debugEnabled = false;
@@ -74,7 +74,7 @@ class AGALMiniAssembler
 		
 		agalcode.endian = Endian.LITTLE_ENDIAN;
 		agalcode.writeByte(0xa0);				//tag version
-		agalcode.writeUnsignedInt(version);		//AGAL version, big endian, bit pattern will be 0x01000000
+		agalcode.writeUnsignedInt(version);		//Agal version, big endian, bit pattern will be 0x01000000
 		agalcode.writeByte(0xa1);				//tag program id
 		agalcode.writeByte(isFrag ? 1:0);		//vertex or fragment
 		
@@ -439,7 +439,7 @@ class AGALMiniAssembler
 		}
 		
 		if (verbose)
-			trace('AGALMiniAssembler.assemble time: ' + ((Lib.getTimer() - start) / 1000) + 's');
+			trace('AgalMiniAssembler.assemble time: ' + ((Lib.getTimer() - start) / 1000) + 's');
 		
 		return agalcode;
 	}

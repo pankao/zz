@@ -29,66 +29,81 @@
  */
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
-import de.polygonal.zz.render.module.flash.stage3d.shader.AGALSolidColor;
-import de.polygonal.zz.render.module.flash.stage3d.Stage3DRenderer;
+import de.polygonal.zz.render.module.flash.stage3d.shader.AgalTextureShader;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dRenderer;
 import flash.display3D.Context3D;
 
-using de.polygonal.gl.color.RGBA;
-
-class Stage3DBrushRectSolidColor extends Stage3DBrushRect
+class Stage3dBrushRectTexture extends Stage3dBrushRect
 {
 	inline static var INV_FF = .00392156;
 	
-	public function new(context:Context3D, effectMask:Int)
+	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
 	{
-		super(context, effectMask, -1);
+		super(context, effectMask, textureFlags);
 		
 		initVertexBuffer(1, [2]);
 		initIndexBuffer(1);
 		
-		_shader = new AGALSolidColor(_context, effectMask);
+		_shader = new AgalTextureShader(_context, effectMask, textureFlags);
 	}
 	
-	override public function draw(renderer:Stage3DRenderer):Void
+	override public function draw(renderer:Stage3dRenderer):Void
 	{
 		super.draw(renderer);
 		
 		var constantRegisters = _scratchVector;
 		var indexBuffer = _ib.handle;
 		
+		var pma = _shader.hasPMA();
+		var supportsColorXForm = _shader.supportsColorXForm();
+		
 		for (i in 0..._batch.size())
 		{
 			var geometry = _batch.get(i);
-			var mvp = renderer.setModelViewProjMatrix(geometry);
-			mvp.m13 = 1; //op.zw
+			
+			var mvp = renderer.setModelViewProjMatrix(renderer.currGeometry);
+			var e = renderer.currEffect.__textureEffect;
+			var crop = e.crop;
+			var alpha = e.alpha;
+			
+			mvp.m13 = alpha;
+			mvp.m23 = 1; //op.zw
+			mvp.m31 = crop.w * e.uvScaleX;
+			mvp.m32 = crop.h * e.uvScaleY;
+			mvp.m33 = crop.x + e.uvOffsetX;
+			mvp.m34 = crop.y + e.uvOffsetY;
 			mvp.toVector(constantRegisters);
 			
-			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 2);
+			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.VERTEX, 0, constantRegisters, 3);
 			
-			var e = geometry.effect;
-			var c = e.color;
-			var r = c.getR();
-			var g = c.getG();
-			var b = c.getB();
-			var a = e.alpha;
-			if (e.colorXForm != null)
+			if (supportsColorXForm)
 			{
-				var m = e.colorXForm.multiplier;
-				var o = e.colorXForm.offset;
-				constantRegisters[0] = (r * m.r + o.r) * INV_FF;
-				constantRegisters[1] = (g * m.g + o.g) * INV_FF;
-				constantRegisters[2] = (b * m.b + o.b) * INV_FF;
-				constantRegisters[3] =  a * m.a + (o.a * INV_FF);
-			}
-			else
-			{
-				constantRegisters[0] = r * INV_FF;
-				constantRegisters[1] = g * INV_FF;
-				constantRegisters[2] = b * INV_FF;
-				constantRegisters[3] = e.alpha;
+				var t = e.colorXForm.multiplier;
+				if (pma)
+				{
+					var am = t.a;
+					constantRegisters[0] = t.r * am * alpha;
+					constantRegisters[1] = t.g * am * alpha;
+					constantRegisters[2] = t.b * am * alpha;
+					constantRegisters[3] = t.a * alpha;
+				}
+				else
+				{
+					constantRegisters[0] = t.r;
+					constantRegisters[1] = t.g;
+					constantRegisters[2] = t.b;
+					constantRegisters[3] = t.a * alpha;
+				}
+				
+				t = e.colorXForm.offset;
+				constantRegisters[4] = t.r * INV_FF;
+				constantRegisters[5] = t.g * INV_FF;
+				constantRegisters[6] = t.b * INV_FF;
+				constantRegisters[7] = t.a * INV_FF;
+				
+				_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.FRAGMENT, 0, constantRegisters, 2);
 			}
 			
-			_context.setProgramConstantsFromVector(flash.display3D.Context3DProgramType.FRAGMENT, 0, constantRegisters, 1);
 			_context.drawTriangles(indexBuffer, 0, 2);
 			renderer.numCallsToDrawTriangle++;
 		}

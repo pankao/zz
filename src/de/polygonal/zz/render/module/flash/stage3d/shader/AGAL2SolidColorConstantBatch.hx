@@ -31,58 +31,30 @@ package de.polygonal.zz.render.module.flash.stage3d.shader;
 
 import flash.display3D.Context3D;
 
-class AGALTextureShader extends AGALShader
+class AgalSolidColorConstantBatch extends AgalSolidColor
 {
-	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
+	public function new(context:Context3D, vertexAttributes:Int)
 	{
-		super(context, effectMask, textureFlags);
+		super(context, vertexAttributes);
 	}
 	
 	override function getVertexShader():String
 	{
-		//|r11 r12  a   tx| vc0
-		//|r21 r22  1   ty| vc1
-		//|uvw uvh uvx uvy| vc2
+		//|r11 r12  1   tx| vc0
+		//|r21 r22  -   ty| vc1
+		//| r   g   b   a | vc2
 		//| -   -   -   - |
 		
 		var s = '';
-		
-		s += 'dp4 op.x, vc0, va0 \n';			//vertex * clip space row1
-		s += 'dp4 op.y, vc1, va0 \n';			//vertex * clip space row2
-		s += 'mov op.zw, vc1.z \n';				//z = 1, w = 1
-		
-		s += 'mul vt0, va0, vc2.xy \n';			//scale uv
-		s += 'add vt0.xy, vt0.xy, vc2.zw \n';	//offset uv
-		s += 'mov v0, vt0 \n';	 				//copy uv
-		
-		if (supportsAlpha())
-			s += 'mov v1, vc0.z \n';			//copy alpha
-		
+		s += 'dp4 op.x, va0, vc[va1.x] \n';		//vertex * clipspace row1
+		s += 'dp4 op.y, va0, vc[va1.y] \n';		//vertex * clipspace row2
+		s += 'mov op.zw, vc[va1.x].z \n';		//z = 1, w = 1
+		s += 'mov v0 vc[va1.z] \n';
 		return s;
 	}
 	
 	override function getFragmentShader():String
 	{
-		var s = '';
-		
-		s += 'tex ft0, v0, fs0 <TEX_FLAGS> \n';	//sample texture from uv
-		
-		if (supportsAlpha())
-		{
-			if (hasPMA())
-				s += 'mul ft0, v1, ft0 \n';		//* alpha
-			else
-				s += 'mul ft0.w, v1, ft0 \n';
-		}
-		
-		if (supportsColorXForm())
-		{
-			s += 'mul ft0, ft0, fc0 \n';		//* color multiplier
-			s += 'add ft0, fc1, ft0 \n';		//+ color offset
-		}
-		
-		s += 'mov oc, ft0 \n';
-		
-		return s;
+		return 'mov oc, v0 \n';
 	}
 }

@@ -27,66 +27,50 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.flash.stage3d.shader;
+package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dIndexBuffer;
+import de.polygonal.zz.render.module.flash.stage3d.Stage3dVertexBuffer;
 import flash.display3D.Context3D;
 
-class AGALTextureConstantBatch extends AGALTextureShader
+class Stage3dBrushRect extends Stage3dBrush
 {
-	public function new(context:Context3D, vertexAttributes:Int, textureFlags:Int)
+	function new(context:Context3D, effectMask:Int, textureFlags:Int)
 	{
-		super(context, vertexAttributes, textureFlags);
+		super(context, effectMask, textureFlags);
 	}
 	
-	override function getVertexShader():String
+	function initVertexBuffer(numQuads:Int, numFloatsPerAttribute:Array<Int>):Void
 	{
-		//|r11 r12  1   tx| vc0
-		//|r21 r22  a   ty| vc1
-		//|uvw uvh uvx uvy| vc2
-		//| -   -   -   - |
-		
-		var s = '';
-		s += 'dp4 op.x, va0, vc[va1.x] \n';		//vertex * clipspace row1
-		s += 'dp4 op.y, va0, vc[va1.y] \n';		//vertex * clipspace row2
-		s += 'mov op.zw, vc[va1.x].z \n';		//z = 1, w = 1
-		
-		s += 'mul vt0 va0 vc[va1.z].xy \n';		//scale uv
-		s += 'add vt0 vt0 vc[va1.z].zw \n';		//offset uv
-		s += 'mov v0, vt0 \n';					//copy uv
-		
-		if (supportsAlpha())
-			s += 'mov v1, vc[va1.y].z \n'; 		//copy alpha
-		
-		if (supportsColorXForm())
+		_vb = new Stage3dVertexBuffer(_context);
+		_vb.allocate(numFloatsPerAttribute, numQuads * 4);
+		for (i in 0...numQuads)
 		{
-			s += 'mov v1, vc[va2.x] \n'; 		//copy color multiplier
-			s += 'mov v2, vc[va2.y] \n'; 		//copy color offset
+			_vb.addFloat2f(0, 0);
+			_vb.addFloat2f(1, 0);
+			_vb.addFloat2f(1, 1);
+			_vb.addFloat2f(0, 1);
 		}
 		
-		return s;
+		_vb.upload();
 	}
 	
-	override function getFragmentShader():String
+	function initIndexBuffer(numQuads:Int):Void
 	{
-		var s = '';
-		s += 'tex ft0, v0, fs0 <TEX_FLAGS> \n';	//sample texture from uv
-		
-		if (supportsAlpha())
+		_ib = new Stage3dIndexBuffer(_context);
+		for (i in 0...numQuads)
 		{
-			if (hasPMA())
-				s += 'mul ft0, v1, ft0 \n';		//* alpha
-			else
-				s += 'mul ft0.w, v1, ft0 \n';
+			var offset = i << 2;
+			
+			_ib.add(offset + 0);
+			_ib.add(offset + 1);
+			_ib.add(offset + 2);
+			
+			_ib.add(offset + 0);
+			_ib.add(offset + 2);
+			_ib.add(offset + 3);
 		}
 		
-		if (supportsColorXForm())
-		{
-			s += 'mul ft0, v1, ft0 \n';		//* color multiplier
-			s += 'add ft0, v2, ft0 \n';		//+ color offset
-		}
-		
-		s += 'mov oc, ft0 \n';
-		
-		return s;
+		_ib.upload();
 	}
 }
