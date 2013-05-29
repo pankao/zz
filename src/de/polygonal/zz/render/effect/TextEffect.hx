@@ -33,13 +33,14 @@ import de.polygonal.core.fmt.ASCII;
 import de.polygonal.core.math.Vec2;
 import de.polygonal.ds.Bits;
 import de.polygonal.ds.DA;
-import de.polygonal.ds.pooling.DynamicObjectPool;
 import de.polygonal.motor.geom.primitive.AABB2;
 import de.polygonal.zz.render.texture.SpriteAtlas;
 import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.zz.render.texture.thirdparty.BMFontFormat;
+import de.polygonal.zz.scene.Geometry;
 import de.polygonal.zz.scene.Quad;
 import de.polygonal.zz.scene.Renderer;
+import de.polygonal.zz.scene.Node;
 
 enum Align
 {
@@ -54,6 +55,8 @@ enum Align
  */
 class TextEffect extends SpriteSheetEffect
 {
+	public static var id:Int = 0;
+	
 	/**
 	 * Defines the letter spacing.
 	 */
@@ -69,54 +72,60 @@ class TextEffect extends SpriteSheetEffect
 	 */
 	public var applyKerning = true;
 	
-	var _format:BMFontFormat;
-	var _quadList:DA<FontQuad>;
-	var _stringList:DA<StringBlock>;
-	var _scratchQuad:Quad;
-	var _nextCode:Int;
-	var _fontQuadPool:DynamicObjectPool<FontQuad>;
+	public var monoSpaceWidth = -1;
 	
-	public function new(src:String, tex:Tex)
+	var _format:BMFontFormat;
+	var _stringList:DA<StringBlock>;
+	var _nextCode:Int;
+	
+	var _quads:Array<FontQuad>;
+	var _invalidate:Bool;
+	var _lastBound:AABB2;
+	
+	var _numQuads:Int;
+	
+	public function new(format:BMFontFormat, tex:Tex)
 	{
+		TextEffect.id++;
+		
 		__textEffect = this;
 		
-		_format = new BMFontFormat(src);
-		_quadList = new DA();
-		_quadList.reuseIterator = true;
-		_stringList = new DA();
-		_scratchQuad = new Quad();
+		_format = format;
+		_stringList = new DA<StringBlock>();
 		_nextCode = -1;
-		_fontQuadPool = new DynamicObjectPool(FontQuad);
 		
 		super(new SpriteAtlas(tex, _format));
+		
+		_numQuads = 0;
+		_quads = [];
 	}
 	
-	override public function free():Void 
+	override public function free():Void
 	{
 		super.free();
 		
-		_format.free();
-		_quadList.free();
+		_format = null;
 		_stringList.free();
-		_scratchQuad.free();
-		_fontQuadPool.free();
+		
+		for (i in _quads) i.free();
+		_quads = null;
 		
 		_format = null;
-		_quadList = null;
 		_stringList = null;
-		_scratchQuad = null;
-		_fontQuadPool = null;
 	}
 	
-	public function setString(x:String, bound:AABB2, align:Align, size:Float):Int
+	public function setString(x:String, bound:AABB2, align:Align, size:Float):Void
 	{
+		if (bound == null)
+			bound = _lastBound;
+		
 		if (_stringList.size() > 0)
-		{
 			updateString(0, x);
-			return 0;
-		}
 		else
-			return addString(x, bound, align, size);
+		{
+			addString(x, bound, align, size);
+			_lastBound = bound;
+		}
 	}
 	
 	public function addString(text:String, bound:AABB2, align:Align, size:Float):Int
@@ -124,70 +133,73 @@ class TextEffect extends SpriteSheetEffect
 		var block = new StringBlock(text, bound, align, size, applyKerning);
 		_stringList.pushBack(block);
 		
-		_quadList.concat(processQuads(block));
+		_numQuads = processQuads(block);
+		_invalidate = true;
 		
 		return _stringList.size() - 1;
 	}
 	
-	public function updateString(i:Int, text:String):Void
+	public function updateString(i:Int, text:String, align:Align = null):Void
 	{
-		var b = _stringList.get(i);
+		var block = _stringList.get(i);
+		if (block.text == text && block.align == align) return;
 		
-		if (b.text == text) return;
-		
-		b.text = text;
-		
-		for (q in _quadList) _fontQuadPool.put(q);
-		_quadList = processQuads(b);
+		if (align != null) block.align = align;
+		block.text = text;
+		_numQuads = processQuads(block);
+		_invalidate = true;
 	}
-	
-	/*public function clearString(i:Int):Void
-	{
-		_stringList.removeAt(i);
-	}
-	
-	public function clearStrings():Void
-	{
-		_stringList.clear();
-	}*/
 	
 	override public function draw(renderer:Renderer):Void
 	{
 		var node = renderer.currNode;
 		
-		var q = _scratchQuad;
-		
-		node.addChild(q);
-		
-		for (quad in _quadList)
+		//add/remove children, update geometry
+		if (_invalidate)
 		{
-			var char = quad.bitmapChar;
-			if (char.code == -1) continue;
+			_invalidate = false;
 			
-			q.x = quad.x;
-			q.y = quad.y;
-			q.scaleX = char.w * quad.sizeScale;
-			q.scaleY = char.h * quad.sizeScale;
+			for (i in 0..._quads.length)
+				node.removeChild(_quads[i]);
+				
+			for (i in 0..._numQuads)
+			{
+				var fq = _quads[i];
+				var c = fq.bitmapChar;
+				if (c.code == -1) continue;
+				
+				node.addChild(fq);
+				
+				fq.x = fq.minX;
+				fq.y = fq.minY;
+				fq.scaleX = c.w * fq.sizeScale;
+				fq.scaleY = c.h * fq.sizeScale;
+				fq.effect.__spriteSheetEffect.frame = c.code;
+			}
 			
-			trace(char.w, char.h);
-			
-			q.updateGeometricState(true);
-			
-			this.frame = char.code;
-			
-			untyped renderer.currGeometry = q;
-			untyped renderer.currEffect = this;
-			
-			renderer.drawSpriteSheetEffect(this);
+			node.updateGeometricState();
+			node.updateRenderState();
 		}
 		
-		node.removeChild(q);
+		for (i in 0..._numQuads)
+		{
+			var fq = _quads[i];
+			fq.effect.alpha = alpha;
+		}
+		
+		//temporarily disable effect in order to draw child nodes
+		var tmp = node.effect;
+		node.effect = null;
+		node.draw(renderer, renderer.noCulling);
+		
+		//restore effect
+		node.effect = tmp;
 	}
 	
-	function processQuads(b:StringBlock):DA<FontQuad>
+	function processQuads(b:StringBlock):Int
 	{
-		var quads = new DA<FontQuad>();
-		quads.reuseIterator = true;
+		var quads = _quads;
+		var numQuads = 0;
 		
 		var x = b.bound.minX;
 		var y = b.bound.minY;
@@ -203,7 +215,6 @@ class TextEffect extends SpriteSheetEffect
 		var wordWidth = 0.;
 		var firstCharOfLine = true;
 		var text = b.text;
-		
 		var alignment = b.align;
 		
 		for (i in 0...text.length)
@@ -215,8 +226,7 @@ class TextEffect extends SpriteSheetEffect
 			
 			var xOffset = c.offX * sizeScale;
 			var yOffset = c.offY * sizeScale;
-			
-			var stepX = c.stepX * sizeScale + tracking;
+			var stepX = (monoSpaceWidth == -1 ? c.stepX : monoSpaceWidth) * sizeScale + tracking;
 			var width = c.w * sizeScale;
 			var height = c.h * sizeScale;
 			
@@ -240,8 +250,10 @@ class TextEffect extends SpriteSheetEffect
 					var newLineLastChar = 0;
 					lineWidth = 0.;
 					
-					for (q in quads)
+					for (i in 0...numQuads)
 					{
+						var q = quads[i];
+						var bc = q.bitmapChar;
 						switch (alignment)
 						{
 							case Left:
@@ -249,10 +261,11 @@ class TextEffect extends SpriteSheetEffect
 								{
 									q.lineNumber++;
 									q.wordNumber = 1;
-									q.x = x + (q.bitmapChar.offX * sizeScale);
-									q.y = y + (q.bitmapChar.offY * sizeScale);
-									x += q.bitmapChar.stepX * sizeScale;
-									lineWidth += q.bitmapChar.stepX * sizeScale;
+									q.minX = x + (bc.offX * sizeScale);
+									q.minY = y + (bc.offY * sizeScale);
+									x += bc.stepX * sizeScale;
+									lineWidth += bc.stepX * sizeScale;
+									
 									if (b.kerning)
 									{
 										_nextCode = q.character;
@@ -271,11 +284,12 @@ class TextEffect extends SpriteSheetEffect
 								{
 									q.lineNumber++;
 									q.wordNumber = 1;
-									q.x = x + (q.bitmapChar.offX * sizeScale);
-									q.y = y + (q.bitmapChar.offY * sizeScale);
-									x += q.bitmapChar.stepX * sizeScale;
-									lineWidth += q.bitmapChar.stepX * sizeScale;
-									offset += q.bitmapChar.stepX * sizeScale * .5;
+									q.minX = x + (bc.offX * sizeScale);
+									q.minY = y + (bc.offY * sizeScale);
+									x += bc.stepX * sizeScale;
+									lineWidth += bc.stepX * sizeScale;
+									offset += bc.stepX * sizeScale * .5;
+									
 									if (b.kerning)
 									{
 										_nextCode = q.character;
@@ -295,11 +309,12 @@ class TextEffect extends SpriteSheetEffect
 								{
 									q.lineNumber++;
 									q.wordNumber = 1;
-									q.x = x + (q.bitmapChar.offX * sizeScale);
-									q.y = y + (q.bitmapChar.offY * sizeScale);
-									lineWidth += q.bitmapChar.stepX * sizeScale;
-									x += q.bitmapChar.stepX * sizeScale;
-									offset += q.bitmapChar.stepX * sizeScale;
+									q.minX = x + (bc.offX * sizeScale);
+									q.minY = y + (bc.offY * sizeScale);
+									lineWidth += bc.stepX * sizeScale;
+									x += bc.stepX * sizeScale;
+									offset += bc.stepX * sizeScale;
+									
 									if (b.kerning)
 									{
 										_nextCode = q.character;
@@ -317,17 +332,23 @@ class TextEffect extends SpriteSheetEffect
 						newLineLastChar = q.character;
 					}
 					
-					if (alignment == Center || alignment == Right)
+					switch (alignment)
 					{
-						for (q in quads)
-							if (q.lineNumber == lineNumber + 1)
-								q.x -= offset;
-						
-						x -= offset;
-						
-						for (q in quads)
-							if (q.lineNumber == lineNumber)
-								q.x += offset;
+						case Center, Right:
+							for (i in 0...numQuads)
+							{
+								var q = quads[i];
+								if (q.lineNumber == lineNumber + 1)
+									q.minX -= offset;
+							}
+							x -= offset;
+							for (i in 0...numQuads)
+							{
+								var q = quads[i];
+								if (q.lineNumber == lineNumber)
+									q.minX += offset;
+							}
+						default:
 					}
 				}
 				else
@@ -370,30 +391,34 @@ class TextEffect extends SpriteSheetEffect
 			
 			firstCharOfLine = false;
 			
-			var q = _fontQuadPool.get();
-			
-			var bound = q.bound;
-			bound.minX = x + xOffset;
-			bound.minY = y + yOffset;
-			bound.maxX = bound.minX + width;
-			bound.maxY = bound.minY + height;
-			
 			if (code == ASCII.SPACE && alignment == Right)
 			{
 				wordNumber++;
 				wordWidth = 0.;
 			}
-			
 			wordWidth += stepX;
 			
-			q.lineNumber = lineNumber;
-			q.wordNumber = wordNumber;
-			q.wordWidth  = wordWidth;
-			q.bitmapChar = c;
-			q.sizeScale  = sizeScale;
-			q.character  = text.charCodeAt(i);
+			var fq = quads[numQuads];
+			if (fq == null)
+			{
+				fq = new FontQuad();
+				fq.effect = new SpriteSheetEffect(sheet);
+				quads[numQuads] = fq;
+				
+			}
+			numQuads++;
 			
-			quads.pushBack(q);
+			var a = fq.bound;
+			a.minX = x + xOffset;
+			a.minY = y + yOffset;
+			a.maxX = a.minX + width;
+			a.maxY = a.minY + height;
+			fq.lineNumber = lineNumber;
+			fq.wordNumber = wordNumber;
+			fq.wordWidth = wordWidth;
+			fq.bitmapChar = c;
+			fq.sizeScale = sizeScale;
+			fq.character = text.charCodeAt(i);
 			
 			if (code == ASCII.SPACE && alignment == Left)
 			{
@@ -411,20 +436,25 @@ class TextEffect extends SpriteSheetEffect
 					var offset = stepX * .5;
 					if (b.kerning) offset += kernAmount * .5;
 					
-					for (q in quads)
+					for (i in 0...numQuads)
+					{
+						var q = quads[i];
 						if (q.lineNumber == lineNumber)
-							q.x -= offset;
+							q.minX -= offset;
+					}
 					x -= offset;
 				
 				case Right:
 					var offset = 0.;
 					if (b.kerning) offset += kernAmount;
-					for (q in quads)
+					
+					for (i in 0...numQuads)
 					{
+						var q = quads[i];
 						if (q.lineNumber == lineNumber)
 						{
 							offset = stepX;
-							q.x -= stepX;
+							q.minX -= stepX;
 						}
 					}
 					x -= offset;
@@ -433,7 +463,26 @@ class TextEffect extends SpriteSheetEffect
 			}
 		}
 		
-		return quads;
+		return numQuads;
+	}
+}
+
+class CSpriteSheetEffect extends Effect
+{
+	var _e:SpriteSheetEffect;
+	public var frame:Int;
+	public function new(e:SpriteSheetEffect)
+	{
+		super();
+		
+		frame = 0;
+		_e = e;
+	}
+	
+	override public function draw(renderer:Renderer):Void
+	{
+		_e.frame = frame;
+		renderer.drawSpriteSheetEffect(_e);
 	}
 }
 
@@ -447,48 +496,54 @@ private class StringBlock
 
 	public function new(text:String, bound:AABB2, align:Align, size:Float, kerning:Bool)
 	{
-		this.text    = text;
-		this.bound   = bound;
-		this.align   = align;
-		this.size    = size;
+		this.text = text;
+		this.bound = bound;
+		this.align = align;
+		this.size = size;
 		this.kerning = kerning;
 	}
 }
 
-private class FontQuad
+private class FontQuad extends Quad
 {
 	public var lineNumber:Int;
 	public var wordNumber:Int;
-	
 	public var sizeScale:Float;
     public var bitmapChar:BitmapChar;
     public var character:Int;
     public var wordWidth:Float;
-	
 	public var bound:AABB2;
 	
 	public function new()
 	{
+		super();
 		bound = new AABB2();
 	}
 	
-	public var x(get_x, set_x):Float;
-	inline function get_x():Float
+	override public function free():Void 
+	{
+		super.free();
+		bitmapChar = null;
+		bound = null;
+	}
+	
+	public var minX(get_minX, set_minX):Float;
+	inline function get_minX():Float
 	{
 		return bound.minX;
 	}
-	inline function set_x(value:Float):Float
+	inline function set_minX(value:Float):Float
 	{
 		bound.setMinX(value);
 		return value;
 	}
 	
-	public var y(get_y, set_y):Float;
-	inline function get_y():Float
+	public var minY(get_minY, set_minY):Float;
+	inline function get_minY():Float
 	{
 		return bound.minY;
 	}
-	inline function set_y(value:Float):Float
+	inline function set_minY(value:Float):Float
 	{
 		bound.setMinY(value);
 		return value;
