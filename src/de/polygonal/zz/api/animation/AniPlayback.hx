@@ -31,66 +31,71 @@ package de.polygonal.zz.api.animation;
 
 import de.polygonal.core.sys.Entity;
 import de.polygonal.core.sys.EntityPriority;
+import haxe.ds.StringMap;
 
 class AniPlayback extends Entity
 {
-	public var currAnimationId(default, null):String;
+	public var curAnimationId(default, null):String;
 	
-	var _sequenceMap:haxe.ds.StringMap<AniSequence>;
-	var _currSequence:AniSequence;
+	var _sequenceMap:StringMap<AniSequence>;
+	var _curSequence:AniSequence;
 	var _time = 0.;
 	
 	public function new()
 	{
 		super();
 		priority = EntityPriority.ANIMATION;
-		_currSequence = null;
-		_sequenceMap = new haxe.ds.StringMap();
+		_curSequence = null;
+		_sequenceMap = new StringMap();
+		tick = false;
 	}
 	
 	inline public function getFrame():AniFrame
 	{
-		return _currSequence == null ? null : _currSequence.getFrameAtTime(_time);
+		return _curSequence == null ? null : _curSequence.getFrameAtTime(_time);
 	}
 	
 	inline public function isFinished():Bool
 	{
-		var s = _currSequence;
+		var s = _curSequence;
 		return s != null && !s.loop && _time >= s.length && s.frameCount > 1;
 	}
 	
 	public function addAnimation(x:AniSequence):Void
 	{
+		D.assert(x != null, 'x != null');
 		_sequenceMap.set(x.id, x);
 	}
 	
-	public function playAnimation(id:String):Void
+	public function playAnimation(id:String, resetTime = true):Void
 	{
 		var sequence = _sequenceMap.get(id);
-		if (_currSequence != sequence)
+		if (sequence == null)
+			L.w('animation "$id" does not exist');
+		if (_curSequence != sequence)
 		{
-			currAnimationId = id;
-			_currSequence = sequence;
-			_time = 0;
+			curAnimationId = id;
+			_curSequence = sequence;
+			if (resetTime) _time = 0;
 			tick = true;
 		}
 	}
 	
 	public function stopAnimation():Void
 	{
-		_currSequence = null;
+		_curSequence = null;
 		tick = false;
 	}
 	
 	override function onFree():Void
 	{
 		_sequenceMap = null;
-		_currSequence = null;
+		_curSequence = null;
 	}
 	
 	override function onTick(timeDelta:Float, parent:Entity):Void
 	{
-		if (_currSequence != null)
+		if (_curSequence != null)
 			_time += timeDelta;
 	}
 }
