@@ -34,6 +34,7 @@ import de.polygonal.core.math.Mathematics;
 import de.polygonal.core.math.TrigApprox;
 import de.polygonal.core.math.Vec3;
 import de.polygonal.ds.Bits;
+import de.polygonal.ds.HashableItem;
 import de.polygonal.ds.TreeNode;
 import de.polygonal.ds.Visitable;
 import de.polygonal.zz.render.effect.Effect;
@@ -51,7 +52,7 @@ using de.polygonal.ds.BitFlags;
 	BIT_MODEL_CHANGED,
 	BIT_UPDATE_WORLD_BOUND
 ], true))
-class Spatial
+class Spatial extends HashableItem
 {
 	/**
 	 * The id of this object.<br/>
@@ -66,12 +67,12 @@ class Spatial
 	public var userData:Dynamic;
 	
 	/**
-	 * Local transformation.
+	 * Local transformation (relative to parent node).
 	 */
 	public var local(default, null):XForm;
 	
 	/**
-	 * World transformation.
+	 * World transformation (relative to root node).
 	 */
 	public var world(default, null):XForm;
 	
@@ -172,6 +173,8 @@ class Spatial
 	
 	function new(id:String)
 	{
+		super();
+
 		this.id = id;
 		treeNode = new TreeNode<Spatial>(this);
 		local = new XForm();
@@ -461,7 +464,9 @@ class Spatial
 			world.set(local); //root node
 	}
 	
-	function updateWorldBound():Void {}
+	function updateWorldBound():Void
+	{
+	}
 	
 	function propagateBoundToRoot():Void
 	{
@@ -482,7 +487,9 @@ class Spatial
 		pushState(stacks);
 	}
 	
-	function propagateRenderStateUpdate(stacks:GlobalStateStacks):Void {}
+	function propagateRenderStateUpdate(stacks:GlobalStateStacks):Void
+	{
+	}
 	
 	function syncLocalXForm2d():Void
 	{
