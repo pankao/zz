@@ -27,16 +27,19 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.flash.misc;
+package de.polygonal.zz.render.module.flash.cpu;
 
+import de.polygonal.core.fmt.NumberFormat;
+import de.polygonal.core.math.Mat33;
 import de.polygonal.core.math.Mat44;
 import de.polygonal.core.math.Vec3;
 import de.polygonal.ds.IntHashTable;
+import de.polygonal.flash.display.DisplayListUtil;
 import de.polygonal.gl.color.RGBA;
 import de.polygonal.zz.render.effect.Effect;
+import de.polygonal.zz.render.effect.Effect.*;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
-import de.polygonal.zz.render.module.flash.util.DisplayListUtil;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.zz.scene.Renderer;
@@ -52,19 +55,20 @@ import flash.geom.Point;
 import flash.geom.Rectangle;
 import de.polygonal.core.util.Assert;
 
-import de.polygonal.zz.render.effect.Effect.*;
+using de.polygonal.ds.BitFlags;
 
 class BitmapDataRenderer extends Renderer
 {
-	var _bitmap:Bitmap;
-	var _canvas:BitmapData;
+	public var canvas(default, null):Bitmap;
 	
+	var _bitmap:BitmapData;
 	var _scratchMatrix:Matrix;
 	var _scratchColorTransform:ColorTransform;
 	var _scratchColorTransformAlpha:ColorTransform;
 	var _scratchRect:Rectangle;
 	var _scratchPoint:Point;
 	var _scratchShape:Shape;
+	var _scratchXForm:XForm;
 	
 	var _tileLookup:IntHashTable<Tile>;
 	
@@ -72,8 +76,8 @@ class BitmapDataRenderer extends Renderer
 	{
 		super(width, height);
 		
-		_canvas = new BitmapData(this.width, this.height, true, 0);
-		_bitmap = new Bitmap(_canvas, PixelSnapping.NEVER, false);
+		_bitmap = new BitmapData(this.width, this.height, true, 0);
+		canvas = new Bitmap(_bitmap, PixelSnapping.NEVER, false);
 		
 		_scratchMatrix = new Matrix();
 		_scratchColorTransform = new ColorTransform();
@@ -82,16 +86,19 @@ class BitmapDataRenderer extends Renderer
 		_scratchPoint = new Point();
 		_tileLookup = new IntHashTable(512, 512, false, 512);
 		_scratchShape = new Shape();
+		_scratchXForm = new XForm();
 		
 		drawDeferred = null;
+		
+		RenderSurface.root.addChild(canvas);
 	}
 	
 	override public function free():Void
 	{
 		super.free();
 		
-		_canvas.dispose();
-		_canvas = null;
+		_bitmap.dispose();
+		_bitmap = null;
 		
 		_scratchMatrix = null;
 		_scratchColorTransform = null;
@@ -103,13 +110,13 @@ class BitmapDataRenderer extends Renderer
 		_tileLookup.free();
 		_tileLookup = null;
 		
-		DisplayListUtil.remove(_bitmap);
-		_bitmap = null;
+		DisplayListUtil.remove(canvas);
+		canvas = null;
 	}
 	
 	public function getBitmap():Bitmap
 	{
-		return _bitmap;
+		return canvas;
 	}
 	
 	override public function createTex(image:Image):Tex
@@ -133,14 +140,14 @@ class BitmapDataRenderer extends Renderer
 			else
 				(cast(effect.alpha * 0xff) << 24) | effect.color;
 			
-			if (effect.flags & EFF_COLOR_XFORM > 0)
+			if (effect.flags & EFFECT_COLOR_XFORM > 0)
 				color = effect.colorXForm.transformRGBA(color);
 			
 			_scratchRect.x = t.x;
 			_scratchRect.y = t.y;
 			_scratchRect.width = s.x;
 			_scratchRect.height = s.y;
-			_canvas.fillRect(_scratchRect, color);
+			_bitmap.fillRect(_scratchRect, color);
 			return;
 		}
 		
@@ -152,11 +159,17 @@ class BitmapDataRenderer extends Renderer
 		var flashMatrix = transformationToMatrix(world, s.x, s.y, _scratchMatrix);
 		var flashColorTransform = getColorTransform(effect);
 		
-		_canvas.draw(_scratchShape, flashMatrix, flashColorTransform, null, null, effect.smooth);
+		var smooth = false;//effect.smooth;
+		_bitmap.draw(_scratchShape, flashMatrix, flashColorTransform, null, null, smooth);
 	}
 	
 	override public function drawTextureEffect(effect:TextureEffect):Void
 	{
+		//create bitmap tile for repeated use..
+		//create/retrurn  MovieClip  for geometry
+		
+		//var mc <- currGeometry.key
+		
 		var tex = effect.tex;
 		
 		var uv = effect.crop;
@@ -193,11 +206,11 @@ class BitmapDataRenderer extends Renderer
 		{
 			if (s.x == uv.w && s.y == uv.h)
 			{
-				if (effect.flags == EFF_TEXTURE)
+				if (effect.flags == EFFECT_TEXTURE)
 				{
 					_scratchPoint.x = t.x;
 					_scratchPoint.y = t.y;
-					_canvas.copyPixels(tile.b, tile.r, _scratchPoint, null, null, true);
+					_bitmap.copyPixels(tile.b, tile.r, _scratchPoint, null, null, true);
 					return;
 				}
 			}
@@ -206,7 +219,8 @@ class BitmapDataRenderer extends Renderer
 		var flashMatrix = transformationToMatrix(world, uv.w, uv.h, _scratchMatrix);
 		var flashColorTransform = getColorTransform(effect);
 		
-		_canvas.draw(tile.b, flashMatrix, flashColorTransform, null, null, effect.smooth);
+		var smooth = false;//effect.smooth;
+		_bitmap.draw(tile.b, flashMatrix, flashColorTransform, null, null, smooth);
 	}
 	
 	override public function drawSpriteSheetEffect(effect:SpriteSheetEffect):Void
@@ -246,11 +260,11 @@ class BitmapDataRenderer extends Renderer
 		{
 			if (s.x == uv.w && s.y == uv.h)
 			{
-				if (effect.flags == EFF_TEXTURE)
+				if (effect.flags == EFFECT_TEXTURE)
 				{
 					_scratchPoint.x = t.x;
 					_scratchPoint.y = t.y;
-					_canvas.copyPixels(tile.b, tile.r, _scratchPoint, null, null, true);
+					_bitmap.copyPixels(tile.b, tile.r, _scratchPoint, null, null, true);
 					return;
 				}
 			}
@@ -258,7 +272,7 @@ class BitmapDataRenderer extends Renderer
 		
 		var flashMatrix = transformationToMatrix(world, uv.w, uv.h, _scratchMatrix);
 		var flashColorTransform = getColorTransform(effect);
-		_canvas.draw(tile.b, flashMatrix, flashColorTransform, null, null, effect.smooth);
+		_bitmap.draw(tile.b, flashMatrix, flashColorTransform, null, null, false);
 	}
 	
 	override public function onViewPortChange():Void
@@ -268,17 +282,17 @@ class BitmapDataRenderer extends Renderer
 	
 	override function onBeginScene():Void
 	{
-		_canvas.lock();
+		_bitmap.lock();
 		var r = _backgroundColor.x;
 		var g = _backgroundColor.y;
 		var b = _backgroundColor.z;
 		var a = _backgroundColor.w;
-		_canvas.fillRect(_canvas.rect, RGBA.ofFloat4(r, g, b, a));
+		_bitmap.fillRect(_bitmap.rect, RGBA.ofFloat4(r, g, b, a));
 	}
 	
 	override function onEndScene():Void
 	{
-		_canvas.unlock();
+		_bitmap.unlock();
 	}
 	
 	inline function transformationToMatrix(xf:XForm, w:Float, h:Float, m:Matrix):Matrix
@@ -292,15 +306,22 @@ class BitmapDataRenderer extends Renderer
 		D.assert(xf.isRSMatrix(), 'xf.isRSMatrix()');
 		#end
 		
+		var frame = getCamera().local;
+		if (!frame.isIdentity())
+		{
+			_scratchXForm.product(frame, xf);
+			_scratchXForm.setf(XForm.BIT_HINT_RS_MATRIX);
+			xf = _scratchXForm;
+		}
+		
 		var r = xf.getRotate();
 		var s = xf.getScale();
-		var sx = s.x / w;
+		var sx = (s.x / w);
 		m.a = sx * r.m11;
 		m.b = sx * r.m21;
-		var sy = s.y / h;
+		var sy = (s.y / h);
 		m.c = sy * r.m12;
 		m.d = sy * r.m22;
-		
 		var v = xf.getTranslate();
 		m.tx = v.x;
 		m.ty = v.y;
@@ -312,16 +333,16 @@ class BitmapDataRenderer extends Renderer
 	{
 		var flags = effect.flags;
 		var ct = null;
-		if (flags & EFF_ALPHA > 0)
+		if (flags & EFFECT_ALPHA > 0)
 		{
 			ct = _scratchColorTransformAlpha;
 			ct.alphaMultiplier = effect.alpha;
 			
-			if (flags & EFF_COLOR_XFORM > 0)
+			if (flags & EFFECT_COLOR_XFORM > 0)
 				ct.concat(convert(effect));
 		}
 		else
-		if (flags & EFF_COLOR_XFORM > 0)
+		if (flags & EFFECT_COLOR_XFORM > 0)
 			ct = convert(effect);
 		return ct;
 	}

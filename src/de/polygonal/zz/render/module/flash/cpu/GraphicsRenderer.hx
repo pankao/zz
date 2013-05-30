@@ -27,7 +27,7 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package de.polygonal.zz.render.module.flash.misc;
+package de.polygonal.zz.render.module.flash.cpu;
 
 import de.polygonal.core.math.Vec2;
 import de.polygonal.core.math.Vec3;
@@ -131,6 +131,10 @@ class GraphicsRenderer extends Renderer
 		{
 			//bounding sphere position => screen space
 			var sphere = cast(node.worldBound, SphereBV).sphere;
+			
+			sphere.c.x += 800/2;
+			sphere.c.y += 480/2;
+			
 			drawCircle(sphere.c.x, sphere.c.y, sphere.r * 1.02, 0xff0000);
 		}
 		
