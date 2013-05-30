@@ -75,6 +75,7 @@ class Cocos2dv3Format extends SpriteAtlasFormat
 					nameList.push(name);
 					untrimmedSize.push(spriteSize);
 					trimOffset.push(spriteOffset);
+					trimFlag.push(trimmed);
 				}
 				
 				c = c.next;

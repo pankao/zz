@@ -250,10 +250,10 @@ class RenderSystem
 		L.d('register sprite atlas with imageId "$imageId"');
 	}
 	
-	static public function registerSpriteStrip(imageId:String, rows:Int, cols:Int, crop:Rect = null):Void
+	static public function registerSpriteStrip(imageId:String, rows:Int, cols:Int):Void
 	{
 		var tex = initTexture(imageId);
-		var strip = new SpriteStrip(tex, rows, cols, crop);
+		var strip = new SpriteStrip(tex, rows, cols);
 		if (_sheetMap == null) _sheetMap = new StringMap();
 		_sheetMap.set(imageId, strip);
 	}

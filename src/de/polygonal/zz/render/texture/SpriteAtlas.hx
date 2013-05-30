@@ -29,55 +29,33 @@
  */
 package de.polygonal.zz.render.texture;
 
-import de.polygonal.ds.DA;
-import de.polygonal.core.util.Assert;
+import de.polygonal.zz.render.texture.Size;
 
 class SpriteAtlas extends SpriteSheet
 {
-	var _format:SpriteAtlasFormat;
-	
 	public function new(tex:Tex, format:SpriteAtlasFormat)
 	{
-		super(tex);
+		super(tex, format.frameList.length);
 		__spriteAtlas = this;
-		_format = format;
-		
-		frameCount = format.frameList.length;
 		
 		for (i in 0...frameCount)
 		{
 			var frame = format.frameList[i];
-			if (frame != null) addCropRectAt(i, format.nameList[i], frame, tex.isNormalize);
+			var size = new Size(Std.int(frame.w), Std.int(frame.h));
+			
+			if (frame != null)
+			{
+				addCropRectAt(i, format.nameList[i], frame, size, tex.isNormalize);
+				
+				if (format.trimFlag[i])
+				{
+					_trimFlagList.set(i, true);
+					_trimOffset.set(i, format.trimOffset[i]);
+					_untrimmedSize.set(i, format.untrimmedSize[i]);
+				}
+				else
+					_untrimmedSize.set(i, size);
+			}
 		}
-	}
-	
-	override public function free():Void
-	{
-		super.free();
-		_format = null;
-	}
-	
-	inline public function getTrimOffset(id:String):Size
-	{
-		return getTrimOffsetAt(getFrameIndex(id));
-	}
-	
-	inline public function getTrimOffsetAt(index:Int):Size
-	{
-		D.assert(index >= 0 && index < _cropList.size(), 'index out of bound ($index)');
-		
-		return _format.trimOffset[index];
-	}
-	
-	inline public function getUntrimmedSize(id:String):Size
-	{
-		return getUntrimmedSizeAt(getFrameIndex(id));
-	}
-	
-	inline public function getUntrimmedSizeAt(index:Int):Size
-	{
-		D.assert(index >= 0 && index < _cropList.size(), 'index out of bound ($index)');
-		
-		return _format.untrimmedSize[index];
 	}
 }

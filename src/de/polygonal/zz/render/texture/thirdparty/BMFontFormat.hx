@@ -62,8 +62,8 @@ class BMFontFormat extends SpriteAtlasFormat
 			charSet.textureW     = fast.node.common.att.scaleW.parseInt();
 			charSet.textureH     = fast.node.common.att.scaleH.parseInt();
 			
-			sheetW = charSet.textureW;
-			sheetH = charSet.textureH;
+			sheetWidth = charSet.textureW;
+			sheetHeight = charSet.textureH;
 			
 			var minCode = Limits.INT16_MAX;
 			var maxCode = -1;
@@ -76,8 +76,8 @@ class BMFontFormat extends SpriteAtlasFormat
 			
 			for (i in 0...maxCode)
 			{
-				frames[i] = new Rect(0, 0, 1, 1);
-				names[i] = 'undefined';
+				frameList[i] = new Rect(0, 0, 1, 1);
+				nameList[i] = 'undefined';
 			}
 			
 			for (e in fast.node.chars.nodes.char)
@@ -98,8 +98,8 @@ class BMFontFormat extends SpriteAtlasFormat
 				if (code == -1) continue;
 				
 				var crop = new Rect(char.x, char.y, char.w, char.h);
-				frames[code] = crop;
-				names[code] = String.fromCharCode(code);
+				frameList[code] = crop;
+				nameList[code] = String.fromCharCode(code);
 			}
 			
 			charSet.kerning = new IntHash();

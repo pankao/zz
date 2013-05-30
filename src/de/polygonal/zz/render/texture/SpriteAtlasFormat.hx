@@ -47,6 +47,11 @@ class SpriteAtlasFormat
 	public var frameList:Array<Rect>;
 	
 	/**
+	 * Trim flag for each sprite.
+	 */
+	public var trimFlag:Array<Bool>;
+	
+	/**
 	 * The size of each sprite before trimming.
 	 */
 	public var untrimmedSize:Array<Size>;
@@ -66,6 +71,7 @@ class SpriteAtlasFormat
 		sheetWidth = -1;
 		sheetHeight = -1;
 		frameList = [];
+		trimFlag = [];
 		untrimmedSize = [];
 		trimOffset = [];
 		nameList = [];

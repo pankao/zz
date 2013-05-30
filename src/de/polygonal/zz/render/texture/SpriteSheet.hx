@@ -30,9 +30,9 @@
 package de.polygonal.zz.render.texture;
 
 import de.polygonal.ds.DA;
-import de.polygonal.core.util.Assert;
-import haxe.ds.StringMap;
 import haxe.ds.IntMap;
+import haxe.ds.StringMap;
+import de.polygonal.core.util.Assert;
 
 class SpriteSheet
 {
@@ -46,30 +46,41 @@ class SpriteSheet
 	var _cropList:DA<Rect>;
 	var _sizeList:DA<Size>;
 	
+	var _trimFlagList:DA<Bool>;
+	var _trimOffset:DA<Size>;
+	var _untrimmedSize:DA<Size>;
+	
 	var _sheetW:Int;
 	var _sheetH:Int;
 	
 	var _indexMap:StringMap<Int>;
 	var _nameMap:IntMap<String>;
 	
+	var _size:Int;
+	
 	public var __spriteStrip:SpriteStrip;
 	public var __spriteAtlas:SpriteAtlas;
 	
-	function new(tex:Tex)
+	function new(tex:Tex, size:Int)
 	{
 		this.tex = tex;
+		frameCount = size;
 		
 		_cropMap = new StringMap();
 		_sizeMap = new StringMap();
 		
-		_cropList = new DA<Rect>();
-		_sizeList = new DA<Size>();
+		_cropList = new DA<Rect>(size, size);
+		_sizeList = new DA<Size>(size, size);
 		
-		_indexMap = new StringMap();
-		_nameMap = new IntMap();
+		_trimFlagList = new DA<Bool>(size, size).fill(false, size);
+		_trimOffset = new DA<Size>(size, size).fill(new Size(), size);
+		_untrimmedSize = new DA<Size>(size, size);
 		
 		_sheetW = tex.image.w;
 		_sheetH = tex.image.h;
+		
+		_indexMap = new StringMap();
+		_nameMap = new IntMap();
 		
 		__spriteStrip = null;
 		__spriteAtlas = null;
@@ -84,6 +95,13 @@ class SpriteSheet
 		
 		_cropList = null;
 		_sizeList = null;
+		
+		_trimFlagList.free();
+		_trimFlagList = null;
+		_trimOffset.free();
+		_trimOffset = null;
+		_untrimmedSize.free();
+		_untrimmedSize = null;
 		
 		_indexMap = null;
 		
@@ -103,9 +121,7 @@ class SpriteSheet
 	
 	inline public function getCropRect(id:String):Rect
 	{
-		#if debug
 		D.assert(_cropMap.exists(id), '_cropMap.exists($id)');
-		#end
 		
 		return _cropMap.get(id);
 	}
@@ -115,32 +131,41 @@ class SpriteSheet
 		return _cropList.get(index);
 	}
 	
+	inline public function isTrimmed(index:Int):Bool
+	{
+		return _trimFlagList.get(index);
+	}
+	
+	inline public function getTrimOffsetAt(index:Int):Size
+	{
+		return _trimOffset.get(index);
+	}
+	
+	inline public function getUntrimmedSizeAt(index:Int):Size
+	{
+		return _untrimmedSize.get(index);
+	}
+	
 	inline public function getFrameIndex(id:String):Int
 	{
-		#if debug
 		D.assert(_indexMap.exists(id), '_indexMap.exists($id)');
-		#end
 		
 		return _indexMap.get(id);
 	}
 	
 	inline public function getFrameName(index:Int):String
 	{
-		#if debug
 		D.assert(_nameMap.exists(index), '_nameMap.exists($index)');
-		#end
 		
 		return _nameMap.get(index);
 	}
 	
-	function addCropRectAt(index:Int, id:String, crop:Rect, normalize:Bool):Void
+	function addCropRectAt(index:Int, id:String, crop:Rect, size:Size, normalize:Bool):Void
 	{
 		_indexMap.set(id, index);
 		_nameMap.set(index, id);
 		
 		crop = crop.clone();
-		
-		var size = new Size(Std.int(crop.w), Std.int(crop.h));
 		
 		_cropMap.set(id, crop);
 		_cropMap.set(cast index, crop);
