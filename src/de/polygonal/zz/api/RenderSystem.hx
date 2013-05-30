@@ -148,9 +148,9 @@ class RenderSystem
 	}
 	
 	//adds x to the scene graph root node
-	public static function addChild(x:Spatial):Void
+	public static function addChild(x:Tile):Void
 	{
-		sceneGraph.addChild(x);
+		sceneGraph.addChild(x.sgn);
 	}
 	
 	public static function setBackgroundColor(color:ColorRGBA):Void
