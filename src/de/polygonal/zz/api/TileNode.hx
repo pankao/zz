@@ -36,7 +36,7 @@ import de.polygonal.zz.scene.Spatial;
 import de.polygonal.core.util.Assert;
 
 /**
- * A TileNode object wraps a <em>Node</em> to provide a simple interface.
+ * A TileNode object wraps a <em>Node</em> node to provide a simple interface.
  */
 @:access(de.polygonal.zz.api.Tile)
 class TileNode
