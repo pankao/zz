@@ -113,21 +113,24 @@ class Cocos2dv3Format extends SpriteAtlasFormat
 			
 			case 'string':
 				var s = data.value;
-				if (~/{{?\d/.match(s))
+
+				var ereg = ~/{(-?\d+),(-?\d+)},{(-?\d+),(-?\d+)}/;
+				if (ereg.match(s))
 				{
-					var values:Array<Int> = [];
-					var r = ~/\d+/;
-					while (r.match(s))
-					{
-						values.push(Std.parseInt(r.matched(0)));
-						s = r.replace(s, '');
-					}
-					
-					if (values.length == 2)
-						return new Size(values[0], values[1]);
-					else
-						return new Rect(values[0], values[1], values[2], values[3]);
+					var x0 = Std.parseInt(ereg.matched(1));
+					var y0 = Std.parseInt(ereg.matched(2));
+					var x1 = Std.parseInt(ereg.matched(3));
+					var y1 = Std.parseInt(ereg.matched(4));
+					return new Rect(x0, y0, x1, y1);
 				}
+				ereg = ~/{(-?\d+),(-?\d+)}/;
+				if (ereg.match(s))
+				{
+					var x = Std.parseInt(ereg.matched(1));
+					var y = Std.parseInt(ereg.matched(2));
+					return new Size(x, y);
+				}
+
 				return s;
 		}
 		
