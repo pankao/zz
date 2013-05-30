@@ -47,11 +47,11 @@ class Cocos2dv3Format extends SpriteAtlasFormat
 		{
 			var metadata = getKey(tree, 'metadata');
 			var format:Int = getKeyValue(metadata, 'format');
-			if (format != 3) throw 'only v3 is supported';
+			if (format != 3) throw 'only Cocos2D v3 is supported';
 			
 			var size:Size = getKeyValue(metadata, 'size');
-			sheetW = Std.int(size.x);
-			sheetH = Std.int(size.y);
+			sheetWidth = Std.int(size.x);
+			sheetHeight = Std.int(size.y);
 			
 			var frames = getKey(tree, 'frames');
 			
@@ -60,18 +60,21 @@ class Cocos2dv3Format extends SpriteAtlasFormat
 			{
 				if (c.val.name == 'key')
 				{
+					//http://www.cocos2d-iphone.org/forums/topic/zwoptex-and-their-plist-explanation/
 					var name = c.val.value;
 					var dict = c.next;
 					var sourceColorRect:Rect  = getKeyValue(c, 'sourceColorRect');
-					var spriteOffset:Size     = getKeyValue(c, 'spriteOffset');
-					var spriteSize:Size       = getKeyValue(c, 'spriteSize');
-					var spriteSourceSize:Size = getKeyValue(c, 'spriteSourceSize');
-					var trimmed:Bool          = getKeyValue(c, 'spriteTrimmed');
-					var textureRect:Rect      = getKeyValue(c, 'textureRect');
-					var textureRotated:Bool   = getKeyValue(c, 'textureRotated');
+					var spriteOffset:Size     = getKeyValue(c, 'spriteOffset'); //sprite offset due to trimming
+					var spriteSize:Size       = getKeyValue(c, 'spriteSize'); //sprite size before trimming
+					var spriteSourceSize:Size = getKeyValue(c, 'spriteSourceSize'); //sprite size after trimming
+					var trimmed:Bool          = getKeyValue(c, 'spriteTrimmed'); //true if sprite was trimmed
+					var textureRect:Rect      = getKeyValue(c, 'textureRect'); //texture crop rectangle
+					var textureRotated:Bool   = getKeyValue(c, 'textureRotated'); //true if sprite was rotated
 					
-					this.frames.push(textureRect);
-					this.names.push(name);
+					frameList.push(textureRect);
+					nameList.push(name);
+					untrimmedSize.push(spriteSize);
+					trimOffset.push(spriteOffset);
 				}
 				
 				c = c.next;
@@ -79,7 +82,7 @@ class Cocos2dv3Format extends SpriteAtlasFormat
 		}
 		catch (error:Dynamic)
 		{
-			trace('invalid xml file: ' + error);
+			L.e('invalid Cocos2D v3 file: $error');
 		}
 	}
 	
@@ -113,7 +116,7 @@ class Cocos2dv3Format extends SpriteAtlasFormat
 			
 			case 'string':
 				var s = data.value;
-
+				
 				var ereg = ~/{(-?\d+),(-?\d+)},{(-?\d+),(-?\d+)}/;
 				if (ereg.match(s))
 				{
@@ -130,7 +133,7 @@ class Cocos2dv3Format extends SpriteAtlasFormat
 					var y = Std.parseInt(ereg.matched(2));
 					return new Size(x, y);
 				}
-
+				
 				return s;
 		}
 		

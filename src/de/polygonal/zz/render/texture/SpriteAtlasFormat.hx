@@ -31,16 +31,43 @@ package de.polygonal.zz.render.texture;
 
 class SpriteAtlasFormat
 {
-	public var sheetW = 0;
-	public var sheetH = 0;
+	/**
+	 * The sheet width in px.
+	 */
+	public var sheetWidth:Int;
 	
-	public var frames:Array<Rect>;
+	/**
+	 * The sheet height in px.
+	 */
+	public var sheetHeight:Int;
 	
-	public var names:Array<String>;
+	/**
+	 * The crop rectangle of each sprite inside the sprite sheet.
+	 */
+	public var frameList:Array<Rect>;
+	
+	/**
+	 * The size of each sprite before trimming.
+	 */
+	public var untrimmedSize:Array<Size>;
+	
+	/**
+	 * The offset of each sprite in px. due to trimming.
+	 */
+	public var trimOffset:Array<Size>;
+	
+	/**
+	 * The name of each sprite.
+	 */
+	public var nameList:Array<String>;
 	
 	public function new()
 	{
-		frames = [];
-		names = [];
+		sheetWidth = -1;
+		sheetHeight = -1;
+		frameList = [];
+		untrimmedSize = [];
+		trimOffset = [];
+		nameList = [];
 	}
 }

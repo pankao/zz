@@ -29,18 +29,55 @@
  */
 package de.polygonal.zz.render.texture;
 
+import de.polygonal.ds.DA;
+import de.polygonal.core.util.Assert;
+
 class SpriteAtlas extends SpriteSheet
 {
+	var _format:SpriteAtlasFormat;
+	
 	public function new(tex:Tex, format:SpriteAtlasFormat)
 	{
 		super(tex);
 		__spriteAtlas = this;
+		_format = format;
 		
-		frameCount = format.frames.length;
+		frameCount = format.frameList.length;
+		
 		for (i in 0...frameCount)
 		{
-			var frame = format.frames[i];
-			if (frame != null) addCropRectAt(i, format.names[i], frame, tex.isNormalize);
+			var frame = format.frameList[i];
+			if (frame != null) addCropRectAt(i, format.nameList[i], frame, tex.isNormalize);
 		}
+	}
+	
+	override public function free():Void
+	{
+		super.free();
+		_format = null;
+	}
+	
+	inline public function getTrimOffset(id:String):Size
+	{
+		return getTrimOffsetAt(getFrameIndex(id));
+	}
+	
+	inline public function getTrimOffsetAt(index:Int):Size
+	{
+		D.assert(index >= 0 && index < _cropList.size(), 'index out of bound ($index)');
+		
+		return _format.trimOffset[index];
+	}
+	
+	inline public function getUntrimmedSize(id:String):Size
+	{
+		return getUntrimmedSizeAt(getFrameIndex(id));
+	}
+	
+	inline public function getUntrimmedSizeAt(index:Int):Size
+	{
+		D.assert(index >= 0 && index < _cropList.size(), 'index out of bound ($index)');
+		
+		return _format.untrimmedSize[index];
 	}
 }
