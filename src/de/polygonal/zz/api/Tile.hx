@@ -174,13 +174,13 @@ class Tile
 	}
 	
 	public var size(get_size, set_size):Float;
-	function get_size():Float
+	inline function get_size():Float
 	{
 		D.assert(_width == _height, 'width != height');
 		
 		return _width;
 	}
-	function set_size(value:Float):Float
+	inline function set_size(value:Float):Float
 	{
 		D.assert(_width != 0, 'use applyColor(), applyTexture() or applySpriteSheet to define an initial width/height');
 		
