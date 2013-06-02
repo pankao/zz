@@ -39,14 +39,23 @@ import de.polygonal.core.util.Assert;
  * A TileNode object wraps a <em>Node</em> node to provide a simple interface.
  */
 @:access(de.polygonal.zz.api.Tile)
-class TileNode
+class TileNode extends AbstractTile
 {
-	public var sgn(default, null):Node;
-	
 	public function new(id:String = null)
 	{
-		sgn = new Node();
-		sgn.id = id;
+		super();
+		
+		sgn = new Node(id);
+		TileManager.register(this, sgn);
+	}
+	
+	public function free():Void
+	{
+		if (sgn == null) return;
+		
+		TileManager.unregister(sgn);
+		sgn.free();
+		sgn = null;
 	}
 	
 	public var id(get_id, set_id):String;
@@ -116,83 +125,115 @@ class TileNode
 		sgn.updateGeometricState(false, false);
 	}
 	
-	public function addChild(child:Tile):Void
+	public function addChild(child:Tile):TileNode
 	{
 		D.assert(child != null, 'child is null');
 		D.assert(child.sgn.treeNode.parent == null, 'child has a parent, call child.remove() first');
 		
+		sgn.__node.addChild(child.sgn);
 		child.parent = this;
-		sgn.addChild(child.sgn);
+		return this;
 	}
 	
-	public function removeChild(child:Tile):Void
+	public function removeChild(child:Tile):TileNode
 	{
 		D.assert(child != null, 'child is null');
 		D.assert(child.parent == this, 'not a child of this node');
 		
-		sgn.removeChild(child.sgn);
+		sgn.__node.removeChild(child.sgn);
+		child.parent = null;
+		return this;
 	}
 	
-	public function addChildAt(child:Tile, index:Int):Void
+	public function addChildAt(child:Tile, index:Int):TileNode
 	{
 		D.assert(child != null, 'child is null');
 		D.assert(child.sgn.treeNode.parent == null, 'child has a parent, call child.remove() first');
-		D.assert(index >= 0 || index < sgn.treeNode.numChildren(), 'index out of range ($index)');
+		D.assert(index >= 0 && index <= sgn.treeNode.numChildren(), 'index $index out of range');
 		
-		sgn.addChildAt(child.sgn, index);
+		sgn.__node.addChildAt(child.sgn, index);
+		child.parent = this;
+		return this;
 	}
 	
-	public function removeChildAt(index:Int):Void
+	public function removeChildAt(index:Int):TileNode
 	{
-		D.assert(index >= 0 || index < sgn.treeNode.numChildren() - 1, 'index out of range ($index)');
+		D.assert(sgn.treeNode.hasChildren(), 'node has no children');
+		D.assert(index >= 0 || index < sgn.treeNode.numChildren() - 1, 'index $index out of range');
 		
-		sgn.removeChildAt(index);
+		var child = sgn.__node.removeChildAt(index);
+		cast(TileManager.ofSpatial(child), Tile).parent = null;
+		return this;
 	}
 	
 	public function removeChildren(beginIndex = 0, count = -1):Void
 	{
 		D.assert(sgn.isNode(), 'no children');
 		
-		sgn.removeChildren(beginIndex + 1, count);
+		var i = beginIndex + 1;
+		var n = count;
+		var j = 0;
+		var c = sgn.treeNode.children;
+		while (j < i)
+		{
+			c = c.next;
+			j++;
+		}
+		j = 0;
+		while (j < n)
+		{
+			var next = c.next;
+			removeChild(cast TileManager.ofSpatial(c.val));
+			c = next;
+			j++;
+		}
 	}
 	
 	public function getChildAt(index:Int):Tile
 	{
-		D.assert(index >= 0 && index <= sgn.treeNode.numChildren() - 1, 'index out of range ($index)');
+		D.assert(sgn.treeNode.hasChildren(), 'node has no children');
+		D.assert(index >= 0 && index <= sgn.treeNode.numChildren() - 1, 'index $index out of range');
 		
-		return sgn.getChildAt(index).userData;
+		var spatial = sgn.__node.getChildAt(index);
+		return cast TileManager.ofSpatial(spatial);
 	}
 	
 	public function getChildIndex(child:Tile):Int
 	{
+		D.assert(sgn.treeNode.hasChildren(), 'node has no children');
 		D.assert(child.sgn.treeNode.parent == sgn.treeNode, 'not a parent of child');
 		
-		var i = sgn.getChildIndex(child.sgn);
-		if (child.sgn.isGeometry()) i--;
-		return i;
+		return sgn.__node.getChildIndex(child.sgn);
 	}
 	
 	public function setChildIndex(child:Tile, index:Int):Void
 	{
-		D.assert(index >= 0 && index < sgn.treeNode.numChildren() - 1, 'index %d out of range ($index)');
+		D.assert(sgn.treeNode.hasChildren(), 'node has no children');
+		D.assert(index >= 0 && index < sgn.treeNode.numChildren() - 1, 'index $index out of range');
 		
-		sgn.setChildIndex(child.sgn, index + 1);
+		sgn.__node.setChildIndex(child.sgn, index + 1);
 	}
 	
 	public function getChildById(id:String):Tile
 	{
-		D.assert(sgn.isNode(), 'no children');
+		D.assert(sgn.treeNode.hasChildren(), 'node has no children');
 		
-		return sgn.getChildById(id).userData;
+		var child = sgn.__node.getChildById(id);
+		if (child != null) return cast TileManager.ofSpatial(child);
+		return null;
 	}
 	
 	public function swapChildren(child1:Tile, child2:Tile):Void
 	{
-		sgn.swapChildren(child1.sgn, child2.sgn);
+		D.assert(sgn.treeNode.hasChildren(), 'node has no children');
+		
+		sgn.__node.swapChildren(child1.sgn, child2.sgn);
 	}
 	
 	public function swapChildrenAt(index1:Int, index2:Int):Void
 	{
-		sgn.swapChildrenAt(index1, index2);
+		D.assert(sgn.treeNode.hasChildren(), 'node has no children');
+		
+		sgn.__node.swapChildrenAt(index1, index2);
 	}
 }

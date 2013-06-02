@@ -30,11 +30,9 @@
 package de.polygonal.zz.api;
  
 import de.polygonal.core.math.Mathematics;
-import de.polygonal.core.util.Assert;
 import de.polygonal.gl.color.ColorXForm;
 import de.polygonal.zz.render.texture.Size;
 import de.polygonal.zz.scene.AlphaState;
-import de.polygonal.zz.scene.Geometry;
 import de.polygonal.zz.scene.GlobalStateType;
 import de.polygonal.zz.scene.Quad;
 
@@ -51,24 +49,13 @@ enum BlendMode
 }
 
 //TODO scaleAbs, scaleSgn
-//TODO resolve tile from sgn
+//TODO don't change frame
+
 /**
  * A Tile object wraps a <em>Geometry</em> node to provide a simple interface.
  */
-class Tile
+class Tile extends AbstractTile
 {
-	/*static var _tileLookup:IntMap<Tile> = new IntMap<Tile>();
-	
-	inline public static function findTile(x:Spatial):Tile
-	{
-		return _tileLookup.get(x.key);
-	}*/
-	
-	/**
-	 * The geometry node that this Tile is controlling.
-	 */
-	public var sgn(default, null):Geometry;
-	
 	public var parent(default, null):TileNode;
 	
 	var _width:Float;
@@ -84,6 +71,8 @@ class Tile
 	
 	public function new(id:String = null)
 	{
+		super();
+		
 		_width = _centerX = 0;
 		_height = _centerY = 0;
 		_scaleX = 1;
@@ -95,22 +84,24 @@ class Tile
 		_blendMode = BlendMode.Inherit;
 		_smooth = true;
 		
-		//_tileLookup.set(sgn.key, this);
+		TileManager.register(this, sgn);
 	}
 	
 	public function free():Void
 	{
 		if (sgn == null) return;
+		TileManager.unregister(sgn);
 		
-		var e = sgn.effect;
-		if (e != null && e.hasTexture())
-			RenderSystem.freeTexture(sgn.effect.tex);
+		//TODO decrease texture usage counter
+		//var e = sgn.effect;
+		//if (e != null && e.hasTexture())
+			//RenderSystem.freeTexture(sgn.effect.tex);
 		
-		//_tileLookup.remove(sgn.key);
-		
-		sgn.remove();
 		sgn.free();
 		sgn = null;
+		parent = null;
+		_blendMode = null;
+		_trimOffset = null;
 	}
 	
 	public var id(get_id, set_id):String;
@@ -512,7 +503,7 @@ class Tile
 		_centerY = sgn.centerY = 0;
 	}
 	
-	public function update():Void
+	inline public function update():Void
 	{
 		//sgn.scaleX = _curW;
 		//sgn.scaleY = _curH;
