@@ -9,4 +9,8 @@ class AbstractTile
 	function new() 
 	{
 	}
+	
+	public function free():Void
+	{
+	}
 }

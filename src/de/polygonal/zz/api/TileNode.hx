@@ -49,7 +49,7 @@ class TileNode extends AbstractTile
 		TileManager.register(this, sgn);
 	}
 	
-	public function free():Void
+	override public function free():Void
 	{
 		if (sgn == null) return;
 		

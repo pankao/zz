@@ -35,6 +35,7 @@ import de.polygonal.zz.render.texture.Size;
 import de.polygonal.zz.scene.AlphaState;
 import de.polygonal.zz.scene.GlobalStateType;
 import de.polygonal.zz.scene.Quad;
+import de.polygonal.core.util.Assert;
 
 using de.polygonal.core.math.Mathematics;
 
@@ -87,7 +88,7 @@ class Tile extends AbstractTile
 		TileManager.register(this, sgn);
 	}
 	
-	public function free():Void
+	override public function free():Void
 	{
 		if (sgn == null) return;
 		TileManager.unregister(sgn);
