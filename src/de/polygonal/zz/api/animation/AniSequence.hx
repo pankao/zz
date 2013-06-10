@@ -29,17 +29,16 @@
  */
 package de.polygonal.zz.api.animation;
 
-import de.polygonal.core.sys.Entity;
 import de.polygonal.ds.ArrayUtil;
 import de.polygonal.core.util.Assert;
 
 class AniSequence
 {
 	public var id:String;
-	
-	public var length(default, null):Float;
 	public var loop(default, null):Bool;
+	public var length(default, null):Float;
 	public var frameCount(default, null):Int;
+	
 	var _lastFrameIndex:Int;
 	var _frames:Array<AniFrame>;
 	var _startTimes:Array<Float>;
@@ -49,8 +48,8 @@ class AniSequence
 		this.id = id;
 		this.loop = loop;
 		length = 0;
-		
 		frameCount = 0;
+		
 		_lastFrameIndex = 0;
 		_frames = new Array<AniFrame>();
 		_startTimes = new Array<Float>();

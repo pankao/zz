@@ -29,13 +29,27 @@
  */
 package de.polygonal.zz.api.animation;
 
-import de.polygonal.core.sys.Entity;
-import de.polygonal.core.sys.EntityPriority;
 import haxe.ds.StringMap;
 
-class AniPlayback extends Entity
+class AniPlayback
 {
 	public var curAnimationId(default, null):String;
+	
+	public var curFrame(get_curFrame, never):AniFrame;
+	inline function get_curFrame():AniFrame
+	{
+		if (_curSequence == null)
+			return null;
+		else
+			return _curSequence.getFrameAtTime(_time);
+	}
+	
+	public var finished(get_finished, never):Bool;
+	inline function get_finished():Bool
+	{
+		var s = _curSequence;
+		return s != null && !s.loop && _time >= s.length && s.frameCount > 1;
+	}
 	
 	var _sequenceMap:StringMap<AniSequence>;
 	var _curSequence:AniSequence;
@@ -43,22 +57,20 @@ class AniPlayback extends Entity
 	
 	public function new()
 	{
-		super();
-		priority = EntityPriority.ANIMATION;
 		_curSequence = null;
 		_sequenceMap = new StringMap();
-		tick = false;
 	}
 	
-	inline public function getFrame():AniFrame
+	public function free():Void
 	{
-		return _curSequence == null ? null : _curSequence.getFrameAtTime(_time);
+		_sequenceMap = null;
+		_curSequence = null;
 	}
 	
-	inline public function isFinished():Bool
+	public function advance(timeDelta:Float):Void
 	{
-		var s = _curSequence;
-		return s != null && !s.loop && _time >= s.length && s.frameCount > 1;
+		if (_curSequence != null)
+			_time += timeDelta;
 	}
 	
 	public function addAnimation(x:AniSequence):Void
@@ -71,31 +83,21 @@ class AniPlayback extends Entity
 	{
 		var sequence = _sequenceMap.get(id);
 		if (sequence == null)
-			L.w('animation "$id" does not exist');
+		{
+			L.w('animation \'$id\' does not exist');
+			return;
+		}
+		
 		if (_curSequence != sequence)
 		{
 			curAnimationId = id;
 			_curSequence = sequence;
 			if (resetTime) _time = 0;
-			tick = true;
 		}
 	}
 	
 	public function stopAnimation():Void
 	{
 		_curSequence = null;
-		tick = false;
-	}
-	
-	override function onFree():Void
-	{
-		_sequenceMap = null;
-		_curSequence = null;
-	}
-	
-	override function onTick(timeDelta:Float, parent:Entity):Void
-	{
-		if (_curSequence != null)
-			_time += timeDelta;
 	}
 }
