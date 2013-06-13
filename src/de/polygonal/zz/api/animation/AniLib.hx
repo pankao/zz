@@ -29,65 +29,21 @@
  */
 package de.polygonal.zz.api.animation;
 
-class AniPlayback
+import haxe.ds.StringMap;
+
+class AniLib
 {
-	public var curAnimationId(default, null):String;
+	static var _aniMap:StringMap<AniSequence> = null;
 	
-	public var curFrame(get_curFrame, never):AniFrame;
-	inline function get_curFrame():AniFrame
+	public static function addAnimation(x:AniSequence):Void
 	{
-		if (_curSequence == null)
-			return null;
-		else
-			return _curSequence.getFrameAtTime(_time);
+		if (_aniMap == null)
+			_aniMap = new StringMap<AniSequence>();
+		_aniMap.set(x.id, x);
 	}
 	
-	public var finished(get_finished, never):Bool;
-	inline function get_finished():Bool
+	public static function getAnimation(id:String):AniSequence
 	{
-		var s = _curSequence;
-		return s != null && !s.loop && _time >= s.length && s.frameCount > 1;
-	}
-	
-	var _curSequence:AniSequence;
-	var _time = 0.;
-	
-	public function new()
-	{
-		_curSequence = null;
-	}
-	
-	public function free():Void
-	{
-		_curSequence = null;
-	}
-	
-	public function advance(timeDelta:Float):Void
-	{
-		if (_curSequence != null)
-			_time += timeDelta;
-	}
-	
-	public function playAnimation(id:String, resetTime = true):Void
-	{
-		var sequence = AniLib.getAnimation(id);
-		if (sequence == null)
-		{
-			L.w('animation \'$id\' does not exist');
-			return;
-		}
-		
-		if (_curSequence != sequence)
-		{
-			curAnimationId = id;
-			_curSequence = sequence;
-			if (resetTime) _time = 0;
-		}
-	}
-	
-	public function stopAnimation():Void
-	{
-		curAnimationId = null;
-		_curSequence = null;
+		return _aniMap.get(id);
 	}
 }
