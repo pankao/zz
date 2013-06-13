@@ -45,7 +45,7 @@ class SpriteAtlas extends SpriteSheet
 			
 			if (frame != null)
 			{
-				addCropRectAt(i, format.nameList[i], frame, size, tex.isNormalize);
+				addCropRectAt(i, format.nameList[i], frame, size, tex.isNormalized);
 				
 				if (format.trimFlag[i])
 				{

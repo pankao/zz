@@ -41,7 +41,7 @@ class Tex extends HashableItem
 	/**
 	 * If true, UV coordinates are normalized to [0,1].
 	 */
-	public var isNormalize(default, null):Bool;
+	public var isNormalized(default, null):Bool;
 	
 	/**
 	 * If true, true RGB data is stored with premultiplied alpha. Default is true.
@@ -60,13 +60,13 @@ class Tex extends HashableItem
 	 */
 	public var height(default, null):Int;
 	
-	public function new(image:Image, isPowerOfTwo:Bool, isNormalize:Bool)
+	public function new(image:Image, isPowerOfTwo:Bool, isNormalized:Bool)
 	{
 		super();
 		
 		this.image = image;
 		this.isPowerOfTwo = isPowerOfTwo;
-		this.isNormalize = isNormalize;
+		this.isNormalized = isNormalized;
 		isAlphaPreMultiplied = image.premultipliedAlpha;
 		if (isPowerOfTwo)
 		{

@@ -74,7 +74,7 @@ class TextureEffect extends Effect
 		var w = tex.image.w - 1.;
 		var h = tex.image.h - 1.;
 		
-		if (tex.isNormalize)
+		if (tex.isNormalized)
 		{
 			x /= tex.width;
 			y /= tex.height;

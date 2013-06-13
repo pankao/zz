@@ -64,7 +64,7 @@ class SpriteStrip extends SpriteSheet
 					y * cols + x, x + '' + y,
 					new Rect(offsetX + x * frameW, offsetY + y * frameH, frameW, frameH),
 					new Size(frameW, frameH),
-					tex.isNormalize);
+					tex.isNormalized);
 			}
 		}
 	}
