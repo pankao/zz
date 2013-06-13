@@ -33,7 +33,7 @@ import de.polygonal.zz.render.texture.Size;
 
 class SpriteAtlas extends SpriteSheet
 {
-	public function new(tex:Tex, format:SpriteAtlasFormat)
+	public function new(tex:Tex, format:SpriteAtlasFormat, textureScale:Float = 1.)
 	{
 		super(tex, format.frameList.length);
 		__spriteAtlas = this;
@@ -41,6 +41,20 @@ class SpriteAtlas extends SpriteSheet
 		for (i in 0...frameCount)
 		{
 			var frame = format.frameList[i];
+
+			if (frame == null) continue;
+
+			if (textureScale != 1)
+			{
+				frame = frame.clone();
+				frame.x = Std.int(frame.x * textureScale);
+				frame.y = Std.int(frame.y * textureScale);
+				frame.w = Std.int(frame.w * textureScale);
+				frame.h = Std.int(frame.h * textureScale);
+				frame.r = frame.x + frame.w;
+				frame.b = frame.y + frame.h;
+			}
+
 			var size = new Size(Std.int(frame.w), Std.int(frame.h));
 			
 			if (frame != null)

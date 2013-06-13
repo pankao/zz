@@ -37,7 +37,7 @@ class SpriteStrip extends SpriteSheet
 	public var frameW:Int;
 	public var frameH:Int;
 	
-	public function new(tex:Tex, rows:Int, cols:Int)
+	public function new(tex:Tex, rows:Int, cols:Int, textureScale:Float = 1.)
 	{
 		super(tex, rows * cols);
 		__spriteStrip = this;
@@ -50,11 +50,8 @@ class SpriteStrip extends SpriteSheet
 		D.assert(h % rows == 0, 'h % rows == 0');
 		#end
 		
-		frameW = Std.int(w / cols);
-		frameH = Std.int(h / rows);
-		
-		var offsetX = 0.;
-		var offsetY = 0.;
+		frameW = Std.int((w / cols) * textureScale);
+		frameH = Std.int((h / rows) * textureScale);
 		
 		for (y in 0...rows)
 		{
@@ -62,7 +59,7 @@ class SpriteStrip extends SpriteSheet
 			{
 				addCropRectAt(
 					y * cols + x, x + '' + y,
-					new Rect(offsetX + x * frameW, offsetY + y * frameH, frameW, frameH),
+					new Rect(x * frameW, y * frameH, frameW, frameH),
 					new Size(frameW, frameH),
 					tex.isNormalized);
 			}
