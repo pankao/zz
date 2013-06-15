@@ -38,6 +38,7 @@ import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
 import de.polygonal.zz.render.module.RenderModule;
+import de.polygonal.zz.render.module.RenderModuleConfig;
 import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.ImageData;
@@ -51,7 +52,6 @@ import de.polygonal.zz.render.texture.thirdparty.BMFontFormat;
 import de.polygonal.zz.scene.Node;
 import de.polygonal.zz.scene.Renderer;
 import de.polygonal.zz.scene.Spatial;
-import haxe.ds.StringMap;
 import haxe.ds.StringMap;
 
 #if flash
@@ -84,52 +84,52 @@ class RenderSystem
 	
 	static var _textureUsageCount:IntIntHashTable = null;
 	
-	public static function init(renderModule:RenderModule = null):Void
+	public static function init(type:RenderModule = null, config:RenderModuleConfig = null):Void
 	{
-		if (renderModule == null)
+		if (type == null)
 		{
 			//infer render-module from platform
 			#if flash
 				#if flash11
 				if (RenderSurface.isHardware())
-					renderer = new Stage3dRenderer();
+					renderer = new Stage3dRenderer(config);
 				else
-					renderer = new BitmapDataRenderer();
+					renderer = new BitmapDataRenderer(config);
 				#else
-					renderer = new BitmapDataRenderer();
+					renderer = new BitmapDataRenderer(config);
 				#end
 			#elseif cpp
-				renderer = new CanvasRenderer();
+				renderer = new TileRenderer(config);
 			#elseif js
-				renderer = new TileRenderer();
+				renderer = new CanvasRenderer(config);
 			#end
 		}
 		else
 		{
-			switch (renderModule)
+			switch (type)
 			{
 				case FlashStage3d:
 					#if flash11
-					renderer = new Stage3dRenderer();
+					renderer = new Stage3dRenderer(config);
 					#end
 				
 				case FlashDisplayList:
-					renderer = new DisplayListRenderer();
+					renderer = new DisplayListRenderer(config);
 				
 				case FlashBitmapData:
-					renderer = new BitmapDataRenderer();
+					renderer = new BitmapDataRenderer(config);
 				
 				case FlashGraphics:
 					//renderer = new GraphicsRenderer();
 				
 				case NmeTile:
 					#if cpp
-					new TileRenderer();
+					new TileRenderer(config);
 					#end
 				
 				case Html5Canvas:
 					#if js
-					new CanvasRenderer();
+					new CanvasRenderer(config);
 					#end
 			}
 			

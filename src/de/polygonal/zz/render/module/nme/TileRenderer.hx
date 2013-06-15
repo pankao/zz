@@ -35,6 +35,7 @@ import de.polygonal.ds.IntHashTable;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
+import de.polygonal.zz.render.module.RenderModuleConfig;
 import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Rect;
@@ -52,8 +53,6 @@ import nme.geom.Rectangle;
 
 class TileRenderer extends Renderer
 {
-	public static var MAX_BATCH_SIZE = 4096;
-	
 	public var numCallsToDrawTiles:Int;
 	
 	var _canvas:Graphics;
@@ -67,15 +66,15 @@ class TileRenderer extends Renderer
 	var _currTilesheet:Tilesheet;
 	var _smooth:Bool;
 	
-	public function new()
+	public function new(config:TileRendererConfig)
 	{
-		super();
+		super(config);
 		
 		_canvas = RenderSurface.root.graphics;
 		_tilesheetLUT = new IntHashTable(64, 64, false, 64);
 		
 		//max. 11 valus/tile: x, y, id, a, b, c, d, red, green, blue, alpha
-		_buffer = ArrayUtil.alloc(MAX_BATCH_SIZE * 11);
+		_buffer = ArrayUtil.alloc(maxBatchSize * 11);
 		_bufferSize = 0;
 		
 		//batch rendering is on by default

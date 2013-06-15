@@ -53,7 +53,7 @@ class Stage3dBrush
 	var _scratchVector:Vector<Float>;
 	var _scratchVec3:Vec3;
 	
-	public function new(context:Context3D, effectFlags:Int, textureFlags:Int)
+	function new(context:Context3D, effectFlags:Int, textureFlags:Int)
 	{
 		_context = context;
 		

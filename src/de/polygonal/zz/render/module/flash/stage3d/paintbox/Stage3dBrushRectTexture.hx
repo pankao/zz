@@ -37,7 +37,7 @@ class Stage3dBrushRectTexture extends Stage3dBrushRect
 {
 	inline static var INV_FF = .00392156;
 	
-	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
+	public function new(renderer:Stage3dRenderer, context:Context3D, effectMask:Int, textureFlags:Int)
 	{
 		super(context, effectMask, textureFlags);
 		

@@ -75,9 +75,9 @@ class DisplayListRenderer extends Renderer
 	var _scratchShape:Shape;
 	var _scratchXForm:XForm;
 	
-	public function new(width = 0, height = 0)
+	public function new(config:RenderModuleConfig)
 	{
-		super(width, height);
+		super(config);
 		
 		canvas = new Sprite();
 		canvas.mouseChildren = false;
@@ -98,7 +98,12 @@ class DisplayListRenderer extends Renderer
 		
 		drawDeferred = null;
 		
-		RenderSurface.root.addChild(canvas);
+		var container =
+		if (Reflect.hasField(config, 'container'))
+			config.container;
+		else
+			RenderSurface.root;
+		container.addChild(canvas);
 	}
 	
 	override public function free():Void

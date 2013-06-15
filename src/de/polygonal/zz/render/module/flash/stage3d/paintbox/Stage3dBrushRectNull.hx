@@ -35,7 +35,7 @@ import flash.display3D.Context3D;
 
 class Stage3dBrushRectNull extends Stage3dBrushRect
 {
-	public function new(context:Context3D, effectMask:Int)
+	public function new(renderer:Stage3dRenderer, context:Context3D, effectMask:Int)
 	{
 		super(context, effectMask, -1);
 		

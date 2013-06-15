@@ -44,8 +44,6 @@ class Stage3dBrushRectTextureBatch extends Stage3dBrushRect
 	inline static var MAX_SUPPORTED_REGISTERS = 128;
 	inline static var NUM_FLOATS_PER_REGISTER = 4;
 	
-	public static var MAX_BATCH_SIZE_QUADS = 4096;
-	
 	var _numSharedRegisters:Int;
 	var _numRegistersPerQuad:Int;
 	var _strategy:Int;
@@ -57,13 +55,12 @@ class Stage3dBrushRectTextureBatch extends Stage3dBrushRect
 	var _uv3:Vec3;
 	var _uvs:Array<Vec3>;
 	
-	public function new(context:Context3D, effectMask:Int, textureFlags:Int)
+	public function new(renderer:Stage3dRenderer, context:Context3D, effectMask:Int, textureFlags:Int)
 	{
 		super(context, effectMask, textureFlags);
 		
-		_strategy = Stage3dRenderer.BATCH_STRATEGY;
-		
-		_batchCapacity = MAX_BATCH_SIZE_QUADS;
+		_strategy = renderer.batchStrategy;
+		_batchCapacity = renderer.maxBatchSize;
 		
 		_scratchVertices = [new Vec3(0, 0), new Vec3(1, 0), new Vec3(1, 1), new Vec3(0, 1)];
 		
@@ -73,7 +70,7 @@ class Stage3dBrushRectTextureBatch extends Stage3dBrushRect
 		_uv3 = new Vec3();
 		_uvs = [_uv0, _uv1, _uv2, _uv3];
 		
-		if (_strategy == Stage3dRenderer.VERTEX_BATCH)
+		if (_strategy == 0) //0=use vertex buffer
 		{
 			_shader = new AgalTextureVertexBatch(_context, effectMask, textureFlags);
 			
@@ -90,7 +87,7 @@ class Stage3dBrushRectTextureBatch extends Stage3dBrushRect
 			_vb.allocate(numFloatsPerAttribute, _batchCapacity * 4);
 		}
 		else
-		if (_strategy == Stage3dRenderer.CONSTANT_BATCH)
+		if (_strategy == 1) //1=use constant registers
 		{
 			_shader = new AgalTextureConstantBatch(_context, effectMask, textureFlags);
 			

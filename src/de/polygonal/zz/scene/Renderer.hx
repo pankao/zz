@@ -31,6 +31,7 @@ package de.polygonal.zz.scene;
 
 import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Mat44;
+import de.polygonal.core.util.Assert;
 import de.polygonal.ds.ArrayedStack;
 import de.polygonal.ds.DA;
 import de.polygonal.ds.TreeNode;
@@ -38,6 +39,7 @@ import de.polygonal.gl.color.ColorRGBA;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
+import de.polygonal.zz.render.module.RenderModuleConfig;
 import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Tex;
@@ -47,6 +49,7 @@ import de.polygonal.zz.scene.Spatial;
 import haxe.ds.IntMap;
 
 using de.polygonal.ds.BitFlags;
+using Reflect;
 
 /**
  * A custom renderer must implement this renderer.
@@ -63,6 +66,9 @@ class Renderer
 	 */
 	public var height(default, null):Int;
 	
+	/**
+	 * The current scene graph being drawn.<br/>
+	 */
 	public var currScene(default, null):Node;
 	public var currNode(default, null):Node;
 	public var currGeometry(default, null):Geometry;
@@ -88,6 +94,8 @@ class Renderer
 	
 	public var currAlphaState:AlphaState;
 	
+	public var maxBatchSize(default, null):Int = 4096;
+	
 	var _camera:Camera;
 	var _viewMatrix:Mat44;
 	var _projMatrix:Mat44;
@@ -101,16 +109,21 @@ class Renderer
 	
 	var _scratchStack:ArrayedStack<TreeNode<Spatial>>;
 	
-	public function new(width = 0, height = 0)
+	public function new(config:RenderModuleConfig)
 	{
+		
 		if (RenderSurface.isReady() == false) throw 'Surface not initialized.';
-		if (RenderSurface.isResizable()) RenderSurface.onResize = function(w, h) resize(w, h);
+		RenderSurface.onResize = function(w, h) resize(w, h);
 		
-		if (width == 0) width = RenderSurface.width;
-		if (height == 0) height = RenderSurface.height;
+		width = RenderSurface.width;
+		height = RenderSurface.height;
+		if (config != null)
+		{
+			if (config.hasField('width')) width = config.width;
+			if (config.hasField('height')) height = config.height;
+		}
 		
-		this.width = width;
-		this.height = height;
+		maxBatchSize = 4096;
 		
 		currMVP = new Mat44();
 		currScene = null;

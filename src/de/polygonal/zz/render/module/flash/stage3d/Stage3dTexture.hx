@@ -29,10 +29,10 @@
  */
 package de.polygonal.zz.render.module.flash.stage3d;
 
+import de.polygonal.core.math.Mathematics;
 import de.polygonal.zz.render.module.flash.stage3d.Stage3dRenderer;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Tex;
-import de.polygonal.core.math.Mathematics;
 import flash.display.BitmapData;
 import flash.display3D.Context3D;
 import flash.display3D.Context3DTextureFormat;
@@ -51,12 +51,11 @@ class Stage3dTexture
 	
 	public var flags:Int;
 	
-	public function new(tex:Tex, flags = 0)
+	public function new(tex:Tex)
 	{
 		sourceTexture = tex;
 		
-		if (flags == 0) flags = Stage3dRenderer.DEFAULT_TEXTURE_FLAGS;
-		this.flags = flags;
+		flags = 0;
 		
 		handle = null;
 		atf = tex.image.atf;
@@ -67,9 +66,9 @@ class Stage3dTexture
 			switch (tex.image.atfFormat)
 			{
 				case Context3DTextureFormat.COMPRESSED:
-					this.flags |= Stage3dTextureFlag.DXT1;
+					flags |= Stage3dTextureFlag.DXT1;
 				case Context3DTextureFormat.COMPRESSED_ALPHA:
-					this.flags |= Stage3dTextureFlag.DXT5;
+					flags |= Stage3dTextureFlag.DXT5;
 			}
 		}
 		

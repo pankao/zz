@@ -40,6 +40,7 @@ import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.effect.Effect.*;
 import de.polygonal.zz.render.effect.SpriteSheetEffect;
 import de.polygonal.zz.render.effect.TextureEffect;
+import de.polygonal.zz.render.module.RenderModuleConfig;
 import de.polygonal.zz.render.texture.Image;
 import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.zz.scene.Renderer;
@@ -72,9 +73,9 @@ class BitmapDataRenderer extends Renderer
 	
 	var _tileLookup:IntHashTable<Tile>;
 	
-	public function new(width = 0, height = 0)
+	public function new(config:RenderModuleConfig)
 	{
-		super(width, height);
+		super(config);
 		
 		_bitmap = new BitmapData(this.width, this.height, true, 0);
 		canvas = new Bitmap(_bitmap, PixelSnapping.NEVER, false);
@@ -90,7 +91,12 @@ class BitmapDataRenderer extends Renderer
 		
 		drawDeferred = null;
 		
-		RenderSurface.root.addChild(canvas);
+		var container =
+		if (Reflect.hasField(config, 'container'))
+			config.container;
+		else
+			RenderSurface.root;
+		container.addChild(canvas);
 	}
 	
 	override public function free():Void
