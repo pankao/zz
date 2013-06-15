@@ -29,6 +29,8 @@
  */
 package de.polygonal.zz.api.animation;
 
+import haxe.ds.StringMap;
+
 class AniPlayback
 {
 	public var curAnimationId(default, null):String;
@@ -51,6 +53,7 @@ class AniPlayback
 	
 	var _curSequence:AniSequence;
 	var _time = 0.;
+	var _next:StringMap<String>;
 	
 	public function new()
 	{
@@ -64,8 +67,14 @@ class AniPlayback
 	
 	public function advance(timeDelta:Float):Void
 	{
-		if (_curSequence != null)
-			_time += timeDelta;
+		if (_curSequence == null) return;
+		
+		_time += timeDelta;
+		
+		if (_next == null) return;
+		
+		if (finished && _next.exists(curAnimationId))
+			playAnimation(_next.get(curAnimationId));
 	}
 	
 	public function playAnimation(id:String, resetTime = true):Void
@@ -83,6 +92,12 @@ class AniPlayback
 			_curSequence = sequence;
 			if (resetTime) _time = 0;
 		}
+	}
+	
+	public function setNext(firstId:String, secondId:String):Void
+	{
+		if (_next == null) _next = new StringMap();
+		_next.set(firstId, secondId);
 	}
 	
 	public function stopAnimation():Void
