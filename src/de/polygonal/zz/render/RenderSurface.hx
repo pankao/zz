@@ -190,7 +190,7 @@ class RenderSurface
 	public static var stage3d:flash.display.Stage3D = null;
 	public static var numDeviceLost = -1;
 	#if flash11_4
-	public static var profile = flash.display3D.Context3DProfile.BASELINE_CONSTRAINED;
+	public static var profile = flash.display3D.Context3DProfile.BASELINE;
 	#end
 	#end
 	#end
