@@ -92,7 +92,7 @@ class BitmapDataRenderer extends Renderer
 		drawDeferred = null;
 		
 		var container =
-		if (Reflect.hasField(config, 'container'))
+		if (config != null && Reflect.hasField(config, 'container'))
 			config.container;
 		else
 			RenderSurface.root;

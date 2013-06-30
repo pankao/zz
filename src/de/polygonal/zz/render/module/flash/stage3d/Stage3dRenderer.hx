@@ -64,7 +64,7 @@ class Stage3dRenderer extends Renderer
 	 */
 	public var batchStrategy(default, null):Int;
 	
-	var _antiAliasMode:Int;
+	var _antiAliasMode:Int = -1;
 	var _batchActive:Bool;
 	var _currBrush:Stage3dBrush;
 	var _paintBox:IntHashTable<Stage3dBrush>;
@@ -85,6 +85,7 @@ class Stage3dRenderer extends Renderer
 			if (config.hasField('enableErrorChecking') && config.enableErrorChecking) _enableErrorChecking = true;
 			if (config.hasField('preferConstantOverVertexBatching')) batchStrategy = 1;
 			if (config.hasField('textureFlags')) _textureFlags = config.textureFlags;
+			if (config.hasField('antiAliasMode')) _antiAliasMode = 1 << Type.enumIndex(config.antiAliasMode);
 		}
 		
 		if (_textureFlags == 0) _textureFlags = Stage3dTextureFlag.PRESET_QUALITY_MEDIUM;
@@ -100,7 +101,8 @@ class Stage3dRenderer extends Renderer
 		}
 		
 		_numDeviceLost = RenderSurface.numDeviceLost;
-		_antiAliasMode = 1 << Type.enumIndex(Stage3dAntiAliasMode.Low);
+		
+		if (_antiAliasMode == -1) _antiAliasMode = 1 << Type.enumIndex(Stage3dAntiAliasMode.Low);
 		
 		initPaintBox();
 		
@@ -531,7 +533,7 @@ class Stage3dRenderer extends Renderer
 		}
 		catch (unknown:Dynamic)
 		{
-			L.e('configureBackBuffer failed: ' + unknown);
+			L.e('configureBackBuffer failed: $unknown');
 		}
 	}
 	
