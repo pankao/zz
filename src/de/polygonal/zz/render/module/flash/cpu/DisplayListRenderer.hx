@@ -29,23 +29,23 @@
  */
 package de.polygonal.zz.render.module.flash.cpu;
 
-import de.polygonal.core.util.Assert;
+import de.polygonal.core.time.Timebase;
 import de.polygonal.ds.DLL;
 import de.polygonal.ds.DLLNode;
 import de.polygonal.ds.IntHashTable;
+import de.polygonal.flash.display.DisplayListUtil;
 import de.polygonal.gl.color.ColorRGBA;
 import de.polygonal.zz.render.effect.Effect.*;
-import de.polygonal.zz.render.effect.Effect;
-import de.polygonal.zz.render.effect.SpriteSheetEffect;
-import de.polygonal.zz.render.effect.TextureEffect;
+import de.polygonal.zz.render.effect.*;
+import de.polygonal.zz.render.module.RenderModuleConfig;
 import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.zz.render.texture.Image;
-import de.polygonal.zz.render.texture.Rect;
 import de.polygonal.zz.render.texture.Tex;
 import de.polygonal.zz.scene.Renderer;
 import de.polygonal.zz.scene.Spatial;
 import de.polygonal.zz.scene.XForm;
 import flash.display.Bitmap;
+
 import flash.display.BitmapData;
 import flash.display.Shape;
 import flash.display.Sprite;
@@ -53,7 +53,6 @@ import flash.geom.ColorTransform;
 import flash.geom.Matrix;
 import flash.geom.Point;
 import flash.geom.Rectangle;
-import flash.Lib;
 
 using de.polygonal.ds.BitFlags;
 
@@ -61,7 +60,7 @@ class DisplayListRenderer extends Renderer
 {
 	public var canvas(default, null):Sprite;
 	
-	var _tileLookup:IntHashTable<TileData>;
+	var _tileLookup:IntHashTable<BitmapDataTile>;
 	var _bitmapLookup:IntHashTable<BitmapTile>;
 	var _bitmapList:DLL<BitmapTile>;
 	
@@ -83,23 +82,21 @@ class DisplayListRenderer extends Renderer
 		canvas.mouseChildren = false;
 		canvas.mouseEnabled = false;
 		
-		_scratchMatrix = new Matrix();
-		_scratchColorTransform = new ColorTransform();
+		_scratchMatrix              = new Matrix();
+		_scratchColorTransform      = new ColorTransform();
 		_scratchColorTransformAlpha = new ColorTransform();
-		_scratchRect = new Rectangle();
-		_scratchPoint = new Point();
-		_tileLookup = new IntHashTable(512, 512, false, 512);
-		_scratchShape = new Shape();
-		_scratchXForm = new XForm();
-		
-		_bitmapLookup = new IntHashTable<BitmapTile>(512, 512, false, 512);
-		
-		_bitmapList = new DLL<BitmapTile>();
+		_scratchRect                = new Rectangle();
+		_scratchPoint               = new Point();
+		_tileLookup                 = new IntHashTable(512, 512, false, 512);
+		_scratchShape               = new Shape();
+		_scratchXForm               = new XForm();
+		_bitmapLookup               = new IntHashTable<BitmapTile>(512, 512, false, 512);
+		_bitmapList                 = new DLL<BitmapTile>();
 		
 		drawDeferred = null;
 		
 		var container =
-		if (Reflect.hasField(config, 'container'))
+		if (config != null && Reflect.hasField(config, 'container'))
 			config.container;
 		else
 			RenderSurface.root;
@@ -119,6 +116,9 @@ class DisplayListRenderer extends Renderer
 		
 		_tileLookup.free();
 		_tileLookup = null;
+		
+		DisplayListUtil.removeAll(canvas);
+		canvas = null;
 	}
 	
 	override public function setBackgroundColor(r:Float, g:Float, b:Float, a:Float):Void
@@ -179,21 +179,28 @@ class DisplayListRenderer extends Renderer
 	{
 		var bmp = getBitmap(currGeometry);
 		
-		var uv = effect.crop;
 		var tex = effect.tex;
-		var tileData = getTile(tex.key, tex, uv);
+		var tileData = getTile(tex.key, tex, effect);
 		
 		var world = currGeometry.world;
 		var s = world.getScale();
 		var r = world.getRotate();
 		var t = world.getTranslate();
 		
+		var uv = effect.crop;
 		var flashMatrix = transformationToMatrix(world, uv.w, uv.h, _scratchMatrix);
 		
 		bmp.setData(tileData);
 		bmp.visible = true;
+		bmp.idleTime = 0;
 		bmp.alpha = effect.alpha;
-		sortZ(bmp);
+		
+		if (!bmp.hasParent)
+		{
+			bmp.hasParent = true;
+			canvas.addChild(bmp);
+		}
+		canvas.setChildIndex(bmp, _zIndex++);
 		
 		if (effect.flags & Effect.EFFECT_COLOR_XFORM > 0)
 			bmp.transform.colorTransform = getColorTransform(effect);
@@ -208,22 +215,37 @@ class DisplayListRenderer extends Renderer
 	{
 		var bmp = getBitmap(currGeometry);
 		
-		var uv = effect.crop;
 		var tex = effect.tex;
 		
-		var tileData = getTile(effect.frame << 16 | tex.key, tex, uv);
+		var tileData = getTile(effect.frame << 16 | tex.key, tex, effect);
 		
 		var world = currGeometry.world;
-		var s = world.getScale();
-		var r = world.getRotate();
-		var t = world.getTranslate();
+		//var s = world.getScale();
+		//var r = world.getRotate();
+		//var t = world.getTranslate();
 		
+		/*var atlas = effect.__spriteSheetEffect.sheet.__spriteAtlas;
+		if (atlas != null)
+		{
+			throw 'untrimmed size ' + atlas.getUntrimmedSizeAt(effect.frame);
+		}*/
+		
+		var uv = effect.crop;
 		var flashMatrix = transformationToMatrix(world, uv.w, uv.h, _scratchMatrix);
 		
 		bmp.setData(tileData);
 		bmp.visible = true;
+		bmp.idleTime = 0;
 		bmp.alpha = effect.alpha;
-		sortZ(bmp);
+		
+		if (!bmp.hasParent)
+		{
+			bmp.hasParent = true;
+			canvas.addChild(bmp);
+		}
+		canvas.setChildIndex(bmp, _zIndex++);
+		
+		//depthSort(bmp);
 		
 		if (effect.flags & Effect.EFFECT_COLOR_XFORM > 0)
 			bmp.transform.colorTransform = getColorTransform(effect);
@@ -261,14 +283,15 @@ class DisplayListRenderer extends Renderer
 	
 	override function onBeginScene():Void
 	{
+		var c = 0;
+		_zIndex = 0;
 		var node = _bitmapList.head;
 		while (node != null)
 		{
 			node.val.visible = false;
 			node = node.next;
+			c++;
 		}
-		
-		_zIndex = 0;
 	}
 	
 	override function onEndScene():Void
@@ -276,9 +299,8 @@ class DisplayListRenderer extends Renderer
 		var node = _bitmapList.head;
 		while (node != null)
 		{
-			var x:BitmapTile = node.val;
-			
-			if (x.visible)
+			var tile = node.val;
+			if (tile.visible)
 			{
 				node = node.next;
 				continue;
@@ -286,12 +308,24 @@ class DisplayListRenderer extends Renderer
 			
 			var next = node.next;
 			
-			//freed or removed from scene graph?
-			var treeNode = x.spatial.treeNode;
+			//compact display list
+			
+			//remove display object if invisible for more then one second
+			tile.idleTime += Timebase.realTimeDelta;
+			if (tile.hasParent && tile.idleTime > 1)
+			{
+				tile.hasParent = false;
+				canvas.removeChild(tile);
+			}
+			
+			//remove display object if node was freed or removed from the scene graph
+			var treeNode = tile.spatial.treeNode;
 			if (treeNode == null || treeNode.parent == null)
 			{
-				x.free();
-				_bitmapLookup.remove(x);
+				var key = tile.spatial.key;
+				tile.free();
+				var success = _bitmapLookup.clr(key);
+				D.assert(success, 'success');
 			}
 			
 			node = next;
@@ -369,14 +403,6 @@ class DisplayListRenderer extends Renderer
 		return ct;
 	}
 	
-	inline function sortZ(x:BitmapTile):Void
-	{
-		if (x.zIndex != _zIndex)
-			canvas.setChildIndex(x, _zIndex);
-		x.zIndex = _zIndex;
-		_zIndex++;
-	}
-	
 	inline function getBitmap(spatial:Spatial):BitmapTile
 	{
 		var bmp = _bitmapLookup.get(spatial.key);
@@ -386,41 +412,58 @@ class DisplayListRenderer extends Renderer
 			return bmp;
 	}
 	
-	inline function getTile(key:Int, tex:Tex, uv:Rect):TileData
+	inline function getTile(key:Int, tex:Tex, effect:Effect):BitmapDataTile
 	{
 		var tile = _tileLookup.get(key);
 		if (tile == null)
-			return initTile(key, tex, uv);
+			return initTile(key, tex, effect.__textureEffect);
 		else
 			return tile;
 	}
 	
 	function initBitmap(spatial:Spatial):BitmapTile
 	{
+		L.w('init bitmap ' + spatial.id + ' ' + spatial.key);
+		
 		var bmp = new BitmapTile();
 		bmp.spatial = spatial;
-		_bitmapLookup.set(spatial.key, bmp);
-		canvas.addChild(bmp);
+		
+		for (i in _bitmapList)
+		{
+			if (i.spatial == spatial)
+			{
+				throw 1;
+			}
+		}
 		
 		bmp.listNode = _bitmapList.append(bmp);
+		_bitmapLookup.set(spatial.key, bmp);
+		
+		canvas.addChild(bmp);
+		bmp.hasParent = true;
+		bmp.visible = false;
 		
 		return bmp;
 	}
 	
-	function initTile(key:Int, tex:Tex, uv:Rect):TileData
+	function initTile(key:Int, tex:Tex, effect:TextureEffect):BitmapDataTile
 	{
-		trace( "DisplayListRenderer.initTile > key : " + key + ", tex : " + tex + ", uv : " + uv );
+		var uv = effect.crop;
 		_scratchRect.x = uv.x;
 		_scratchRect.y = uv.y;
 		_scratchRect.width = uv.w;
 		_scratchRect.height = uv.h;
+		
 		_scratchPoint.x = 0;
 		_scratchPoint.y = 0;
 		
-		var bmd = new BitmapData(cast uv.w, cast uv.h, true, 0);
+		var w:Int = cast uv.w;
+		var h:Int = cast uv.h;
+		
+		var bmd = new BitmapData(w, h, true, 0);
 		bmd.copyPixels(tex.image.data, _scratchRect, _scratchPoint);
 		
-		var tile = new TileData(key, bmd, bmd.rect.clone());
+		var tile = new BitmapDataTile(key, bmd, bmd.rect.clone());
 		_tileLookup.set(key, tile);
 		return tile;
 	}
@@ -433,16 +476,17 @@ private class BitmapTile extends Bitmap
 	public var listNode:DLLNode<BitmapTile>;
 	public var zIndex:Int;
 	
+	public var hasParent:Bool;
+	public var idleTime:Float;
+	
 	public function new()
 	{
 		super(null, flash.display.PixelSnapping.NEVER, true);
 		key = -1;
-		spatial = null;
-		listNode = null;
 		zIndex = -1;
 	}
 	
-	inline public function setData(x:TileData):Void
+	inline public function setData(x:BitmapDataTile):Void
 	{
 		if (x.key != key)
 		{
@@ -454,7 +498,7 @@ private class BitmapTile extends Bitmap
 	
 	public function free():Void
 	{
-		if (parent != null) parent.removeChild(this);
+		DisplayListUtil.remove(this);
 		spatial = null;
 		listNode.unlink();
 		listNode.free();
@@ -462,7 +506,7 @@ private class BitmapTile extends Bitmap
 	}
 }
 
-private class TileData
+private class BitmapDataTile
 {
 	public var key:Int;
 	public var bitmapData:BitmapData;
