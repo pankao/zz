@@ -29,7 +29,6 @@
  */
 package de.polygonal.zz.scene;
 
-import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Vec3;
 import de.polygonal.ds.Bits;
 import de.polygonal.ds.DA;

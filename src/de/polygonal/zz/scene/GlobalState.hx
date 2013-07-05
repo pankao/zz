@@ -29,7 +29,6 @@
  */
 package de.polygonal.zz.scene;
 
-import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.ds.ArrayedStack;
 
 typedef GlobalStateStacks = Array<ArrayedStack<GlobalState>>;
@@ -57,7 +56,7 @@ class GlobalState
 	{
 		var s = '\n';
 		for (i in 0...Type.getEnumConstructs(GlobalStateType).length)
-			s += Sprintf.format("[%d] => [%s]\n", [i, _stacks[i].toArray().join('')]);
+			s += Printf.format("[%d] => [%s]\n", [i, _stacks[i].toArray().join('')]);
 		return s;
 	}
 	

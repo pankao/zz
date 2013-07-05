@@ -29,7 +29,6 @@
  */
 package de.polygonal.zz.scene;
 
-import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Mat44;
 import de.polygonal.core.util.Assert;
 import de.polygonal.ds.ArrayedStack;
@@ -563,7 +562,7 @@ class Renderer
 		if (tex == null)
 		{
 			tex = createTex(image);
-			L.d(Sprintf.format('create texture #%d from image "%s" (#%d)', [tex.key, image.id, image.key]));
+			L.d(Printf.format('create texture #%d from image "%s" (#%d)', [tex.key, image.id, image.key]));
 			_textureLookup.set(image.key, tex);
 		}
 		return tex;
@@ -574,7 +573,7 @@ class Renderer
 		var tex = _textureLookup.get(image.key);
 		if (tex != null)
 		{
-			L.d(Sprintf.format('free texture #%d (image "%s", #%d)', [tex.key, image.id, image.key]));
+			L.d(Printf.format('free texture #%d (image "%s", #%d)', [tex.key, image.id, image.key]));
 			tex.free();
 			_textureLookup.remove(image.key);
 		}

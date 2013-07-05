@@ -29,7 +29,6 @@
  */
 package de.polygonal.zz.render.module.flash.stage3d;
 
-import de.polygonal.core.fmt.Sprintf;
 import flash.display3D.Context3D;
 import flash.display3D.IndexBuffer3D;
 import flash.Vector;
@@ -96,6 +95,6 @@ class Stage3dIndexBuffer
 	
 	public function toString():String
 	{
-		return Sprintf.format("{IndexBuffer: #indices=%d, #triangles=%d}", [numIndices, numTriangles]);
+		return Printf.format("{IndexBuffer: #indices=%d, #triangles=%d}", [numIndices, numTriangles]);
 	}
 }

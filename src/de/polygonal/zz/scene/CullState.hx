@@ -29,8 +29,6 @@
  */
 package de.polygonal.zz.scene;
 
-import de.polygonal.core.fmt.Sprintf;
-
 enum FrontType
 {
 	CCW;
@@ -58,6 +56,6 @@ class CullState extends GlobalState
 	
 	public function toString():String
 	{
-		return Sprintf.format("{CullState: frontFace=%s, cullFace=%s}", [frontFace, cullFace]);
+		return Printf.format("{CullState: frontFace=%s, cullFace=%s}", [frontFace, cullFace]);
 	}
 }

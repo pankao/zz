@@ -42,6 +42,6 @@ class Size
 	
 	public function toString():String
 	{
-		return de.polygonal.core.fmt.Sprintf.format("{x %d y %d}", [x, y]);
+		return Printf.format("{x %d y %d}", [x, y]);
 	}
 }

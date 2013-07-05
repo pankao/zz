@@ -29,8 +29,6 @@
  */
 package de.polygonal.zz.api.animation;
 
-import de.polygonal.core.fmt.Sprintf;
-
 class AniFrame
 {
 	public var duration:Float;
@@ -46,6 +44,6 @@ class AniFrame
 	
 	public function toString():String
 	{
-		return Sprintf.format('%.2f #%d' + (frameName != null ? ' %s' : ''), duration, frameIndex, frameName);
+		return Printf.format('%.2f #%d' + (frameName != null ? ' %s' : ''), [duration, frameIndex, frameName]);
 	}
 }

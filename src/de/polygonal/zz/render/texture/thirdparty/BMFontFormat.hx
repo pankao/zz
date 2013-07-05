@@ -29,7 +29,6 @@
  */
 package de.polygonal.zz.render.texture.thirdparty;
 
-import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Limits;
 import de.polygonal.core.math.Mathematics;
 import de.polygonal.ds.ArrayUtil;
@@ -168,7 +167,7 @@ class BitmapCharSet
 	
 	public function toString():String
 	{
-		return Sprintf.format("{BitmapCharSet: lineHeight=%d, base=%d, renderedSize=%d, textureW=%d, textureH=%d",
+		return Printf.format("{BitmapCharSet: lineHeight=%d, base=%d, renderedSize=%d, textureW=%d, textureH=%d",
 			[lineHeight, base, renderedSize, textureW, textureH]);
 	}
 }

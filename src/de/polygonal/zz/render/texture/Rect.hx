@@ -56,6 +56,6 @@ class Rect
 	public function toString():String
 	{
 		var format = "{x %-+8.3f y %-+8.3f w %-+8.3f h %-+.3f}";
-		return de.polygonal.core.fmt.Sprintf.format(format, [x, y, w, h]);
+		return Printf.format(format, [x, y, w, h]);
 	}
 }

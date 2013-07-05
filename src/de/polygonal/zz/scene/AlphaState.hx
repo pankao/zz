@@ -29,8 +29,6 @@
  */
 package de.polygonal.zz.scene;
 
-import de.polygonal.core.fmt.Sprintf;
-
 enum SrcBlendFactor
 {
 	Zero;
@@ -84,7 +82,5 @@ class AlphaState extends GlobalState
 	}
 	
 	public function toString():String
-	{
-		return Sprintf.format("{AlphaState: src=%s, dst=%s}", [src, dst]);
-	}
+		return Printf.format("{AlphaState: src=%s, dst=%s}", [src, dst]);
 }

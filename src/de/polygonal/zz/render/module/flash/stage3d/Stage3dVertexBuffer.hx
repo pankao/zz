@@ -29,7 +29,6 @@
  */
 package de.polygonal.zz.render.module.flash.stage3d;
 
-import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Limits;
 import de.polygonal.core.math.Vec3;
 import flash.display3D.Context3D;
@@ -211,7 +210,7 @@ class Stage3dVertexBuffer
 	
 	public function toString():String
 	{
-		return Sprintf.format("{VertexBuffer: attributes=%s, #vertices=%d}", [_attributes.join(','), Std.int(_size / numFloatsPerVertex)]);
+		return Printf.format("{VertexBuffer: attributes=%s, #vertices=%d}", [_attributes.join(','), Std.int(_size / numFloatsPerVertex)]);
 	}
 	
 	inline function push(x:Float)

@@ -30,7 +30,6 @@
 package de.polygonal.zz.render.module.flash.stage3d;
 
 import de.polygonal.core.fmt.NumberFormat;
-import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.util.Assert;
 import de.polygonal.ds.Bits;
 import de.polygonal.ds.DA;
@@ -195,7 +194,7 @@ class Stage3dRenderer extends Renderer
 		var t = _textureHandles.get(tex.key);
 		if (t == null)
 		{
-			L.d(Sprintf.format('upload texture #%d from image #%d', [tex.key, tex.image.key]), 's3d');
+			L.d(Printf.format('upload texture #%d from image #%d', [tex.key, tex.image.key]), 's3d');
 			t = new Stage3dTexture(tex);
 			t.flags |= _textureFlags;
 			
@@ -213,7 +212,7 @@ class Stage3dRenderer extends Renderer
 		var t = _textureHandles.get(tex.key);
 		if (t != null)
 		{
-			L.d(Sprintf.format('free stage3d texture #%d (image #%d)', [tex.key, tex.image.key]), 's3d');
+			L.d(Printf.format('free stage3d texture #%d (image #%d)', [tex.key, tex.image.key]), 's3d');
 			t.free();
 			_textureHandles.clr(tex.key);
 		}
@@ -596,7 +595,7 @@ class Stage3dRenderer extends Renderer
 			var brush = _paintBox.get(key);
 			
 			#if debug
-			D.assert(brush != null, Sprintf.format('no registered found for effect %b and texture flags %b', [supportedEffects, textureFlags]));
+			D.assert(brush != null, Printf.format('no registered found for effect %b and texture flags %b', [supportedEffects, textureFlags]));
 			#end
 			
 			return brush;

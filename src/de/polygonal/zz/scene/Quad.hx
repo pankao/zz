@@ -29,7 +29,6 @@
  */
 package de.polygonal.zz.scene;
 
-import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Vec3;
 import de.polygonal.motor.geom.inside.PointInsideAABB;
 import de.polygonal.zz.scene.Geometry.VertexFormat;
@@ -55,7 +54,7 @@ class Quad extends TriMesh
 		// 3      2
 		
 		//TODO shared vertices and indices
-		//var key = Sprintf.format('%s.%s.%s', [offset, w, h]);
+		//var key = Printf.format('%s.%s.%s', [offset, w, h]);
 		var vertices =
 		[
 			new Vec3(0 + offset, 0 + offset),

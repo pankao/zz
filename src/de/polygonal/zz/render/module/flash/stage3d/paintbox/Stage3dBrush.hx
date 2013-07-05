@@ -29,7 +29,6 @@
  */
 package de.polygonal.zz.render.module.flash.stage3d.paintbox;
 
-import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Vec3;
 import de.polygonal.core.util.ClassUtil;
 import de.polygonal.ds.DA;
@@ -62,7 +61,7 @@ class Stage3dBrush
 		_scratchVector = new flash.Vector<Float>();
 		_scratchVec3 = new Vec3();
 		
-		L.d(Sprintf.format('create brush: %-40s effects: %-30s texture flags: %s',
+		L.d(Printf.format('create brush: %-40s effects: %-30s texture flags: %s',
 			[ClassUtil.getUnqualifiedClassName(Type.getClass(this)), Effect.print(effectFlags), Stage3dTextureFlag.print(textureFlags)]), 's3d');
 	}
 	

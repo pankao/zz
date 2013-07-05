@@ -1,6 +1,5 @@
 package de.polygonal.zz.scene;
 
-import de.polygonal.core.fmt.Sprintf;
 import de.polygonal.core.math.Vec3;
 import de.polygonal.core.math.Mathematics;
 import de.polygonal.core.util.Assert;
@@ -44,6 +43,6 @@ class Triangle
 	
 	public function toString():String
 	{
-		return Sprintf.format("{Triangle: indices=%d,%d,%d vertices=%s, %s, %s}", [i0, i1, i2, v0, v1, v2]);
+		return Printf.format("{Triangle: indices=%d,%d,%d vertices=%s, %s, %s}", [i0, i1, i2, v0, v1, v2]);
 	}
 }
