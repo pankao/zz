@@ -55,17 +55,17 @@ enum DstBlendFactor
 
 class AlphaState extends GlobalState
 {
-	public static var NONE                   = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.Zero);
+	public static var NONE         = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.Zero);
 	
-	public static var BLEND                  = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.OneMinusSourceAlpha);
-	public static var ADD                    = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.DestinationAlpha);
-	public static var MULTIPLY               = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.Zero);
-	public static var SCREEN                 = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.One);
+	public static var BLEND        = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.OneMinusSourceAlpha);
+	public static var ADD          = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.DestinationAlpha);
+	public static var MULTIPLY     = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.Zero);
+	public static var SCREEN       = new AlphaState(SrcBlendFactor.SourceAlpha     , DstBlendFactor.One);
 	
-	public static var BLEND_PREMULTIPLIED    = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.OneMinusSourceAlpha);
-	public static var ADD_PREMULTIPLIED      = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.One);
-	public static var MULTIPLY_PREMULTIPLIED = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.OneMinusSourceAlpha);
-	public static var SCREEN_PREMULTIPLIED   = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.OneMinusSourceColor);
+	public static var BLEND_PMA    = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.OneMinusSourceAlpha);
+	public static var ADD_PMA      = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.One);
+	public static var MULTIPLY_PMA = new AlphaState(SrcBlendFactor.DestinationColor, DstBlendFactor.OneMinusSourceAlpha);
+	public static var SCREEN_PMA   = new AlphaState(SrcBlendFactor.One             , DstBlendFactor.OneMinusSourceColor);
 	
 	public var src:SrcBlendFactor;
 	public var dst:DstBlendFactor;
@@ -78,7 +78,9 @@ class AlphaState extends GlobalState
 		this.src = src;
 		this.dst = dst;
 		
-		flag = 1 << index | (1 << Type.enumIndex(src) | 1 << Type.enumIndex(dst)) << 16;
+		var shiftOffset = Type.getEnumConstructs(GlobalStateType).length;
+		flags |= 1 << (Type.enumIndex(src) + shiftOffset);
+		flags |= 1 << (Type.enumIndex(dst) + shiftOffset + 8);
 	}
 	
 	public function toString():String

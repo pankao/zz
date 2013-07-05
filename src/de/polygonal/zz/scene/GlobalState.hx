@@ -61,9 +61,8 @@ class GlobalState
 	}
 	
 	public var type(default, null):GlobalStateType;
-	public var flag(default, null):Int;
-	
 	public var index(default, null):Int;
+	public var flags(default, null):Int;
 	public var enabled:Bool;
 	public var next:GlobalState;
 	
@@ -73,7 +72,11 @@ class GlobalState
 	{
 		this.type = type;
 		this.index = Type.enumIndex(type);
+		flags = 1 << index;
 		enabled = true;
 		next = null;
 	}
+	
+	inline public function equals(other:GlobalState):Bool
+		return flags == other.flags;
 }

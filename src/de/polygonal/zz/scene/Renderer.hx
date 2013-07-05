@@ -110,7 +110,6 @@ class Renderer
 	
 	public function new(config:RenderModuleConfig)
 	{
-		
 		if (RenderSurface.isReady() == false) throw 'Surface not initialized.';
 		RenderSurface.onResize = function(w, h) resize(w, h);
 		
@@ -233,11 +232,10 @@ class Renderer
 					return;
 				}
 				
-				var alphaState = state.__alphaState;
-				
-				if (currAlphaState == null || alphaState.flag != currAlphaState.flag)
+				if (currAlphaState == null || state.equals(currAlphaState))
 				{
-					setAlphaState(state.__alphaState);
+					var alphaState = state.__alphaState;
+					setAlphaState(alphaState);
 					currAlphaState = alphaState;
 				}
 			}
