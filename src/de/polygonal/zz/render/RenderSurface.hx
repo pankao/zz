@@ -244,10 +244,9 @@ class RenderSurface
 			#if flash11_4
 			if (args.hasField('profile') && args.hardware)
 				profile = args.field('profile');
+			L.d('context 3d profile is $profile');
 			#end
 		}
-		
-		L.d('context 3d profile is $profile');
 		
 		initDisplayList();
 		#elseif cpp
