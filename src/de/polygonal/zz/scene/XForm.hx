@@ -8,7 +8,7 @@
  *  _/                        _/_/      _/_/
  *
  * POLYGONAL - A HAXE LIBRARY FOR GAME DEVELOPERS
- * Copyright (c) 2009 Michael Baczynski, http://www.polygonal.de
+ * Copyright (c) 2012 Michael Baczynski, http://www.polygonal.de
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
