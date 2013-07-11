@@ -1,4 +1,4 @@
-#ZeroZ - a cross-platform 2D rendering library (zz)
+#Zero Z - a cross-platform 2D rendering library (zz)
 
 ![zz logo](http://polygonal.github.com/zz/images/zz.png)
 
@@ -9,6 +9,6 @@ If you want to test the latest beta build, you should pull the dev branch and ad
 
 ## Changelog
 
-### 0.1 (dev-branch)
+### 0.1.0 (released 2013-07-11)
 
 * Initial version.
