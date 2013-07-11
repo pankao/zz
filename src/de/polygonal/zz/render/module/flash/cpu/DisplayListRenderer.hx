@@ -33,26 +33,17 @@ import de.polygonal.core.time.Timebase;
 import de.polygonal.ds.DLL;
 import de.polygonal.ds.DLLNode;
 import de.polygonal.ds.IntHashTable;
-import de.polygonal.flash.display.DisplayListUtil;
+import de.polygonal.fl.display.DisplayListUtil;
 import de.polygonal.gl.color.ColorRGBA;
-import de.polygonal.zz.render.effect.Effect.*;
 import de.polygonal.zz.render.effect.*;
+import de.polygonal.zz.render.effect.Effect.*;
 import de.polygonal.zz.render.module.RenderModuleConfig;
 import de.polygonal.zz.render.RenderSurface;
-import de.polygonal.zz.render.texture.Image;
-import de.polygonal.zz.render.texture.Tex;
-import de.polygonal.zz.scene.Renderer;
-import de.polygonal.zz.scene.Spatial;
-import de.polygonal.zz.scene.XForm;
-import flash.display.Bitmap;
+import de.polygonal.zz.render.texture.*;
+import de.polygonal.zz.scene.*;
 
-import flash.display.BitmapData;
-import flash.display.Shape;
-import flash.display.Sprite;
-import flash.geom.ColorTransform;
-import flash.geom.Matrix;
-import flash.geom.Point;
-import flash.geom.Rectangle;
+import flash.display.*;
+import flash.geom.*;
 
 using de.polygonal.ds.BitFlags;
 
@@ -74,6 +65,10 @@ class DisplayListRenderer extends Renderer
 	var _scratchShape:Shape;
 	var _scratchXForm:XForm;
 	
+	var _curBlendMode:BlendMode;
+	
+	var _blendModeLUT:IntHashTable<BlendMode>;
+	
 	public function new(config:RenderModuleConfig)
 	{
 		super(config);
@@ -92,6 +87,13 @@ class DisplayListRenderer extends Renderer
 		_scratchXForm               = new XForm();
 		_bitmapLookup               = new IntHashTable<BitmapTile>(512, 512, false, 512);
 		_bitmapList                 = new DLL<BitmapTile>();
+		_blendModeLUT               = new IntHashTable(16);
+		_curBlendMode               = BlendMode.NORMAL;
+		
+		_blendModeLUT.set(AlphaState.NONE.flags, BlendMode.NORMAL);
+		_blendModeLUT.set(AlphaState.MULTIPLY_PMA.flags, BlendMode.MULTIPLY);
+		_blendModeLUT.set(AlphaState.ADD_PMA.flags, BlendMode.ADD);
+		_blendModeLUT.set(AlphaState.SCREEN_PMA.flags, BlendMode.SCREEN);
 		
 		drawDeferred = null;
 		
@@ -175,8 +177,16 @@ class DisplayListRenderer extends Renderer
 		var flashColorTransform = getColorTransform(effect);
 	}
 	
+	override function setAlphaState(state:AlphaState):Void
+	{
+		_curBlendMode = _blendModeLUT.get(state.flags);
+		D.assert(_curBlendMode != null, "unsupported alpha state");
+	}
+	
 	override public function drawTextureEffect(effect:TextureEffect):Void
 	{
+		super.drawTextureEffect(effect);
+		
 		var bmp = getBitmap(currGeometry);
 		
 		var tex = effect.tex;
@@ -209,10 +219,18 @@ class DisplayListRenderer extends Renderer
 			bmp.alpha = effect.alpha;
 		
 		bmp.transform.matrix = flashMatrix;
+		
+		if (_curBlendMode != bmp.prevBlendMode)
+		{
+			bmp.blendMode = _curBlendMode;
+			bmp.prevBlendMode = _curBlendMode;
+		}
 	}
 	
 	override public function drawSpriteSheetEffect(effect:SpriteSheetEffect):Void
 	{
+		super.drawSpriteSheetEffect(effect);
+		
 		var bmp = getBitmap(currGeometry);
 		
 		var tex = effect.tex;
@@ -220,6 +238,7 @@ class DisplayListRenderer extends Renderer
 		var tileData = getTile(effect.frame << 16 | tex.key, tex, effect);
 		
 		var world = currGeometry.world;
+		
 		//var s = world.getScale();
 		//var r = world.getRotate();
 		//var t = world.getTranslate();
@@ -244,8 +263,6 @@ class DisplayListRenderer extends Renderer
 			canvas.addChild(bmp);
 		}
 		canvas.setChildIndex(bmp, _zIndex++);
-		
-		//depthSort(bmp);
 		
 		if (effect.flags & Effect.EFFECT_COLOR_XFORM > 0)
 			bmp.transform.colorTransform = getColorTransform(effect);
@@ -272,8 +289,15 @@ class DisplayListRenderer extends Renderer
 			//bmp.scaleX = s.x;
 			//bmp.scaleY = s.y;
 		}
-		else*/
+		*/
+		
 		bmp.transform.matrix = flashMatrix;
+		
+		if (_curBlendMode != bmp.prevBlendMode)
+		{
+			bmp.blendMode = _curBlendMode;
+			bmp.prevBlendMode = _curBlendMode;
+		}
 	}
 	
 	override public function onViewPortChange():Void
@@ -423,8 +447,6 @@ class DisplayListRenderer extends Renderer
 	
 	function initBitmap(spatial:Spatial):BitmapTile
 	{
-		L.w('init bitmap ' + spatial.id + ' ' + spatial.key);
-		
 		var bmp = new BitmapTile();
 		bmp.spatial = spatial;
 		
@@ -475,6 +497,8 @@ private class BitmapTile extends Bitmap
 	public var spatial:Spatial;
 	public var listNode:DLLNode<BitmapTile>;
 	public var zIndex:Int;
+	
+	public var prevBlendMode:BlendMode;
 	
 	public var hasParent:Bool;
 	public var idleTime:Float;
