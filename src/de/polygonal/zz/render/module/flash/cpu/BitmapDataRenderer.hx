@@ -34,7 +34,7 @@ import de.polygonal.core.math.Mat33;
 import de.polygonal.core.math.Mat44;
 import de.polygonal.core.math.Vec3;
 import de.polygonal.ds.IntHashTable;
-import de.polygonal.flash.display.DisplayListUtil;
+import de.polygonal.native.flash.display.DisplayListUtil;
 import de.polygonal.gl.color.RGBA;
 import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.render.effect.Effect.*;

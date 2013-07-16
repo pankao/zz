@@ -30,11 +30,12 @@
 package de.polygonal.zz.render.module.flash.cpu;
 
 import de.polygonal.core.time.Timebase;
+import de.polygonal.core.util.Assert.assert;
 import de.polygonal.ds.DLL;
 import de.polygonal.ds.DLLNode;
 import de.polygonal.ds.IntHashTable;
-import de.polygonal.fl.display.DisplayListUtil;
 import de.polygonal.gl.color.ColorRGBA;
+import de.polygonal.native.flash.display.DisplayListUtil;
 import de.polygonal.zz.render.effect.*;
 import de.polygonal.zz.render.effect.Effect.*;
 import de.polygonal.zz.render.module.RenderModuleConfig;
@@ -91,6 +92,7 @@ class DisplayListRenderer extends Renderer
 		_curBlendMode               = BlendMode.NORMAL;
 		
 		_blendModeLUT.set(AlphaState.NONE.flags, BlendMode.NORMAL);
+		_blendModeLUT.set(AlphaState.BLEND_PMA.flags, BlendMode.NORMAL);
 		_blendModeLUT.set(AlphaState.MULTIPLY_PMA.flags, BlendMode.MULTIPLY);
 		_blendModeLUT.set(AlphaState.ADD_PMA.flags, BlendMode.ADD);
 		_blendModeLUT.set(AlphaState.SCREEN_PMA.flags, BlendMode.SCREEN);
@@ -180,7 +182,7 @@ class DisplayListRenderer extends Renderer
 	override function setAlphaState(state:AlphaState):Void
 	{
 		_curBlendMode = _blendModeLUT.get(state.flags);
-		D.assert(_curBlendMode != null, "unsupported alpha state");
+		assert(_curBlendMode != null, 'unsupported alpha state: $state');
 	}
 	
 	override public function drawTextureEffect(effect:TextureEffect):Void
@@ -349,7 +351,7 @@ class DisplayListRenderer extends Renderer
 				var key = tile.spatial.key;
 				tile.free();
 				var success = _bitmapLookup.clr(key);
-				D.assert(success, 'success');
+				assert(success, 'success');
 			}
 			
 			node = next;
@@ -364,7 +366,7 @@ class DisplayListRenderer extends Renderer
 		//|u v w |
 		
 		#if debug
-		D.assert(xf.isRSMatrix(), 'xf.isRSMatrix()');
+		assert(xf.isRSMatrix(), 'xf.isRSMatrix()');
 		#end
 		
 		var frame = getCamera().local;
