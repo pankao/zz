@@ -48,10 +48,8 @@ class SphereBV extends BoundingVolume
 	public function new()
 	{
 		super();
-		
+		__sphereBV = this;
 		type = BoundingVolume.TYPE_SPHERE;
-		
-		sphereBV = this;
 		
 		sphere = new Sphere2();
 		_c = sphere.c;
@@ -63,6 +61,8 @@ class SphereBV extends BoundingVolume
 	
 	override public function free():Void
 	{
+		super.free();
+
 		sphere = null;
 		_c = null;
 		_center = null;
@@ -106,7 +106,7 @@ class SphereBV extends BoundingVolume
 	
 	override public function growToContain(other:BoundingVolume):Void
 	{
-		sphere.addSphere(other.sphereBV.sphere);
+		sphere.addSphere(other.__sphereBV.sphere);
 	}
 	
 	override public function contains(point:Vec3):Bool
@@ -138,7 +138,7 @@ class SphereBV extends BoundingVolume
 		
 		transform.applyForward(t2, t1);
 		
-		var out = output.sphereBV;
+		var out = output.__sphereBV;
 		out.sphere.c.x = t1.x;
 		out.sphere.c.y = t1.y;
 		out.sphere.r   = transform.getNorm() * sphere.r;
@@ -146,6 +146,8 @@ class SphereBV extends BoundingVolume
 	
 	override public function set(other:BoundingVolume):Void
 	{
-		sphere.set(other.sphereBV.sphere);
+		//if (Math.isNaN(other.__sphereBV.sphere.c.x)) throw 1;
+
+		sphere.set(other.__sphereBV.sphere);
 	}
 }

@@ -294,20 +294,26 @@ class Tile extends AbstractTile
 		if (e != null && e.hasTexture())
 			preMultipliedAlpha = e.tex.isAlphaPreMultiplied;
 		_blendMode = value;
-		var state:AlphaState =
-		switch (value)
+		
+		var state:AlphaState = null;
+		if (value != null)
 		{
-			case BlendMode.Inherit:  null;
-			case BlendMode.None:     AlphaState.NONE;
-			case BlendMode.Normal:   preMultipliedAlpha ? AlphaState.BLEND_PREMULTIPLIED : AlphaState.BLEND;
-			case BlendMode.Multiply: preMultipliedAlpha ? AlphaState.MULTIPLY_PREMULTIPLIED : AlphaState.MULTIPLY;
-			case BlendMode.Add:      preMultipliedAlpha ? AlphaState.ADD_PREMULTIPLIED : AlphaState.ADD;
-			case BlendMode.Screen:   preMultipliedAlpha ? AlphaState.SCREEN_PREMULTIPLIED : AlphaState.SCREEN;
+			state =
+			switch (value)
+			{
+				case BlendMode.Inherit:  null;
+				case BlendMode.None:     AlphaState.NONE;
+				case BlendMode.Normal:   preMultipliedAlpha ? AlphaState.BLEND_PMA : AlphaState.BLEND;
+				case BlendMode.Multiply: preMultipliedAlpha ? AlphaState.MULTIPLY_PMA : AlphaState.MULTIPLY;
+				case BlendMode.Add:      preMultipliedAlpha ? AlphaState.ADD_PMA : AlphaState.ADD;
+				case BlendMode.Screen:   preMultipliedAlpha ? AlphaState.SCREEN_PMA : AlphaState.SCREEN;
+			}
 		}
 		if (state == null)
 			sgn.removeGlobalState(GlobalStateType.Alpha)
 		else
 			sgn.setGlobalState(state);
+		sgn.updateRenderState();
 		return value;
 	}
 	
@@ -437,7 +443,7 @@ class Tile extends AbstractTile
 		var s = sheet.getSizeAt(frameIndex);
 		sgn.scaleX = _width = s.x;
 		sgn.scaleY = _height = s.y;
-		_scaleX = _scaleX = 1;
+		_scaleX = _scaleY = 1;
 		
 		frame = frameIndex;
 		return this;
@@ -470,7 +476,7 @@ class Tile extends AbstractTile
 	 *   |                       |
 	 *   v                       v
 	 */
-	public function centerPivot(noShift = false):Void
+	public function centerPivot(noShift = false):Tile
 	{
 		if (_trimOffset != null)
 		{
@@ -496,6 +502,7 @@ class Tile extends AbstractTile
 				y += height * .5;
 			}
 		}
+		return this;
 	}
 	
 	public function resetPivot():Void

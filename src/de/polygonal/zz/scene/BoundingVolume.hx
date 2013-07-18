@@ -37,17 +37,17 @@ class BoundingVolume
 	inline public static var TYPE_AABB   = 1;
 	
 	public var type:Int;
-	public var sphereBV:SphereBV;
+	public var __sphereBV:SphereBV;
 	
 	public function new()
 	{
 		type = -1;
-		sphereBV = null;
+		__sphereBV = null;
 	}
 	
 	public function free():Void
 	{
-		sphereBV = null;
+		__sphereBV = null;
 	}
 	
 	public function getCenter():Vec3

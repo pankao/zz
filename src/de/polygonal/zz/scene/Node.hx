@@ -47,15 +47,23 @@ class Node extends Spatial
 		__node = this;
 	}
 	
+	/**
+	 * Adds a <code>child</code> node to the end of the list of children of this node.
+	 */
 	public function addChild(child:Spatial):Void
 	{
-		D.assert(child != null, 'child != null');
+		D.assert(child != null, 'child is null');
+		D.assert(!treeNode.contains(child), 'child was added before');
 		treeNode.appendNode(child.treeNode);
 	}
 	
+	/**
+	 * Removes a <code>child</code> node from the list of children of this node.
+	 */
 	public function removeChild(child:Spatial):Void
 	{
 		D.assert(child != null, 'child != null');
+		D.assert(child.treeNode != null, 'child has been freed');
 		child.treeNode.unlink();
 	}
 	
@@ -65,9 +73,9 @@ class Node extends Spatial
 		treeNode.insertChildAt(child.treeNode, index);
 	}
 	
-	public function removeChildAt(index:Int):Void
+	public function removeChildAt(index:Int):Spatial
 	{
-		treeNode.removeChildAt(index);
+		return treeNode.removeChildAt(index).val;
 	}
 	
 	public function removeChildren(beginIndex = 0, count = -1):Void
@@ -117,7 +125,7 @@ class Node extends Spatial
 	}
 	
 	/**
-	 * If <code>x</code> is false, world bound computations are ignored, that is <em>updateWorldBound()</em> has no effect.
+	 * If <code>x</code> is false, world bound computations are ignored, that is calling <em>updateWorldBound()</em> has no effect.
 	 */
 	public function enableUpdateBV(x:Bool):Void
 	{

@@ -138,7 +138,9 @@ class RenderSystem
 		
 		sceneGraph = new Node('sceneGraphRoot');
 		images = new StringMap();
+		#if flash11_4
 		compressedImages = new StringMap();
+		#end
 		
 		_textureUsageCount = new IntIntHashTable(4096);
 		
@@ -147,8 +149,7 @@ class RenderSystem
 		sceneGraph.enableUpdateBV(false);
 	}
 	
-	//adds x to the scene graph root node
-	public static function addChild(x:Tile):Void
+	public static function addChild(x:AbstractTile):Void
 	{
 		sceneGraph.addChild(x.sgn);
 	}
@@ -160,10 +161,11 @@ class RenderSystem
 	
 	public static function drawScene():Void
 	{
-		renderer.drawScene(sceneGraph);
+		if (renderer != null && sceneGraph != null)
+			renderer.drawScene(sceneGraph);
 	}
 	
-	static public function getSheet(id:String):SpriteSheet
+	public static function getSheet(id:String):SpriteSheet
 	{
 		#if debug
 		if (!_sheetMap.exists(id))
@@ -172,19 +174,19 @@ class RenderSystem
 		return _sheetMap.get(id);
 	}
 	
-	static public function createTile(id:String):Tile
+	public static function createTile(id:String):Tile
 	{
 		return new Tile(id);
 	}
 	
-	static public function getImage(imageId:String):Image
+	public static function getImage(imageId:String):Image
 	{
 		if (!images.exists(imageId))
 			throw 'image with id "' + imageId + '" does not exits';
 		return images.get(imageId);
 	}
 	
-	static public function registerImage(imageId:String, data:ImageData):Void
+	public static function registerImage(imageId:String, data:ImageData):Void
 	{
 		if (images.exists(imageId))
 		{
@@ -200,7 +202,7 @@ class RenderSystem
 	}
 	
 	#if flash11_4
-	static public function registerCompressedImage(imageId:String, data:flash.utils.ByteArray):Void
+	public static function registerCompressedImage(imageId:String, data:flash.utils.ByteArray):Void
 	{
 		if (images.exists(imageId))
 		{
@@ -216,12 +218,12 @@ class RenderSystem
 	}
 	#end
 	
-	static public function initTexture(imageId:String):Tex
+	public static function initTexture(imageId:String):Tex
 	{
 		return renderer.initTex(getImage(imageId));
 	}
 	
-	static public function freeTexture(tex:Tex):Void
+	public static function freeTexture(tex:Tex):Void
 	{
 		var count = _textureUsageCount.get(tex.key);
 		if (count == 1)

@@ -307,7 +307,9 @@ class Spatial extends HashableItem
 		camera.planeCullState = planeCullState;
 	}
 	
-	public function draw(renderer:Renderer, noCull:Bool):Void {}
+	public function draw(renderer:Renderer, noCull:Bool):Void
+	{
+	}
 	
 	public function pick(origin:Vec3, result:PickResult):Int
 	{
@@ -442,9 +444,9 @@ class Spatial extends HashableItem
 	
 	public function toString():String
 	{
-		if (isGeometry()) return Sprintf.format('Geometry id=%s userData=%s', [id, userData]);
-		if (isNode()) return Sprintf.format('Node id=%s userData=%s', [id, userData]);
-		return Sprintf.format("? id=%s userData=%s", [id, userData]);
+		if (isGeometry()) return Printf.format('Geometry id=%s userData=%s', [id, userData]);
+		if (isNode()) return Printf.format('Node id=%s userData=%s', [id, userData]);
+		return Printf.format("? id=%s userData=%s", [id, userData]);
 	}
 	
 	function updateWorldData(updateBV:Bool):Void

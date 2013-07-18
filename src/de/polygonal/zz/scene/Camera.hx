@@ -57,7 +57,7 @@ class Camera extends Spatial
 	
 	public function new()
 	{
-		super(null);
+		super('Camera');
 		
 		planeCullState = Bits.mask(4);
 		zoom = 1;

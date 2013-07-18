@@ -133,7 +133,7 @@ class Geometry extends Spatial
 			{
 				var state = stack.top();
 				states.set(i, state);
-				stateFlags |= state.flag;
+				stateFlags |= state.flags;
 			}
 		}
 	}
