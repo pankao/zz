@@ -61,9 +61,6 @@ typedef SurfaceArgs =
  */
 class RenderSurface
 {
-	inline static var HARDWARE  = 0x01;
-	inline static var READY     = 0x02;
-	
 	/**
 	 * The width of this surface in pixels.
 	 */
@@ -179,20 +176,22 @@ class RenderSurface
 		return {x: x, y: y, scaleX: sX, scaleY: sY};
 	}
 	
+	
+	static var _args:SurfaceArgs;
+	static var _ready:Bool;
 	static var _mouse:Vec2;
-	static var _flags:Int = 0;
 	static var _onCreate:Void->Void = null;
 	
 	#if (flash || nme)
 	public static var stage(default, null):flash.display.Stage = null;
 	public static var root(default, null):flash.display.Sprite = null;
-	#if flash11
-	public static var stage3d:flash.display.Stage3D = null;
-	public static var numDeviceLost = -1;
-	#if flash11_4
-	public static var profile = flash.display3D.Context3DProfile.BASELINE;
-	#end
-	#end
+		#if flash11
+		public static var stage3d:flash.display.Stage3D = null;
+		public static var numDeviceLost = -1;
+			#if flash11_4
+			public static var profile = flash.display3D.Context3DProfile.BASELINE;
+			#end
+		#end
 	#end
 	
 	#if js
@@ -207,7 +206,7 @@ class RenderSurface
 	 */
 	public static function isReady():Bool
 	{
-		return (_flags & READY) > 0;
+		return _ready;
 	}
 	
 	/**
@@ -215,15 +214,26 @@ class RenderSurface
 	 */
 	public static function isHardware():Bool
 	{
-		return (_flags & HARDWARE) > 0;
+		return _args.hasField('hardware') && _args.hardware;
 	}
 	
+	/**
+	 * Returns true if this surface is resizable (scale mode set to "noScale")
+	 */
+	public static function isResizable():Bool
+	{
+		return _args.hasField('resizable') && _args.resizable;
+	}
+
 	public static function create(onCreate:Void->Void, onResize:Int->Int->Void = null, args:SurfaceArgs = null)
 	{
+		_args = args;
+		_ready = false;
+		
 		_onCreate = function()
 		{
+			_ready = true;
 			L.i('surface initialized (${width}x${height})');
-			_flags |= READY;
 			onCreate();
 		}
 		
@@ -238,11 +248,8 @@ class RenderSurface
 		#if flash
 		if (args != null)
 		{
-			if (args.hasField('hardware') && args.hardware)
-				_flags |= HARDWARE;
-				
 			#if flash11_4
-			if (args.hasField('profile') && args.hardware)
+			if (args.hasField('profile') && isHardware())
 				profile = args.field('profile');
 			L.d('context 3d profile is $profile');
 			#end
@@ -257,7 +264,7 @@ class RenderSurface
 		var color = 0;
 		width = 640;
 		height = 800;
-		_flags |= HARDWARE;
+		_isHardware = true;
 		
 		if (args != null)
 		{
@@ -267,10 +274,10 @@ class RenderSurface
 			if (args.hasField('height')) height = args.height;
 			
 			if (args.hasField('hardware') && args.hardware)
-				_flags |= HARDWARE;
+				_isHardware = true;
 			
 			if (args.hasField('resizable') && args.resizable)
-				_flags |= RESIZABLE;
+				_isResizable = true;
 		}
 		
 		try
@@ -342,21 +349,18 @@ class RenderSurface
 		}
 		rec(flash.Lib.current.stage);
 		for (i in a) i.parent.removeChild(i);
-
-
-		#if flash11
-		if (isHardware())
-		{
-			try 
-			{
-				stage3d.removeEventListener(flash.events.Event.CONTEXT3D_CREATE, function(e) _onCreate());
-			}
-			catch(error:Dynamic) {}
-		}
-		#end
-		#end
 		
-		_flags &= ~READY;
+			#if flash11
+			if (isHardware())
+			{
+				try 
+				{
+					stage3d.removeEventListener(flash.events.Event.CONTEXT3D_CREATE, function(e) _onCreate());
+				}
+				catch(error:Dynamic) {}
+			}
+			#end
+		#end
 	}
 	
 	#if (flash || nme)
@@ -378,9 +382,12 @@ class RenderSurface
 		bound.maxY = height = stage.stageHeight;
 		
 		#if (flash || nme)
-		stage.scaleMode = flash.display.StageScaleMode.NO_SCALE;
-		stage.align = flash.display.StageAlign.TOP_LEFT;
-		stage.addEventListener(flash.events.Event.RESIZE, onStageResize);
+		if (isResizable())
+		{
+			stage.scaleMode = flash.display.StageScaleMode.NO_SCALE;
+			stage.align = flash.display.StageAlign.TOP_LEFT;
+			stage.addEventListener(flash.events.Event.RESIZE, onStageResize);
+		}
 		#end
 		
 		if (isHardware())
@@ -416,6 +423,7 @@ class RenderSurface
 	}
 	#end
 	
+	#if (flash || nme)
 	static function onStageResize(_):Void
 	{
 		#if (flash || nme)
@@ -426,4 +434,5 @@ class RenderSurface
 		L.i('surface resized to ${width}x${height}');
 		if (onResize != null) onResize(width, height);
 	}
+	#end
 }
