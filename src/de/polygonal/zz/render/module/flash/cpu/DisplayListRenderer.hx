@@ -52,6 +52,9 @@ class DisplayListRenderer extends Renderer
 {
 	public var canvas(default, null):Sprite;
 	
+	var _sceneGraphContainer:Sprite;
+	var _hudContainer:Sprite;
+	
 	var _tileLookup:IntHashTable<BitmapDataTile>;
 	var _bitmapLookup:IntHashTable<BitmapTile>;
 	var _bitmapList:DLL<BitmapTile>;
@@ -75,8 +78,19 @@ class DisplayListRenderer extends Renderer
 		super(config);
 		
 		canvas = new Sprite();
-		canvas.mouseChildren = false;
+		canvas.name = "canvas";
 		canvas.mouseEnabled = false;
+		canvas.tabEnabled = false;
+		
+		var o = _sceneGraphContainer = new Sprite();
+		o.name = "sceneGraph";
+		o.mouseChildren = o.mouseEnabled = o.tabChildren = o.tabEnabled = false;
+		canvas.addChild(o);
+		
+		var o = _hudContainer = new Sprite();
+		o.name = "hud";
+		o.mouseEnabled = o.tabEnabled = false;
+		canvas.addChild(o);
 		
 		_scratchMatrix              = new Matrix();
 		_scratchColorTransform      = new ColorTransform();
@@ -105,6 +119,11 @@ class DisplayListRenderer extends Renderer
 		else
 			RenderSurface.root;
 		container.addChild(canvas);
+	}
+	
+	public function getHudContainer():DisplayObjectContainer
+	{
+		return cast canvas.getChildByName("hud");
 	}
 	
 	override public function free():Void
@@ -210,9 +229,9 @@ class DisplayListRenderer extends Renderer
 		if (!bmp.hasParent)
 		{
 			bmp.hasParent = true;
-			canvas.addChild(bmp);
+			_sceneGraphContainer.addChild(bmp);
 		}
-		canvas.setChildIndex(bmp, _zIndex++);
+		_sceneGraphContainer.setChildIndex(bmp, _zIndex++);
 		
 		if (effect.flags & Effect.EFFECT_COLOR_XFORM > 0)
 			bmp.transform.colorTransform = getColorTransform(effect);
@@ -262,9 +281,9 @@ class DisplayListRenderer extends Renderer
 		if (!bmp.hasParent)
 		{
 			bmp.hasParent = true;
-			canvas.addChild(bmp);
+			_sceneGraphContainer.addChild(bmp);
 		}
-		canvas.setChildIndex(bmp, _zIndex++);
+		_sceneGraphContainer.setChildIndex(bmp, _zIndex++);
 		
 		if (effect.flags & Effect.EFFECT_COLOR_XFORM > 0)
 			bmp.transform.colorTransform = getColorTransform(effect);
@@ -341,7 +360,7 @@ class DisplayListRenderer extends Renderer
 			if (tile.hasParent && tile.idleTime > 1)
 			{
 				tile.hasParent = false;
-				canvas.removeChild(tile);
+				_sceneGraphContainer.removeChild(tile);
 			}
 			
 			//remove display object if node was freed or removed from the scene graph
@@ -463,7 +482,7 @@ class DisplayListRenderer extends Renderer
 		bmp.listNode = _bitmapList.append(bmp);
 		_bitmapLookup.set(spatial.key, bmp);
 		
-		canvas.addChild(bmp);
+		_sceneGraphContainer.addChild(bmp);
 		bmp.hasParent = true;
 		bmp.visible = false;
 		
@@ -517,6 +536,9 @@ private class BitmapTile extends Bitmap
 		if (x.key != key)
 		{
 			key = x.key;
+			#if debug
+			name = 'BitmapTile${spatial.id}';
+			#end
 			bitmapData = x.bitmapData;
 			smoothing = true;
 		}
