@@ -121,11 +121,6 @@ class DisplayListRenderer extends Renderer
 		container.addChild(canvas);
 	}
 	
-	public function getHudContainer():DisplayObjectContainer
-	{
-		return cast canvas.getChildByName("hud");
-	}
-	
 	override public function free():Void
 	{
 		super.free();
@@ -142,6 +137,16 @@ class DisplayListRenderer extends Renderer
 		
 		DisplayListUtil.removeAll(canvas);
 		canvas = null;
+	}
+	
+	public function getHudContainer():DisplayObjectContainer
+	{
+		return cast canvas.getChildByName("hud");
+	}
+	
+	override public function clear():Void
+	{
+		DisplayListUtil.removeChildren(_sceneGraphContainer);
 	}
 	
 	override public function setBackgroundColor(r:Float, g:Float, b:Float, a:Float):Void

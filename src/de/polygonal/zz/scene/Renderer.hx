@@ -199,6 +199,10 @@ class Renderer
 		_backgroundColor.w = a;
 	}
 	
+	public function clear()
+	{
+	}
+	
 	public function resize(width:Int, height:Int):Void
 	{
 		this.width = width;
