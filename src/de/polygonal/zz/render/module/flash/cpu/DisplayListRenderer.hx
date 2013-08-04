@@ -78,7 +78,7 @@ class DisplayListRenderer extends Renderer
 		super(config);
 		
 		canvas = new Sprite();
-		canvas.name = "canvas";
+		canvas.name = "DisplayListRenderer.canvas";
 		canvas.mouseEnabled = false;
 		canvas.tabEnabled = false;
 		
@@ -118,7 +118,8 @@ class DisplayListRenderer extends Renderer
 			config.container;
 		else
 			RenderSurface.root;
-		container.addChild(canvas);
+		
+		if (container != null) container.addChild(canvas);
 	}
 	
 	override public function free():Void
