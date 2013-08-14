@@ -100,7 +100,7 @@ class DisplayListRenderer extends Renderer
 		_tileLookup                 = new IntHashTable(512, 512, false, 512);
 		_scratchShape               = new Shape();
 		_scratchXForm               = new XForm();
-		_bitmapLookup               = new IntHashTable<BitmapTile>(512, 512, false, 512);
+		_bitmapLookup               = new IntHashTable<BitmapTile>(512, 4096, false, 4096);
 		_bitmapList                 = new DLL<BitmapTile>();
 		_blendModeLUT               = new IntHashTable(16);
 		_curBlendMode               = BlendMode.NORMAL;
@@ -148,6 +148,13 @@ class DisplayListRenderer extends Renderer
 	override public function clear():Void
 	{
 		DisplayListUtil.removeChildren(_sceneGraphContainer);
+		var node = _bitmapList.head;
+		while (node != null)
+		{
+			var tile = node.val;
+			tile.hasParent = false;
+			node = node.next;
+		}
 	}
 	
 	override public function setBackgroundColor(r:Float, g:Float, b:Float, a:Float):Void
