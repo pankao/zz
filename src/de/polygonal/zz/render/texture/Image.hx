@@ -29,19 +29,56 @@
  */
 package de.polygonal.zz.render.texture;
 
-import de.polygonal.ds.HashableItem;
-
-class Image extends HashableItem
+/*typedef ImgData<T> =
 {
-	#if (flash || cpp)
-	public static function ofData(data:flash.display.BitmapData)
+	var width:Int;
+	var height:Int;
+	var data:T;
+}
+*/
+class Image extends de.polygonal.ds.HashableItem
+{
+	public static function ofData(data:ImageData):Image
 	{
 		return new Image(data, data.width, data.height, true);
 	}
-	#elseif js
-	public static function ofData(data:js.w3c.html5.Core.HTMLImageElement)
+
+	#if flash11_4
+	public static function ofBytes(data:flash.utils.ByteArray):Image
 	{
-		return new Image(data, data.width, data.height, true);
+		data.position = 0;
+
+		if (data.readUTFBytes(3) != 'ATF') throw 'not an .atf file';
+
+		//var tdata : UInt= data[6];
+		//var type = tdata >> 7; 		// UB[1]
+		//trace( "type : " + type );
+		//var format = tdata & 0x7f;	// UB[7]
+		//trace( "format : " + format );
+
+		var format:flash.display3D.Context3DTextureFormat =
+		switch (data[6])
+		{
+			case 0:
+			case 1: flash.display3D.Context3DTextureFormat.BGRA;
+			case 2:
+			case 3: flash.display3D.Context3DTextureFormat.COMPRESSED;
+			case 4: flash.display3D.Context3DTextureFormat.COMPRESSED_ALPHA;
+			case 5: flash.display3D.Context3DTextureFormat.COMPRESSED_ALPHA;
+			default: throw 'invalid atf format';
+		}
+
+		var w = 1 << data[7];
+		var h = 1 << data[8];
+
+		//num textures data[9];
+
+		var image = new Image(null, w, h, false);
+		data.position = 0;
+		image.atf = data;
+		image.atfFormat = format;
+
+		return image;
 	}
 	#end
 	
@@ -51,6 +88,11 @@ class Image extends HashableItem
 	public var h(default, null):Int;
 	public var premultipliedAlpha:Bool;
 	
+	#if flash11_4
+	public var atf:flash.utils.ByteArray;
+	public var atfFormat:flash.display3D.Context3DTextureFormat;
+	#end
+
 	public function new(data:ImageData, w:Int, h:Int, premultipliedAlpha:Bool)
 	{
 		super();
@@ -61,6 +103,13 @@ class Image extends HashableItem
 		this.premultipliedAlpha = premultipliedAlpha;
 	}
 	
+	#if flash11_4
+	/*public function setATF(data:flash.utils.ByteArray)
+	{
+
+	}*/
+	#end
+
 	public function clone():Image
 	{
 		#if (flash || cpp)
@@ -70,12 +119,17 @@ class Image extends HashableItem
 		return throw 'unsupported operation';
 	}
 	
-	public function free():Void
+	public function free()
 	{
 		#if (flash || cpp)
 		data.dispose();
 		#end
 		data = null;
+
+		#if flash11_4
+		atf = null;
+		#end
+
 		w = -1;
 		h = -1;
 		key = -1;

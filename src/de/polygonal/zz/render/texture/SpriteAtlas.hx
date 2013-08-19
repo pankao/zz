@@ -41,9 +41,9 @@ class SpriteAtlas extends SpriteSheet
 		for (i in 0...frameCount)
 		{
 			var frame = format.frameList[i];
-
+			
 			if (frame == null) continue;
-
+			
 			if (textureScale != 1)
 			{
 				frame = frame.clone();
@@ -54,22 +54,19 @@ class SpriteAtlas extends SpriteSheet
 				frame.r = frame.x + frame.w;
 				frame.b = frame.y + frame.h;
 			}
-
+			
 			var size = new Size(Std.int(frame.w), Std.int(frame.h));
 			
-			if (frame != null)
+			addCropRectAt(i, format.nameList[i], frame, size, tex.isNormalized);
+			
+			if (format.trimFlag[i])
 			{
-				addCropRectAt(i, format.nameList[i], frame, size, tex.isNormalized);
-				
-				if (format.trimFlag[i])
-				{
-					_trimFlagList.set(i, true);
-					_trimOffset.set(i, format.trimOffset[i]);
-					_untrimmedSize.set(i, format.untrimmedSize[i]);
-				}
-				else
-					_untrimmedSize.set(i, size);
+				_trimFlagList.set(i, true);
+				_trimOffset.set(i, format.trimOffset[i]);
+				_untrimmedSize.set(i, format.untrimmedSize[i]);
 			}
+			else
+				_untrimmedSize.set(i, size);
 		}
 	}
 }

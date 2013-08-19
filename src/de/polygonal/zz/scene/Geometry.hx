@@ -77,12 +77,16 @@ class Geometry extends Spatial
 		states = null;
 	}
 	
-	override public function free():Void
+	override public function free()
 	{
 		super.free();
 		modelBound.free();
 		modelBound = null;
 		
+		vertices = null;
+		indices = null;
+		normals = null;
+
 		if (states != null)
 		{
 			states.free();
