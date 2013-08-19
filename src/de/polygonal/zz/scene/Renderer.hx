@@ -47,6 +47,8 @@ import de.polygonal.zz.scene.Node;
 import de.polygonal.zz.scene.Spatial;
 import haxe.ds.IntMap;
 
+import de.polygonal.zz.scene.AlphaState;
+
 using de.polygonal.ds.BitFlags;
 using Reflect;
 
@@ -210,7 +212,7 @@ class Renderer
 		onViewPortChange();
 	}
 	
-	public function setGlobalState(states:DA<GlobalState>):Void
+	public function setGlobalState(states:DA<GlobalState>)
 	{
 		if (allowAlphaState)
 		{
@@ -221,27 +223,25 @@ class Renderer
 					setAlphaState(AlphaState.NONE);
 					currAlphaState = null;
 				}
+				return;
 			}
-			else
+
+			var state = states.get(Type.enumIndex(GlobalStateType.Alpha));
+			if (state == null)
 			{
-				var state = states.get(Type.enumIndex(GlobalStateType.Alpha));
-				
-				if (state == null)
+				if (currAlphaState != null)
 				{
-					if (currAlphaState != null)
-					{
-						setAlphaState(AlphaState.NONE);
-						currAlphaState = null;
-					}
-					return;
+					setAlphaState(AlphaState.NONE);
+					currAlphaState = null;
 				}
-				
-				if (currAlphaState == null || state.equals(currAlphaState))
-				{
-					var alphaState = state.__alphaState;
-					setAlphaState(alphaState);
-					currAlphaState = alphaState;
-				}
+				return;
+			}
+
+			if (currAlphaState == null || !currAlphaState.equals(state))
+			{
+				var alphaState = state.__alphaState;
+				setAlphaState(alphaState);
+				currAlphaState = alphaState;
 			}
 		}
 	}
@@ -408,7 +408,8 @@ class Renderer
 	
 	public function drawSpriteSheetEffect(effect:SpriteSheetEffect):Void
 	{
-		if (allowGlobalState) setGlobalState(currGeometry.states);
+		if (allowGlobalState)
+			setGlobalState(currGeometry.states);
 	}
 	
 	//TODO only recompute if changed

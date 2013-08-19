@@ -30,34 +30,40 @@
 package de.polygonal.zz.scene;
 
 import de.polygonal.ds.ArrayedStack;
+import de.polygonal.ds.ArrayUtil;
 
 typedef GlobalStateStacks = Array<ArrayedStack<GlobalState>>;
 
 class GlobalState
 {
 	static var _stacks:GlobalStateStacks = null;
+	static var _numStates:Int;
+	
 	inline public static function getStacks():GlobalStateStacks
 	{
-		if (_stacks == null)
-		{
-			_stacks = [];
-			for (i in 0...Type.getEnumConstructs(GlobalStateType).length)
-				_stacks[i] = new ArrayedStack();
-		}
+		if (_stacks == null) initStacks();
 		return _stacks;
 	}
 	
-	public static function clrStacks():Void
+	public static function clrStacks()
 	{
-		for (i in _stacks) i.clear();
+		for (i in 0..._numStates)
+			_stacks[i].clear();
 	}
 	
 	public static function dumpStacks():String
 	{
-		var s = '\n';
-		for (i in 0...Type.getEnumConstructs(GlobalStateType).length)
-			s += Printf.format("[%d] => [%s]\n", [i, _stacks[i].toArray().join('')]);
+		var s = "";
+		for (i in 0..._numStates)
+			s += '[$i] => [${_stacks[i].toArray().join("")}]';
 		return s;
+	}
+	
+	static function initStacks()
+	{
+		_numStates = Type.getEnumConstructs(GlobalStateType).length;
+		_stacks = ArrayUtil.alloc(_numStates);
+		for (i in 0..._numStates) _stacks[i] = new ArrayedStack();
 	}
 	
 	public var type(default, null):GlobalStateType;

@@ -40,6 +40,8 @@ import de.polygonal.zz.render.effect.Effect;
 import de.polygonal.zz.scene.GlobalState.GlobalStateStacks;
 import de.polygonal.core.util.Assert;
 
+import de.polygonal.zz.scene.AlphaState;
+
 using de.polygonal.ds.BitFlags;
 
 @:build(de.polygonal.core.util.IntEnum.build(
@@ -168,7 +170,7 @@ class Spatial extends HashableItem
 	public var __next:Spatial;
 	
 	var _bits:Int;
-	var _globalStates:GlobalState;
+	var _globalStateList:GlobalState;
 	
 	function new(id:String)
 	{
@@ -368,7 +370,7 @@ class Spatial extends HashableItem
 	
 	public function getGlobalState(type:GlobalStateType):GlobalState
 	{
-		var node = _globalStates;
+		var node = _globalStateList;
 		while (node != null)
 		{
 			if (node.type == type) return node;
@@ -383,14 +385,14 @@ class Spatial extends HashableItem
 		D.assert(state.next == null, 'state.next == null');
 		
 		//set initial state
-		if (_globalStates == null)
+		if (_globalStateList == null)
 		{
-			_globalStates = state;
+			_globalStateList = state;
 			return;
 		}
 		
 		//replace existing state
-		var node = _globalStates, prev = null, type = state.type;
+		var node = _globalStateList, prev = null, type = state.type;
 		while (node != null)
 		{
 			if (node.type == type)
@@ -399,7 +401,7 @@ class Spatial extends HashableItem
 				if (prev != null)
 					prev.next = state;
 				else
-					_globalStates = state;
+					_globalStateList = state;
 				node.next = null;
 				return;
 			}
@@ -407,14 +409,14 @@ class Spatial extends HashableItem
 			node = node.next;
 		}
 		
-		//add state
-		state.next = _globalStates;
-		_globalStates = state;
+		//add to list
+		state.next = _globalStateList;
+		_globalStateList = state;
 	}
 	
 	public function removeGlobalState(type:GlobalStateType):Void
 	{
-		var node = _globalStates, prev = null;
+		var node = _globalStateList, prev = null;
 		while (node != null)
 		{
 			if (node.type == type)
@@ -422,7 +424,7 @@ class Spatial extends HashableItem
 				if (prev != null)
 					prev.next = node.next;
 				else
-					_globalStates = node.next;
+					_globalStateList = node.next;
 				return;
 			}
 			prev = node;
@@ -432,14 +434,14 @@ class Spatial extends HashableItem
 	
 	public function removeAllGlobalStates():Void
 	{
-		var node = _globalStates, next;
+		var node = _globalStateList, next;
 		while (node != null)
 		{
 			next = node.next;
 			node.next = null;
 			node = next;
 		}
-		_globalStates = null;
+		_globalStateList = null;
 	}
 	
 	public function toString():String
@@ -565,7 +567,7 @@ class Spatial extends HashableItem
 	
 	inline function pushState(stacks:GlobalStateStacks):Void
 	{
-		var node = _globalStates;
+		var node = _globalStateList;
 		while (node != null)
 		{
 			stacks[node.index].push(node);
@@ -575,7 +577,7 @@ class Spatial extends HashableItem
 	
 	inline function popState(stacks:GlobalStateStacks):Void
 	{
-		var node = _globalStates;
+		var node = _globalStateList;
 		while (node != null)
 		{
 			stacks[node.index].pop();

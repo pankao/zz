@@ -303,10 +303,10 @@ class Tile extends AbstractTile
 			{
 				case BlendMode.Inherit:  null;
 				case BlendMode.None:     AlphaState.NONE;
-				case BlendMode.Normal:   preMultipliedAlpha ? AlphaState.BLEND_PMA : AlphaState.BLEND;
+				case BlendMode.Normal:   preMultipliedAlpha ? AlphaState.BLEND_PMA    : AlphaState.BLEND;
 				case BlendMode.Multiply: preMultipliedAlpha ? AlphaState.MULTIPLY_PMA : AlphaState.MULTIPLY;
-				case BlendMode.Add:      preMultipliedAlpha ? AlphaState.ADD_PMA : AlphaState.ADD;
-				case BlendMode.Screen:   preMultipliedAlpha ? AlphaState.SCREEN_PMA : AlphaState.SCREEN;
+				case BlendMode.Add:      preMultipliedAlpha ? AlphaState.ADD_PMA      : AlphaState.ADD;
+				case BlendMode.Screen:   preMultipliedAlpha ? AlphaState.SCREEN_PMA   : AlphaState.SCREEN;
 			}
 		}
 		if (state == null)
