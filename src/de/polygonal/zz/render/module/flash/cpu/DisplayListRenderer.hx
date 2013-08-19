@@ -31,6 +31,7 @@ package de.polygonal.zz.render.module.flash.cpu;
 
 import de.polygonal.core.time.Timebase;
 import de.polygonal.core.util.Assert.assert;
+import de.polygonal.core.util.Assert;
 import de.polygonal.ds.DLL;
 import de.polygonal.ds.DLLNode;
 import de.polygonal.ds.IntHashTable;
@@ -42,7 +43,6 @@ import de.polygonal.zz.render.module.RenderModuleConfig;
 import de.polygonal.zz.render.RenderSurface;
 import de.polygonal.zz.render.texture.*;
 import de.polygonal.zz.scene.*;
-
 import flash.display.*;
 import flash.geom.*;
 
@@ -97,10 +97,10 @@ class DisplayListRenderer extends Renderer
 		_scratchColorTransformAlpha = new ColorTransform();
 		_scratchRect                = new Rectangle();
 		_scratchPoint               = new Point();
-		_tileLookup                 = new IntHashTable(512, 512, false, 512);
+		_tileLookup                 = new IntHashTable(1 << 16, 0xffff);
 		_scratchShape               = new Shape();
 		_scratchXForm               = new XForm();
-		_bitmapLookup               = new IntHashTable<BitmapTile>(512, 4096, false, 4096);
+		_bitmapLookup               = new IntHashTable<BitmapTile>(1 << 16, 0xffff);
 		_bitmapList                 = new DLL<BitmapTile>();
 		_blendModeLUT               = new IntHashTable(16);
 		_curBlendMode               = BlendMode.NORMAL;
@@ -383,7 +383,7 @@ class DisplayListRenderer extends Renderer
 				var key = tile.spatial.key;
 				tile.free();
 				var success = _bitmapLookup.clr(key);
-				assert(success, 'success');
+				assert(success);
 			}
 			
 			node = next;
@@ -472,6 +472,8 @@ class DisplayListRenderer extends Renderer
 	
 	inline function getTile(key:Int, tex:Tex, effect:Effect):BitmapDataTile
 	{
+		D.assert(key != -1);
+		
 		var tile = _tileLookup.get(key);
 		if (tile == null)
 			return initTile(key, tex, effect.__textureEffect);
@@ -484,13 +486,11 @@ class DisplayListRenderer extends Renderer
 		var bmp = new BitmapTile();
 		bmp.spatial = spatial;
 		
+		#if debug
 		for (i in _bitmapList)
-		{
 			if (i.spatial == spatial)
-			{
-				throw 1;
-			}
-		}
+				assert(false, 'i.spatial == spatial');
+		#end
 		
 		bmp.listNode = _bitmapList.append(bmp);
 		_bitmapLookup.set(spatial.key, bmp);
